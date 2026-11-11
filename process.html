@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>绞胎全流程定制 · 选土到出窑</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="process.css" />
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="hero">
+    <div class="hero-text">
+      <p class="eyebrow">当阳峪 · 原创工艺档案</p>
+      <h1>绞胎全流程定制</h1>
+      <p class="lead">从选土到出窑，一步一步做「只属于你」的君子瓷方案。现场绞泥烧制仍由匠人完成，这里负责个性化预演与原创工艺卡。</p>
+    </div>
+    <div class="hero-aside">
+      <a class="link" href="./index.html">纹样生成器</a>
+      <a class="link" href="./share.html">扫码页</a>
+      <p class="id-live" id="liveId">档案号生成中…</p>
+    </div>
+  </header>
+
+  <nav class="steps" id="stepNav" aria-label="全流程步骤"></nav>
+
+  <main class="layout">
+    <section class="panel">
+      <div class="step-head">
+        <p class="step-kicker" id="stepKicker">步骤 1 / 9</p>
+        <h2 id="stepTitle">选土</h2>
+        <p id="stepDesc" class="step-desc"></p>
+      </div>
+      <div id="stepBody" class="step-body"></div>
+      <div class="nav-row">
+        <button type="button" class="btn" id="btnPrev">上一步</button>
+        <button type="button" class="btn primary" id="btnNext">下一步</button>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="preview-card">
+        <canvas id="preview" width="640" height="640" aria-label="个性化成瓷预览"></canvas>
+        <p class="preview-cap" id="previewCap">完成关键选择后生成预览</p>
+      </div>
+      <div class="dossier" id="dossier"></div>
+      <button type="button" class="btn primary wide" id="btnExportCard" disabled>导出我的原创工艺卡</button>
+      <p class="fine">每份档案号唯一。方案为原创设计草稿，不复刻他人作品，不替代真实烧制。</p>
+    </aside>
+  </main>
+
+  <canvas id="cardCanvas" width="1080" height="1620" hidden></canvas>
+
+  <script src="vessels.js"></script>
+  <script src="process.js"></script>
+</body>
+</html>
