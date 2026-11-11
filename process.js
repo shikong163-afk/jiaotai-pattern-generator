@@ -492,51 +492,229 @@
   function exportCard() {
     const canvas = $("cardCanvas");
     const ctx = canvas.getContext("2d");
-    const W = canvas.width, H = canvas.height;
-    ctx.fillStyle = "#f4f0e7";
-    ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = "#3d5a48";
-    ctx.fillRect(0, 0, W, 140);
-    ctx.fillStyle = "#f7f3eb";
-    ctx.font = "700 48px Noto Serif SC, serif";
-    ctx.fillText("绞胎原创工艺卡", 64, 88);
-    ctx.fillStyle = "#1c1a17";
-    ctx.font = "600 28px Source Sans 3, sans-serif";
+    const W = canvas.width;
+    const H = canvas.height;
     const id = dossierId();
-    ctx.fillText(`档案号 ${id}`, 64, 200);
-    ctx.font = "400 24px Source Sans 3, sans-serif";
-    const lines = [
-      `创作者：${state.author.trim() || "匿名创作者"}`,
-      `心愿：${state.wish.trim() || "（未填写，可现场补写）"}`,
-      `选土 → ${labelOf(SOILS, state.soil)}`,
-      `炼泥调色 → ${state.colorCount} 色原创配色`,
-      `绞泥编花 → ${labelOf(TWISTS, state.twist)} / 密度 ${state.density} / 种子 ${state.seed}`,
-      `器型 → ${vesselName()}（腹${state.belly} 口${state.rim}）`,
-      `成型 → ${labelOf(FORMS, state.form)}`,
-      `荫干 → ${labelOf(DRYS, state.dry)}`,
-      `施釉 → ${labelOf(GLAZES, state.glaze)}`,
-      `焙烧偏好 → ${labelOf(FIRES, state.fire)}`,
-      `原创声明：本方案由个人选择生成，不复刻他人作品。`,
-      `使用边界：用于研学预演与传播；真实烧制以工坊为准。`,
-    ];
-    lines.forEach((line, i) => ctx.fillText(line, 64, 260 + i * 42));
+    const padX = 72;
+    const colors = [state.c1, state.c2, state.c3].slice(0, state.colorCount);
 
-    // embed preview
-    const preview = $("preview");
-    ctx.drawImage(preview, 64, 820, 420, 420);
+    // paper background
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, "#f8f4ec");
+    bg.addColorStop(1, "#efe8da");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // soft side grain
+    ctx.fillStyle = "rgba(61,90,72,0.04)";
+    for (let i = 0; i < 18; i++) {
+      ctx.fillRect(0, 80 + i * 100, W, 2);
+    }
+
+    // header band
     ctx.fillStyle = "#3d5a48";
-    ctx.font = "700 26px Noto Serif SC, serif";
-    ctx.fillText("成瓷预览（个性化数字样张）", 520, 860);
-    ctx.font = "400 22px Source Sans 3, sans-serif";
+    ctx.fillRect(0, 0, W, 188);
+    ctx.fillStyle = "rgba(247,243,235,0.12)";
+    ctx.beginPath();
+    ctx.arc(W - 80, 20, 160, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#f7f3eb";
+    ctx.font = "700 52px Noto Serif SC, serif";
+    ctx.fillText("绞胎原创工艺卡", padX, 88);
+    ctx.font = "400 24px Source Sans 3, sans-serif";
+    ctx.fillStyle = "rgba(247,243,235,0.82)";
+    ctx.fillText("当阳峪 · 选土到出窑个性化方案", padX, 136);
+
+    // archive badge
+    const badgeY = 228;
+    roundRect(ctx, padX, badgeY, W - padX * 2, 78, 16);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(61,90,72,0.18)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#3d5a48";
+    ctx.font = "600 22px Source Sans 3, sans-serif";
+    ctx.fillText("档案号", padX + 28, badgeY + 32);
+    ctx.font = "700 28px Source Sans 3, sans-serif";
+    ctx.fillStyle = "#1c1a17";
+    ctx.fillText(id, padX + 28, badgeY + 62);
+
+    // identity block
+    let y = 360;
+    y = drawSectionTitle(ctx, "创作者信息", padX, y);
+    y += 18;
+    y = drawParamRow(ctx, "创作者", state.author.trim() || "匿名创作者", padX, y, W);
+    y += 28;
+    y = drawParamRow(
+      ctx,
+      "心愿",
+      state.wish.trim() || "（未填写，可现场补写）",
+      padX,
+      y,
+      W,
+      true
+    );
+
+    // process params
+    y += 44;
+    y = drawSectionTitle(ctx, "全流程参数", padX, y);
+    y += 22;
+
+    const params = [
+      ["选土", labelOf(SOILS, state.soil)],
+      ["炼泥调色", `${state.colorCount} 色原创配色`],
+      ["绞泥编花", `${labelOf(TWISTS, state.twist)}    密度 ${state.density}    绞力 ${state.strength}`],
+      ["纹样种子", String(state.seed)],
+      ["器型", `${vesselName()}    腹径 ${state.belly}    口沿 ${state.rim}`],
+      ["成型", labelOf(FORMS, state.form)],
+      ["荫干", labelOf(DRYS, state.dry)],
+      ["施釉", labelOf(GLAZES, state.glaze)],
+      ["焙烧偏好", labelOf(FIRES, state.fire)],
+    ];
+
+    params.forEach(([label, value], i) => {
+      y = drawParamRow(ctx, label, value, padX, y, W);
+      // color chips after 炼泥调色
+      if (i === 1) {
+        y += 14;
+        colors.forEach((hex, ci) => {
+          const cx = padX + 196 + ci * 54;
+          ctx.beginPath();
+          ctx.arc(cx, y - 18, 16, 0, Math.PI * 2);
+          ctx.fillStyle = hex;
+          ctx.fill();
+          ctx.strokeStyle = "rgba(28,26,23,0.18)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        });
+      }
+      y += 30; // breathing space between params
+    });
+
+    // preview panel
+    y += 28;
+    y = drawSectionTitle(ctx, "成瓷预览", padX, y);
+    y += 24;
+
+    const preview = $("preview");
+    const previewSize = 460;
+    const previewX = padX;
+    const previewY = y;
+
+    roundRect(ctx, previewX - 8, previewY - 8, previewSize + 16, previewSize + 16, 22);
+    ctx.fillStyle = "#1a1a1a";
+    ctx.fill();
+    ctx.drawImage(preview, previewX, previewY, previewSize, previewSize);
+
+    // right meta
+    const metaX = previewX + previewSize + 48;
+    let metaY = previewY + 36;
+    ctx.fillStyle = "#3d5a48";
+    ctx.font = "700 28px Noto Serif SC, serif";
+    ctx.fillText("个性化数字样张", metaX, metaY);
+    metaY += 52;
     ctx.fillStyle = "#5a554c";
-    const note = "表里如一 · 选土到出窑全流程定制\nhttps://shikong163-afk.github.io/jiaotai-pattern-generator/process.html";
-    note.split("\n").forEach((l, i) => ctx.fillText(l, 520, 910 + i * 36));
-    ctx.fillText(`组合独特性 ${originalityScore()}/100`, 520, 1010);
+    ctx.font = "400 22px Source Sans 3, sans-serif";
+    [
+      "表里如一 · 全流程定制",
+      `${labelOf(TWISTS, state.twist)} · ${vesselName()}`,
+      `组合独特性  ${originalityScore()} / 100`,
+      "",
+      "扫码继续体验：",
+      "jiaotai-pattern-generator.pages.dev",
+    ].forEach((line) => {
+      if (line) ctx.fillText(line, metaX, metaY);
+      metaY += 40;
+    });
+
+    // footer notes with spacing
+    const footY = previewY + previewSize + 56;
+    roundRect(ctx, padX, footY, W - padX * 2, 168, 18);
+    ctx.fillStyle = "rgba(61,90,72,0.08)";
+    ctx.fill();
+    ctx.fillStyle = "#3d5a48";
+    ctx.font = "700 22px Noto Serif SC, serif";
+    ctx.fillText("使用说明", padX + 28, footY + 42);
+    ctx.fillStyle = "#4a463e";
+    ctx.font = "400 20px Source Sans 3, sans-serif";
+    ctx.fillText("原创声明：本方案由个人选择生成，不复刻他人作品。", padX + 28, footY + 84);
+    ctx.fillText("使用边界：用于研学预演与传播；真实烧制以工坊为准。", padX + 28, footY + 124);
 
     const a = document.createElement("a");
     a.download = `${id}.png`;
     a.href = canvas.toDataURL("image/png");
     a.click();
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function drawSectionTitle(ctx, title, x, y) {
+    ctx.fillStyle = "#3d5a48";
+    ctx.fillRect(x, y - 18, 8, 28);
+    ctx.font = "700 28px Noto Serif SC, serif";
+    ctx.fillText(title, x + 22, y + 6);
+    return y + 8;
+  }
+
+  function drawParamRow(ctx, label, value, x, y, W, multiline = false) {
+    const labelW = 168;
+    ctx.fillStyle = "#7a7368";
+    ctx.font = "600 22px Source Sans 3, sans-serif";
+    ctx.fillText(label, x, y);
+
+    ctx.fillStyle = "#1c1a17";
+    ctx.font = "500 24px Source Sans 3, sans-serif";
+    const maxW = W - x - labelW - 72;
+    if (!multiline) {
+      ctx.fillText(value, x + labelW, y);
+      // subtle separator under each param
+      ctx.strokeStyle = "rgba(28,26,23,0.08)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, y + 18);
+      ctx.lineTo(W - 72, y + 18);
+      ctx.stroke();
+      return y + 26;
+    }
+
+    const lines = wrapText(ctx, value, maxW);
+    lines.forEach((line, i) => ctx.fillText(line, x + labelW, y + i * 34));
+    const bottom = y + Math.max(1, lines.length) * 34;
+    ctx.strokeStyle = "rgba(28,26,23,0.08)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, bottom - 10);
+    ctx.lineTo(W - 72, bottom - 10);
+    ctx.stroke();
+    return bottom - 8;
+  }
+
+  function wrapText(ctx, text, maxW) {
+    const chars = String(text).split("");
+    const lines = [];
+    let cur = "";
+    chars.forEach((ch) => {
+      const next = cur + ch;
+      if (ctx.measureText(next).width > maxW && cur) {
+        lines.push(cur);
+        cur = ch;
+      } else {
+        cur = next;
+      }
+    });
+    if (cur) lines.push(cur);
+    return lines.length ? lines : [""];
   }
 
   function render() {
