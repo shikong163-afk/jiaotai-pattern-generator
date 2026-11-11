@@ -20,49 +20,100 @@
   </nav>
 
   <main id="gate" data-stage="1">
-    <!-- Level 1: History -->
+    <!-- Level 1: History (scrollable deep read) -->
     <section class="stage stage-1 is-active" id="stage1" aria-label="一级：绞胎瓷历史">
-      <div class="stage-inner history">
-        <p class="eyebrow">当阳峪 · 焦作</p>
-        <h1 class="brand-title">
-          <span class="line">绞胎</span>
-          <span class="line accent">表里如一</span>
-        </h1>
-        <p class="lede">泥在胎里绞转成纹，不是画上去的花。唐启其制，宋盛其名；当阳峪一脉，把“君子瓷”写进泥土。</p>
+      <div class="history-layout">
+        <div class="stage-inner history">
+          <header class="history-hero">
+            <p class="eyebrow">当阳峪 · 焦作</p>
+            <h1 class="brand-title">
+              <span class="line">绞胎</span>
+              <span class="line accent">表里如一</span>
+            </h1>
+            <p class="lede">泥在胎里绞转成纹，不是画上去的花。唐启其制，宋盛其名；当阳峪一脉，把“君子瓷”写进泥土。</p>
+            <p class="scroll-cue" id="scrollCue">向下翻动，细读历史与工艺解读</p>
+          </header>
 
-        <ol class="timeline" aria-label="绞胎简史">
-          <li>
-            <span class="era">唐</span>
-            <div>
-              <strong>初见绞泥</strong>
-              <p>多色瓷泥相绞入胎，纹随形走，表里同构。</p>
-            </div>
-          </li>
-          <li>
-            <span class="era">宋</span>
-            <div>
-              <strong>当阳峪鼎盛</strong>
-              <p>鸟羽、编织、大理石纹……窑场把绞胎推成可识可读的地方名片。</p>
-            </div>
-          </li>
-          <li>
-            <span class="era">今</span>
-            <div>
-              <strong>研学与传播</strong>
-              <p>数字预演帮人先懂工艺边界，再把手伸进泥里——乐趣仍在现场烧成。</p>
-            </div>
-          </li>
-        </ol>
+          <article class="history-article" aria-label="绞胎瓷详细解读">
+            <section class="hist-block">
+              <h2>何为绞胎</h2>
+              <p>绞胎，又称绞泥。它把两种或多种不同颜色的瓷泥揉绞、叠压、切片，再成型、修坯、施釉、焙烧。纹样不是用笔描绘在表面，而是从胎体内部生长出来——剖开截面，仍能看见同一脉络。</p>
+              <p>因此人们常以“表里如一”形容绞胎：看见的纹，就是胎里的纹；好看之外，更有一层诚实。</p>
+            </section>
 
-        <div class="cta-row">
-          <button type="button" class="btn primary" id="toStage2">继续 · 亲手绞一下</button>
-          <button type="button" class="btn ghost" id="skipIntro">跳过入场</button>
+            <section class="hist-block">
+              <h2>唐：技法初成</h2>
+              <p>唐代是中国陶瓷工艺大规模试验与交流的时代。多色泥料被有意识地绞合进胎体，器物表面出现天然流动、难以复刻的纹理。早期绞胎多见碗、枕、罐等日常器，纹路相对自由，近于“天工”多、“人巧”少。</p>
+              <p>这一步的关键突破在于：装饰不再只依附于釉面彩绘，而与胎骨同生。器物被打碎后，碎片上的纹依然能对得上——这是绞胎区别于彩绘瓷的根本证据。</p>
+            </section>
+
+            <section class="hist-block">
+              <h2>宋：当阳峪把绞胎做成地方名片</h2>
+              <p>河南焦作修武当阳峪窑，是宋代北方重要窑场之一。在这里，绞胎从“偶然好看的泥纹”，走向更可辨认的纹样体系：鸟羽纹、编织纹、大理石纹、带状绞等，既保留自然绞转，又有窑工可控的节奏与秩序。</p>
+              <p>当阳峪绞胎的魅力，不只在“花纹奇特”，更在于它把地方泥土、窑业组织与审美风尚拧在一起。同一窑址出土器物中，绞胎与白地黑花等品种并存，说明它不是孤立的绝技，而是整套窑业能力中的高辨识度一脉。</p>
+              <p>民间也常把它称作“君子瓷”：纹不伪饰，里外一致。这个称呼更像文化转译——用道德隐喻，帮助普通人立刻读懂工艺伦理。</p>
+            </section>
+
+            <section class="hist-block">
+              <h2>工艺难点：为什么难做、难烧</h2>
+              <ul class="hist-list">
+                <li><strong>收缩不一致</strong>：不同色泥配方、颗粒与含水率不同，干燥与烧成时收缩差大会开裂。</li>
+                <li><strong>纹路可控性</strong>：绞得太乱难读，绞得太匀又失自然；密度与器型必须匹配。</li>
+                <li><strong>成型约束</strong>：异形器（多管、转心、抱月等）观赏性强，但研学短课更宜从梅瓶、玉壶春、胆瓶等稳形入手。</li>
+                <li><strong>釉的分寸</strong>：厚釉会盖住胎纹；薄透明釉或局部留白，更利于“让纹说话”。</li>
+              </ul>
+              <p>所以绞胎从来不是“会画就会做”。它考验的是选土、炼泥、编花、成型、荫干到焙烧的全链路耐心。</p>
+            </section>
+
+            <section class="hist-block">
+              <h2>纹样怎么读</h2>
+              <div class="pattern-grid">
+                <div>
+                  <strong>鸟羽纹</strong>
+                  <p>羽毛状排列，识别度高，经典当阳峪印象之一。</p>
+                </div>
+                <div>
+                  <strong>编织纹</strong>
+                  <p>席编、经纬感强，适合工坊演示与教学讲解。</p>
+                </div>
+                <div>
+                  <strong>大理石绞</strong>
+                  <p>流纹自然，容错较高，适合初学者建立手感。</p>
+                </div>
+                <div>
+                  <strong>带状绞</strong>
+                  <p>条带节奏清晰，利于长器与腹部展开面。</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="hist-block">
+              <h2>今：研学、非遗传播与数字预演</h2>
+              <p>今天，当阳峪绞胎同时承担三件事：作为地方文化符号被讲述，作为非遗/手工体验被触摸，作为传播内容被看见。研学现场最怕两极：要么只拍照不理解，要么一上来就挑战高风险器型。</p>
+              <p>数字工具的位置，应是“增强现场”，不是“取代窑火”。先在屏幕上理解表里逻辑、器型与纹样匹配、工艺风险，再把双手伸进泥里——乐趣仍在荫干等待与开窑那一刻。</p>
+              <p>本站接下来的二级入场，会让你亲手“绞”一下；三级则进入可带走的原创方案：全流程工艺卡，或纹样工坊起草。</p>
+            </section>
+
+            <section class="hist-block note-block">
+              <h2>阅读提示</h2>
+              <p>以上解读用于传播与研学导览，综合公开陶瓷史叙述与当阳峪地方工艺常识；具体窑址分期、标本定名以考古报告与馆藏说明为准。工艺操作请以工坊师傅现场指导为准。</p>
+            </section>
+          </article>
+
+          <div class="cta-row history-cta sticky-cta">
+            <button type="button" class="btn primary" id="toStage2">读完了 · 亲手绞一下</button>
+            <button type="button" class="btn ghost" id="skipIntro">跳过入场</button>
+          </div>
         </div>
+
+        <aside class="history-visual" aria-hidden="true">
+          <div class="history-visual-sticky">
+            <canvas id="historyClay" width="360" height="450"></canvas>
+            <p class="visual-cap">纹在胎中 · 非绘于表</p>
+            <p class="visual-cap sub" id="historyScrollHint">继续下翻</p>
+          </div>
+        </aside>
       </div>
-      <aside class="history-visual" aria-hidden="true">
-        <canvas id="historyClay" width="360" height="450"></canvas>
-        <p class="visual-cap">纹在胎中 · 非绘于表</p>
-      </aside>
     </section>
 
     <!-- Level 2: Interactive entrance -->

@@ -12,6 +12,20 @@
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  const scrollCue = document.getElementById("scrollCue");
+  const historyScrollHint = document.getElementById("historyScrollHint");
+
+  function syncHistoryScrollHint() {
+    if (stage !== 1) return;
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const y = window.scrollY || 0;
+    const nearBottom = max > 0 ? y / max > 0.82 : true;
+    if (scrollCue) scrollCue.classList.toggle("is-hidden", y > 40);
+    if (historyScrollHint) {
+      historyScrollHint.textContent = nearBottom ? "可继续进入绞泥" : "继续下翻";
+    }
+  }
+
   function go(n, { force = false } = {}) {
     if (!force && !unlocked.has(n)) return;
     stage = n;
@@ -26,10 +40,17 @@
       dot.classList.toggle("active", id === n);
       dot.disabled = !unlocked.has(id);
     });
-    if (n === 1) startHistoryAnim();
+    document.body.classList.toggle("stage-history", n === 1);
+    window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+    if (n === 1) {
+      startHistoryAnim();
+      requestAnimationFrame(syncHistoryScrollHint);
+    }
     if (n === 2) resetTwistBoard(false);
     if (n === 3) sessionStorage.setItem("jiaotai_intro_done", "1");
   }
+
+  window.addEventListener("scroll", syncHistoryScrollHint, { passive: true });
 
   document.getElementById("toStage2").addEventListener("click", () => {
     unlocked.add(2);
