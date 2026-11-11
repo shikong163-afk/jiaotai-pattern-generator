@@ -8,7 +8,7 @@
   const dots = [...document.querySelectorAll(".progress .dot")];
   const unlocked = new Set([1]);
   let stage = 1;
-  let giftOpened = false;
+  let giftBusy = false;
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -29,7 +29,7 @@
     document.body.classList.toggle("stage-history", n === 1);
     window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
     if (n === 1) startHistoryAnim();
-    if (n === 2) prepareGift(false);
+    if (n === 2) resetGift();
     if (n === 3) sessionStorage.setItem("jiaotai_intro_done", "1");
   }
 
@@ -37,12 +37,11 @@
     unlocked.add(2);
     go(2);
   });
-  document.getElementById("toStage3").addEventListener("click", () => {
-    unlocked.add(3);
-    go(3);
-  });
   document.getElementById("back1").addEventListener("click", () => go(1, { force: true }));
-  document.getElementById("back2").addEventListener("click", () => go(2, { force: true }));
+  document.getElementById("back2").addEventListener("click", () => {
+    unlocked.add(2);
+    go(2, { force: true });
+  });
   document.getElementById("skipIntro").addEventListener("click", () => {
     unlocked.add(2);
     unlocked.add(3);
@@ -133,92 +132,37 @@
     historyRaf = requestAnimationFrame(tick);
   }
 
-  // ---- Level 2: gift box unfold ----
+  // ---- Level 2: large gift → Level 3 ----
   const giftBox = document.getElementById("giftBox");
   const giftLid = document.getElementById("giftLid");
   const giftHint = document.getElementById("giftHint");
-  const toStage3 = document.getElementById("toStage3");
-  const reopenGift = document.getElementById("reopenGift");
-  const vesselCanvas = document.getElementById("vesselClay");
-  const vctx = vesselCanvas.getContext("2d");
 
-  function drawVessel() {
-    const w = vesselCanvas.width;
-    const h = vesselCanvas.height;
-    vctx.clearRect(0, 0, w, h);
-    const img = vctx.createImageData(w, h);
-    const data = img.data;
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const xn = (x / w) * 2 - 1;
-        const yn = y / h;
-        // meiping-like silhouette
-        let rx;
-        if (yn < 0.12) rx = 0.18 + yn * 0.6;
-        else if (yn < 0.38) rx = 0.28 + Math.sin(((yn - 0.12) / 0.26) * Math.PI) * 0.42;
-        else if (yn < 0.82) rx = 0.55 - (yn - 0.38) * 0.55;
-        else rx = 0.22 - (yn - 0.82) * 0.2;
-        rx = Math.max(0.08, rx);
-        const inside = Math.abs(xn) <= rx;
-        const i = (y * w + x) * 4;
-        if (!inside) {
-          data[i + 3] = 0;
-          continue;
-        }
-        const u = xn / rx;
-        const swirl = Math.sin(u * 4.2 + yn * 14 + Math.sin(yn * 9) * 1.4);
-        let r, g, b;
-        if (swirl > 0.25) {
-          r = 230; g = 218; b = 198;
-        } else if (swirl > -0.2) {
-          r = 95; g = 125; b = 100;
-        } else {
-          r = 40; g = 38; b = 36;
-        }
-        const shade = 0.62 + 0.38 * Math.sqrt(Math.max(0, 1 - u * u));
-        data[i] = r * shade;
-        data[i + 1] = g * shade;
-        data[i + 2] = b * shade;
-        data[i + 3] = 255;
-      }
-    }
-    vctx.putImageData(img, 0, 0);
-  }
-
-  function setGiftOpened(open) {
-    giftOpened = open;
-    giftBox.classList.toggle("is-open", open);
-    toStage3.disabled = !open;
-    reopenGift.hidden = !open;
-    if (open) {
-      unlocked.add(3);
-      giftHint.textContent = "礼成。四面铺展，绞胎器已迎出。";
-      giftLid.querySelector("small").textContent = "已开启";
-    } else {
-      giftHint.textContent = "点按礼盒，盒盖翻开，四面铺展，迎出绞胎器。";
-      giftLid.querySelector("small").textContent = "点按开启";
-    }
-  }
-
-  function prepareGift(hardReset) {
-    drawVessel();
-    if (hardReset || !giftOpened) setGiftOpened(false);
-    else setGiftOpened(true);
+  function resetGift() {
+    giftBusy = false;
+    giftBox.classList.remove("is-open", "is-opening");
+    giftHint.textContent = "点按礼盒。盒盖翻开、四面外翻后，直接进入三级本体。";
+    giftLid.querySelector("small").textContent = "点按开启";
   }
 
   function openGift() {
-    if (giftOpened) return;
-    setGiftOpened(true);
+    if (giftBusy || giftBox.classList.contains("is-open")) return;
+    giftBusy = true;
+    giftBox.classList.add("is-opening", "is-open");
+    giftHint.textContent = "礼盒铺展中…";
+    giftLid.querySelector("small").textContent = "开启中";
+    unlocked.add(3);
+    const delay = reduced ? 0 : 1050;
+    setTimeout(() => {
+      go(3, { force: true });
+      giftBusy = false;
+    }, delay);
   }
 
   giftLid.addEventListener("click", openGift);
   giftBox.addEventListener("click", (e) => {
-    if (!giftOpened && e.target !== giftLid) openGift();
-  });
-  reopenGift.addEventListener("click", () => {
-    setGiftOpened(false);
-    // replay after a beat
-    setTimeout(() => setGiftOpened(true), reduced ? 0 : 280);
+    if (e.target.closest(".gift-lid") || !giftBox.classList.contains("is-open")) {
+      openGift();
+    }
   });
 
   // boot
