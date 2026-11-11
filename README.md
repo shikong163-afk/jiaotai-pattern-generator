@@ -4,17 +4,15 @@
 
 ## 在线使用（扫码）
 
-- 生成器：仓库 GitHub Pages 的 `index.html`
+- 云端推荐：https://jiaotai-pattern-generator.pages.dev/
+- 三阶入场：`index.html`（历史 → 交互绞泥 → 进入本体）
+- 纹样生成器：`studio.html`
 - 全流程定制：`process.html`（选土→出窑，个性化原创工艺卡）
-- 扫码页：同站点的 `share.html`（展示二维码，手机直接扫）
-
-部署后地址形如：
-
-`https://<你的用户名>.github.io/jiaotai-pattern-generator/`
+- 扫码页：`share.html`
 
 ## 本地怎么用
 
-1. 用浏览器打开 `index.html`（双击即可）
+1. 打开 `index.html` 走三阶入场，或直接打开 `studio.html` / `process.html`
 2. 在「25 种瓶型」中选择：多管瓶、蟠龙瓶、净瓶、盘口瓶、花口瓶、抱月瓶、转心瓶、冬瓜瓶、琮式瓶、荸荠瓶、灯笼瓶、天球瓶、玉壶春瓶、梅瓶、橄榄瓶、胆瓶、瓜棱瓶、柳叶瓶、莱菔瓶、贯耳瓶、葫芦瓶、蒜头瓶、棒槌瓶、观音瓶、象腿瓶
 3. 调节腹径、口沿、足高、釉光；选择纹样、泥色与绞制参数
 4. 预览可在「瓷器器型 / 纯纹样 / 截面证明」间切换
