@@ -3,154 +3,122 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>绞胎纹路生成器 · 当阳峪</title>
+  <title>当阳峪绞胎 · 入场</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="intro.css" />
 </head>
 <body>
   <div class="grain" aria-hidden="true"></div>
+  <div class="veil" aria-hidden="true"></div>
 
-  <header class="top">
-    <p class="brand">绞胎纹路生成器</p>
-    <p class="tag">当阳峪 · 器型设计 + 纹样起草 → 匠人筛选 → 可传播 · <a href="./process.html" style="color:#3d5a48;font-weight:700;text-decoration:none;">全流程定制（选土到出窑）</a></p>
-  </header>
+  <nav class="progress" aria-label="入场进度">
+    <button type="button" class="dot active" data-go="1" aria-label="一级：历史"></button>
+    <button type="button" class="dot" data-go="2" aria-label="二级：交互入场" disabled></button>
+    <button type="button" class="dot" data-go="3" aria-label="三级：进入本体" disabled></button>
+  </nav>
 
-  <main class="stage">
-    <section class="preview-panel">
-      <div class="view-toggle" role="group" aria-label="预览模式">
-        <button type="button" class="chip active" data-view="vessel">瓷器器型</button>
-        <button type="button" class="chip" data-view="flat">纯纹样</button>
-        <button type="button" class="chip" data-view="section">截面证明</button>
-      </div>
-      <div class="canvas-wrap studio">
-        <canvas id="pattern" width="720" height="720" aria-label="绞胎瓷器设计预览"></canvas>
-        <div class="canvas-meta">
-          <span id="seedLabel">种子 —</span>
-          <span id="styleLabel">鸟羽纹 · 梅瓶</span>
+  <main id="gate" data-stage="1">
+    <!-- Level 1: History -->
+    <section class="stage stage-1 is-active" id="stage1" aria-label="一级：绞胎瓷历史">
+      <div class="stage-inner history">
+        <p class="eyebrow">当阳峪 · 焦作</p>
+        <h1 class="brand-title">
+          <span class="line">绞胎</span>
+          <span class="line accent">表里如一</span>
+        </h1>
+        <p class="lede">泥在胎里绞转成纹，不是画上去的花。唐启其制，宋盛其名；当阳峪一脉，把“君子瓷”写进泥土。</p>
+
+        <ol class="timeline" aria-label="绞胎简史">
+          <li>
+            <span class="era">唐</span>
+            <div>
+              <strong>初见绞泥</strong>
+              <p>多色瓷泥相绞入胎，纹随形走，表里同构。</p>
+            </div>
+          </li>
+          <li>
+            <span class="era">宋</span>
+            <div>
+              <strong>当阳峪鼎盛</strong>
+              <p>鸟羽、编织、大理石纹……窑场把绞胎推成可识可读的地方名片。</p>
+            </div>
+          </li>
+          <li>
+            <span class="era">今</span>
+            <div>
+              <strong>研学与传播</strong>
+              <p>数字预演帮人先懂工艺边界，再把手伸进泥里——乐趣仍在现场烧成。</p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="cta-row">
+          <button type="button" class="btn primary" id="toStage2">继续 · 亲手绞一下</button>
+          <button type="button" class="btn ghost" id="skipIntro">跳过入场</button>
         </div>
       </div>
-      <div class="preview-actions">
-        <button type="button" class="btn primary" id="btnGenerate">生成设计</button>
-        <button type="button" class="btn" id="btnExport">导出 PNG</button>
-        <button type="button" class="btn" id="btnSaveVariant">收入对照</button>
-        <button type="button" class="btn" id="btnAiGen">AI 生图</button>
-      </div>
-      <div class="ai-panel" id="aiPanel" hidden>
-        <img id="aiImage" alt="AI 生成样张" />
-        <p class="ai-status" id="aiStatus"></p>
+      <aside class="history-visual" aria-hidden="true">
+        <canvas id="historyClay" width="360" height="450"></canvas>
+        <p class="visual-cap">纹在胎中 · 非绘于表</p>
+      </aside>
+    </section>
+
+    <!-- Level 2: Interactive entrance -->
+    <section class="stage stage-2" id="stage2" aria-label="二级：交互入场" hidden>
+      <div class="stage-inner interact">
+        <p class="eyebrow">二级入场</p>
+        <h2 class="stage-title">拧一拧，让纹路醒来</h2>
+        <p class="lede short">按住泥面拖动。绞得越充分，入场门开得越开。</p>
+
+        <div class="twist-board">
+          <canvas id="twistCanvas" width="640" height="640" aria-label="交互绞泥画布"></canvas>
+          <div class="twist-meter" aria-live="polite">
+            <span>绞制进度</span>
+            <strong id="twistPct">0%</strong>
+            <div class="bar"><i id="twistBar"></i></div>
+          </div>
+        </div>
+
+        <p class="hint" id="twistHint">手指或鼠标在泥面上滑动</p>
+        <div class="cta-row">
+          <button type="button" class="btn primary" id="toStage3" disabled>纹已成形 · 进入</button>
+          <button type="button" class="btn ghost" id="back1">返回历史</button>
+        </div>
       </div>
     </section>
 
-    <aside class="control-panel">
-      <div class="card">
-        <h2>25 种瓶型</h2>
-        <p class="card-note" id="vesselHint">小口丰肩收胫</p>
-        <div class="vessel-grid" id="vesselGrid" role="listbox" aria-label="25种瓶型"></div>
-        <label class="row">
-          <span>腹径</span>
-          <input type="range" id="belly" min="35" max="95" value="68" />
-          <strong id="bellyVal">68</strong>
-        </label>
-        <label class="row">
-          <span>口沿</span>
-          <input type="range" id="rim" min="20" max="90" value="48" />
-          <strong id="rimVal">48</strong>
-        </label>
-        <label class="row">
-          <span>足高</span>
-          <input type="range" id="foot" min="5" max="40" value="14" />
-          <strong id="footVal">14</strong>
-        </label>
-        <label class="row">
-          <span>釉光</span>
-          <input type="range" id="sheen" min="10" max="90" value="55" />
-          <strong id="sheenVal">55</strong>
-        </label>
-      </div>
+    <!-- Level 3: Enter body -->
+    <section class="stage stage-3" id="stage3" aria-label="三级：进入本体" hidden>
+      <div class="stage-inner enter">
+        <p class="eyebrow">三级 · 本体</p>
+        <h2 class="brand-title compact">
+          <span class="line">进入当阳峪</span>
+          <span class="line accent">数字工坊</span>
+        </h2>
+        <p class="lede short">历史与手感都过了。选一条路，开始你的原创方案。</p>
 
-      <div class="card">
-        <h2>纹样类型</h2>
-        <div class="chips" id="styleChips" role="group" aria-label="纹样类型">
-          <button type="button" class="chip active" data-style="feather">鸟羽纹</button>
-          <button type="button" class="chip" data-style="weave">编织纹</button>
-          <button type="button" class="chip" data-style="marble">大理石绞</button>
-          <button type="button" class="chip" data-style="ribbon">带状绞</button>
+        <div class="portals">
+          <a class="portal primary-portal" href="./process.html">
+            <span class="portal-kicker">推荐</span>
+            <strong>全流程定制</strong>
+            <p>选土 → 绞泥 → 器型 → 出窑工艺卡</p>
+          </a>
+          <a class="portal" href="./studio.html">
+            <span class="portal-kicker">工坊</span>
+            <strong>纹样生成器</strong>
+            <p>25 种瓶型 · 纹样起草 · 匠人筛选</p>
+          </a>
+        </div>
+
+        <div class="cta-row">
+          <button type="button" class="btn ghost" id="back2">再绞一次</button>
         </div>
       </div>
-
-      <div class="card">
-        <h2>泥色（2–4 色）</h2>
-        <div class="colors" id="colorInputs">
-          <label><span>泥色 1</span><input type="color" id="c1" value="#2a2a2a" /></label>
-          <label><span>泥色 2</span><input type="color" id="c2" value="#e8dcc8" /></label>
-          <label><span>泥色 3</span><input type="color" id="c3" value="#6b8f71" /></label>
-          <label><span>泥色 4</span><input type="color" id="c4" value="#8b5a3c" /></label>
-        </div>
-        <label class="row">
-          <span>启用色数</span>
-          <input type="range" id="colorCount" min="2" max="4" value="2" />
-          <strong id="colorCountVal">2</strong>
-        </label>
-      </div>
-
-      <div class="card">
-        <h2>绞制参数</h2>
-        <label class="row">
-          <span>绞扭强度</span>
-          <input type="range" id="twist" min="0" max="100" value="55" />
-          <strong id="twistVal">55</strong>
-        </label>
-        <label class="row">
-          <span>纹路密度</span>
-          <input type="range" id="density" min="20" max="100" value="48" />
-          <strong id="densityVal">48</strong>
-        </label>
-        <label class="row">
-          <span>细节锐度</span>
-          <input type="range" id="sharpness" min="10" max="100" value="62" />
-          <strong id="sharpVal">62</strong>
-        </label>
-        <label class="row">
-          <span>随机种子</span>
-          <input type="number" id="seed" value="20261111" />
-          <button type="button" class="btn tiny" id="btnRandomSeed">随机</button>
-        </label>
-      </div>
-
-      <div class="card verdict" id="verdictCard">
-        <h2>匠人筛选卡</h2>
-        <p class="verdict-badge" id="verdictBadge">待生成</p>
-        <ul id="verdictList"></ul>
-      </div>
-
-      <div class="card">
-        <h2>AI 提示词（仅供参考）</h2>
-        <textarea id="promptOut" rows="7" readonly></textarea>
-        <div class="preview-actions">
-          <button type="button" class="btn" id="btnCopyPrompt">复制提示词</button>
-          <button type="button" class="btn" id="btnRefreshPrompt">按当前参数重写</button>
-        </div>
-      </div>
-    </aside>
+    </section>
   </main>
 
-  <section class="variants">
-    <div class="variants-head">
-      <h2>对照台 · 生成稿 vs 筛选</h2>
-      <p>把多版纹样收入这里，开会时给匠人勾选：能绞 / 需简化 / 仅 3D / 不可实现</p>
-    </div>
-    <div class="variants-grid" id="variantsGrid"></div>
-  </section>
-
-  <footer class="foot">
-      <p>省赛新闻传播赛道演示工具 · 25 种传统瓶型 + 绞胎纹样起草 · 瓶型参考公开陶瓷研究资料 · 不替代手工绞胎与工坊授权</p>
-  </footer>
-
-  <script src="config.js"></script>
-  <script src="ai-client.js"></script>
-  <script src="vessels.js"></script>
-  <script src="app.js"></script>
+  <script src="intro.js"></script>
 </body>
 </html>
