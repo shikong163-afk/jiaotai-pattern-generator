@@ -115,6 +115,26 @@ body {
   gap: 10px;
   margin-top: 14px;
 }
+.ai-panel {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #151310;
+}
+.ai-panel img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+.ai-status {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  color: rgba(247,243,235,0.7);
+  background: rgba(0,0,0,0.35);
+}
 
 .control-panel {
   display: grid;

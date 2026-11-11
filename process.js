@@ -407,6 +407,74 @@
     ctx.putImageData(img, 0, 0);
   }
 
+  function buildAiPrompt() {
+    const twist = labelOf(TWISTS, state.twist);
+    const vessel = vesselName();
+    const colors = [state.c1, state.c2, state.c3].slice(0, state.colorCount).join(", ");
+    const glaze =
+      state.glaze === "none"
+        ? "unglazed biscuit-like porcelain surface"
+        : state.glaze === "clear-thin"
+          ? "thin clear glaze highlighting clay veins"
+          : "clear glossy glaze";
+    // English prompt works more reliably on free public models
+    return [
+      "Original product photo of Dangyangyu jiaotai porcelain,",
+      `${vessel} vase form, through-body marbled clay pattern (${twist}),`,
+      `clay colors ${colors}, pattern density ${state.density}, twist ${state.strength},`,
+      `${glaze}, tableware studio lighting, dark seamless backdrop,`,
+      "not painted surface decoration, elegant ceramic craftsmanship,",
+      "no text, no watermark, no logo, square composition",
+      state.wish.trim() ? `, inspired by: ${state.wish.trim()}` : "",
+    ].join(" ");
+  }
+
+  let lastAiAt = 0;
+  function generateAiImage() {
+    const img = $("aiImage");
+    const frame = $("aiFrame");
+    const status = $("aiStatus");
+    const btn = $("btnAiGen");
+    const now = Date.now();
+    const wait = 45000 - (now - lastAiAt);
+    if (lastAiAt && wait > 0) {
+      status.textContent = `免费额度冷却中，请约 ${Math.ceil(wait / 1000)} 秒后再试`;
+      return;
+    }
+
+    const prompt = buildAiPrompt();
+    const seed = state.seed % 1000000;
+    const url =
+      "https://image.pollinations.ai/prompt/" +
+      encodeURIComponent(prompt) +
+      `?width=768&height=768&seed=${seed}&nologo=true&enhance=true&referrer=jiaotai-pattern-generator`;
+
+    frame.classList.add("loading");
+    status.textContent = "正在请求免费生图模型…";
+    btn.disabled = true;
+    const placeholder = frame.querySelector(".ai-placeholder");
+    if (placeholder) placeholder.hidden = true;
+
+    const token = String(now);
+    img.dataset.token = token;
+    img.onload = () => {
+      if (img.dataset.token !== token) return;
+      img.hidden = false;
+      frame.classList.remove("loading");
+      status.textContent = `已生成 · 种子 ${seed} · 可右键保存`;
+      btn.disabled = false;
+      lastAiAt = Date.now();
+    };
+    img.onerror = () => {
+      if (img.dataset.token !== token) return;
+      frame.classList.remove("loading");
+      status.textContent = "生成失败或触发限流，请 45 秒后重试；程序化预览仍可用。";
+      btn.disabled = false;
+      if (placeholder) placeholder.hidden = false;
+    };
+    img.src = url;
+  }
+
   function exportCard() {
     const canvas = $("cardCanvas");
     const ctx = canvas.getContext("2d");
@@ -483,6 +551,7 @@
     render();
   });
   $("btnExportCard").addEventListener("click", exportCard);
+  $("btnAiGen").addEventListener("click", generateAiImage);
 
   render();
 })();

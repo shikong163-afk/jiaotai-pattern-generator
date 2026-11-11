@@ -635,12 +635,60 @@
     });
   });
 
+  let lastAiAt = 0;
+  function generateAiImage() {
+    readStateFromInputs();
+    const panel = $("aiPanel");
+    const img = $("aiImage");
+    const status = $("aiStatus");
+    const btn = $("btnAiGen");
+    const wait = 45000 - (Date.now() - lastAiAt);
+    if (lastAiAt && wait > 0) {
+      panel.hidden = false;
+      status.textContent = `免费额度冷却中，约 ${Math.ceil(wait / 1000)} 秒后再试`;
+      return;
+    }
+    const colors = getColors()
+      .map((c) => `#${((1 << 24) + (c.r << 16) + (c.g << 8) + c.b).toString(16).slice(1)}`)
+      .join(", ");
+    const prompt = [
+      "Original product photo of Dangyangyu jiaotai porcelain,",
+      `${vesselNames[state.vessel] || state.vessel} vase, through-body ${styleNames[state.style]} marbled clay,`,
+      `colors ${colors}, twist ${state.twist}, density ${state.density},`,
+      "thin clear glaze, dark studio backdrop, ceramic product photography,",
+      "not painted decoration, no text no logo, square composition",
+    ].join(" ");
+    const seed = state.seed % 1000000;
+    const url =
+      "https://image.pollinations.ai/prompt/" +
+      encodeURIComponent(prompt) +
+      `?width=768&height=768&seed=${seed}&nologo=true&enhance=true&referrer=jiaotai-pattern-generator`;
+    panel.hidden = false;
+    status.textContent = "正在生成…";
+    btn.disabled = true;
+    const token = String(Date.now());
+    img.dataset.token = token;
+    img.onload = () => {
+      if (img.dataset.token !== token) return;
+      status.textContent = `AI 样张完成 · 种子 ${seed}`;
+      btn.disabled = false;
+      lastAiAt = Date.now();
+    };
+    img.onerror = () => {
+      if (img.dataset.token !== token) return;
+      status.textContent = "生成失败或限流，请 45 秒后重试";
+      btn.disabled = false;
+    };
+    img.src = url;
+  }
+
   $("btnGenerate").addEventListener("click", () => {
     readStateFromInputs();
     state.seed = (state.seed + Math.floor(mulberry32(state.seed)() * 9973) + 17) % 100000000;
     $("seed").value = state.seed;
     render();
   });
+  $("btnAiGen").addEventListener("click", generateAiImage);
 
   $("btnRandomSeed").addEventListener("click", () => {
     state.seed = Math.floor(Math.random() * 1e8);
