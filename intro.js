@@ -28,10 +28,18 @@
     });
     document.body.classList.toggle("stage-history", n === 1);
     window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+    paintIntroBg(n);
     if (n === 1) startHistoryAnim();
     if (n === 2) resetGift();
     if (n === 3) sessionStorage.setItem("jiaotai_intro_done", "1");
   }
+
+  function paintIntroBg(n) {
+    const canvas = document.getElementById("bgVessels");
+    if (!canvas || !window.JiaotaiVesselUI) return;
+    window.JiaotaiVesselUI.paintBgSilhouettes(canvas, n * 3 + 1);
+  }
+  window.addEventListener("resize", () => paintIntroBg(stage));
 
   document.getElementById("toStage2").addEventListener("click", () => {
     unlocked.add(2);

@@ -21,8 +21,8 @@
     {
       id: "vessel",
       title: "选定器型",
-      desc: "从 25 种传统瓶型中选你的主器，并微调腹径与口沿，形成个人器型方案。",
-      tip: "异形瓶（多管、转心、抱月等）观赏性强，但研学体验建议先选梅瓶、玉壶春、胆瓶等更稳的器型。",
+      desc: "从分类图文库中选主器（容量上限 500），并微调腹径与口沿，形成个人器型方案。",
+      tip: "从「入门稳形」起步；异形观赏器适合展示，研学短课优先梅瓶、玉壶春、胆瓶。",
     },
     {
       id: "form",
@@ -106,8 +106,8 @@
     density: 46,
     strength: 52,
     vessel: "meiping",
-    belly: 68,
-    rim: 46,
+    belly: 340,
+    rim: 230,
     form: "hybrid",
     dry: "slow",
     glaze: "clear-thin",
@@ -225,16 +225,14 @@
         </div>
         <div class="tip">${step.tip}</div>`;
     } else if (step.id === "vessel") {
-      const opts = vessels
-        .map((v) => `<option value="${v.id}" ${v.id === state.vessel ? "selected" : ""}>${v.name}</option>`)
-        .join("");
       body.innerHTML = `
-        <div class="field"><label>瓶型</label><select id="vessel">${opts}</select></div>
+        <div id="vesselPicker" class="process-vessel-picker" aria-label="绞胎瓷器型分类选型"></div>
+        <input type="hidden" id="vessel" value="${state.vessel}" />
         <div class="field"><label>腹径 <span id="bellyVal">${state.belly}</span></label>
-          <input type="range" id="belly" min="40" max="90" value="${state.belly}" />
+          <input type="range" id="belly" min="0" max="500" value="${state.belly}" />
         </div>
         <div class="field"><label>口沿 <span id="rimVal">${state.rim}</span></label>
-          <input type="range" id="rim" min="25" max="80" value="${state.rim}" />
+          <input type="range" id="rim" min="0" max="500" value="${state.rim}" />
         </div>
         <div class="tip">${step.tip}</div>`;
     } else if (step.id === "form") {
@@ -254,6 +252,19 @@
         <div class="tip">建议带走：工艺卡 PNG + 现场简化绞泥体验。烧窑与成品仍以工坊实操为准。</div>`;
     }
     bindBodyEvents();
+    if (step.id === "vessel" && window.JiaotaiVesselUI) {
+      window.JiaotaiVesselUI.mountVesselPicker($("vesselPicker"), {
+        selectedId: state.vessel,
+        onSelect: (v) => {
+          state.vessel = v.id;
+          const hidden = $("vessel");
+          if (hidden) hidden.value = v.id;
+          updateSide();
+          drawPreview();
+          $("liveId").textContent = `档案号预览：${dossierId()}`;
+        },
+      });
+    }
   }
 
   function bindBodyEvents() {
@@ -384,7 +395,8 @@
       const t = (y - top) / (bot - top);
       if (t < -0.02 || t > 1.02) continue;
       const tc = Math.max(0, Math.min(1, t));
-      const r = vesselRadius(tc, state.vessel, state.belly / 100, state.rim / 100, 0.14) * scale;
+      const r =
+        vesselRadius(tc, state.vessel, state.belly / 500, state.rim / 500, 0.14) * scale;
       for (let x = 0; x < w; x++) {
         const dx = x - cx;
         const dist = r - Math.abs(dx);

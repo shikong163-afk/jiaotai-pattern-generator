@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="vessel-ui.css" />
 </head>
 <body>
   <div class="grain" aria-hidden="true"></div>
@@ -45,28 +46,28 @@
 
     <aside class="control-panel">
       <div class="card">
-        <h2>25 种瓶型</h2>
-        <p class="card-note" id="vesselHint">小口丰肩收胫</p>
-        <div class="vessel-grid" id="vesselGrid" role="listbox" aria-label="25种瓶型"></div>
+        <h2>器型选型</h2>
+        <p class="card-note" id="vesselHint">从小口丰肩等入门稳形开始</p>
+        <div id="vesselPicker" aria-label="绞胎瓷器型分类选型"></div>
         <label class="row">
           <span>腹径</span>
-          <input type="range" id="belly" min="35" max="95" value="68" />
-          <strong id="bellyVal">68</strong>
+          <input type="range" id="belly" min="0" max="500" value="340" />
+          <strong id="bellyVal">340</strong>
         </label>
         <label class="row">
           <span>口沿</span>
-          <input type="range" id="rim" min="20" max="90" value="48" />
-          <strong id="rimVal">48</strong>
+          <input type="range" id="rim" min="0" max="500" value="240" />
+          <strong id="rimVal">240</strong>
         </label>
         <label class="row">
           <span>足高</span>
-          <input type="range" id="foot" min="5" max="40" value="14" />
-          <strong id="footVal">14</strong>
+          <input type="range" id="foot" min="0" max="500" value="70" />
+          <strong id="footVal">70</strong>
         </label>
         <label class="row">
           <span>釉光</span>
-          <input type="range" id="sheen" min="10" max="90" value="55" />
-          <strong id="sheenVal">55</strong>
+          <input type="range" id="sheen" min="0" max="500" value="275" />
+          <strong id="sheenVal">275</strong>
         </label>
       </div>
 
@@ -151,6 +152,7 @@
   <script src="config.js"></script>
   <script src="ai-client.js"></script>
   <script src="vessels.js"></script>
+  <script src="vessel-ui.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

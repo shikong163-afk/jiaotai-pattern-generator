@@ -19,11 +19,12 @@
     density: 48,
     sharpness: 62,
     colorCount: 2,
-    belly: 68,
-    rim: 48,
-    foot: 14,
-    sheen: 55,
+    belly: 340,
+    rim: 240,
+    foot: 70,
+    sheen: 275,
   };
+  const shapeN = (v) => Math.max(0, Math.min(1, Number(v) / 500));
 
   const styleNames = {
     feather: "鸟羽纹",
@@ -180,9 +181,9 @@
     return vesselRadius(
       Math.max(0, Math.min(1, t)),
       id,
-      state.belly / 100,
-      state.rim / 100,
-      state.foot / 100
+      shapeN(state.belly),
+      shapeN(state.rim),
+      shapeN(state.foot)
     );
   }
 
@@ -325,8 +326,8 @@
     const top = h * 0.08;
     const bot = h * 0.9;
     const scale = w * 0.95;
-    const sheen = state.sheen / 100;
-    const bellyN = state.belly / 100;
+    const sheen = shapeN(state.sheen);
+    const bellyN = shapeN(state.belly);
     const feather = 3.2; // 边缘柔化宽度（像素）
 
     for (let y = Math.floor(top) - 6; y < Math.ceil(bot) + 6; y++) {
@@ -464,7 +465,7 @@
         label = "器型偏难，建议分段";
       }
     }
-    if (state.vessel === "meiping" && state.rim > 70) {
+    if (state.vessel === "meiping" && state.rim > 350) {
       reasons.push("梅瓶口沿过大，会削弱经典小口丰肩识别度。");
     }
     if (state.sharpness > 88 && state.density > 70) {
@@ -531,77 +532,18 @@
     syncInputsFromState();
   }
 
-  function drawThumb(c, id) {
-    const g = c.getContext("2d");
-    const w = c.width;
-    const h = c.height;
-    g.clearRect(0, 0, w, h);
-    g.fillStyle = "rgba(0,0,0,0.03)";
-    g.fillRect(0, 0, w, h);
-    const top = 4;
-    const bot = h - 4;
-    const cx = w / 2;
-    const scale = w * 0.9;
-    const steps = 64;
-    g.beginPath();
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      const r =
-        (vesselRadius(Math.max(0, t - 0.01), id, 0.68, 0.48, 0.14) +
-          vesselRadius(t, id, 0.68, 0.48, 0.14) * 2 +
-          vesselRadius(Math.min(1, t + 0.01), id, 0.68, 0.48, 0.14)) /
-        4 *
-        scale;
-      const yy = top + (bot - top) * t;
-      if (i === 0) g.moveTo(cx + r, yy);
-      else g.lineTo(cx + r, yy);
-    }
-    for (let i = steps; i >= 0; i--) {
-      const t = i / steps;
-      const r =
-        (vesselRadius(Math.max(0, t - 0.01), id, 0.68, 0.48, 0.14) +
-          vesselRadius(t, id, 0.68, 0.48, 0.14) * 2 +
-          vesselRadius(Math.min(1, t + 0.01), id, 0.68, 0.48, 0.14)) /
-        4 *
-        scale;
-      const yy = top + (bot - top) * t;
-      g.lineTo(cx - r, yy);
-    }
-    g.closePath();
-    g.fillStyle = "#d9e3d7";
-    g.fill();
-    g.strokeStyle = "rgba(61,90,72,0.35)";
-    g.lineWidth = 1.25;
-    g.lineJoin = "round";
-    g.lineCap = "round";
-    g.stroke();
-  }
-
+  let vesselPickerApi = null;
   function buildVesselGrid() {
-    const grid = $("vesselGrid");
-    grid.innerHTML = "";
-    VESSELS.forEach((v) => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "vessel-cell" + (v.id === state.vessel ? " active" : "");
-      btn.dataset.vessel = v.id;
-      btn.setAttribute("role", "option");
-      btn.title = `${v.name} · ${v.hint}`;
-      const thumb = document.createElement("canvas");
-      thumb.width = 72;
-      thumb.height = 88;
-      drawThumb(thumb, v.id);
-      const label = document.createElement("span");
-      label.textContent = v.name;
-      btn.appendChild(thumb);
-      btn.appendChild(label);
-      btn.addEventListener("click", () => {
+    const host = $("vesselPicker");
+    if (!host || !window.JiaotaiVesselUI) return;
+    vesselPickerApi = window.JiaotaiVesselUI.mountVesselPicker(host, {
+      selectedId: state.vessel,
+      compact: true,
+      onSelect: (v) => {
         state.vessel = v.id;
-        grid.querySelectorAll(".vessel-cell").forEach((el) => el.classList.remove("active"));
-        btn.classList.add("active");
+        if ($("vesselHint")) $("vesselHint").textContent = v.hint || "";
         render();
-      });
-      grid.appendChild(btn);
+      },
     });
   }
 
