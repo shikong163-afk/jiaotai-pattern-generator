@@ -65,7 +65,7 @@ function normalize(size, ratio) {
   return { size, ratio };
 }
 
-async function generate(env, prompt, size, ratio, headers, ip) {
+async function generate(env, prompt, size, ratio, headers, ip, extras = {}) {
   if (!env.AGNES_API_KEY) {
     return json({ error: "server_misconfigured" }, 503, headers);
   }
@@ -78,11 +78,19 @@ async function generate(env, prompt, size, ratio, headers, ip) {
   }
   ({ size, ratio } = normalize(String(size || "1K"), String(ratio || "1:1")));
 
+  const seed = Number(extras.seed) || 0;
+  const nonce = String(extras.nonce || "").slice(0, 64);
+  if (seed || nonce) {
+    const tag = `[var seed=${seed || "-"} id=${nonce || Date.now()}]`;
+    if (!prompt.includes(tag)) prompt = `${prompt} ${tag}`.slice(0, MAX_PROMPT);
+  }
+
   const upstream = await fetch(AGNES_URL, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${env.AGNES_API_KEY}`,
       "Content-Type": "application/json",
+      "Cache-Control": "no-store",
     },
     body: JSON.stringify({
       model: MODEL,
@@ -114,7 +122,11 @@ async function generate(env, prompt, size, ratio, headers, ip) {
     return json({ error: "empty_image" }, 502, headers);
   }
 
-  return json({ url: imageUrl, model: MODEL, provider: "agnes" }, 200, headers);
+  return json(
+    { url: imageUrl, model: MODEL, provider: "agnes" },
+    200,
+    { ...headers, "Cache-Control": "no-store, no-cache, must-revalidate", Pragma: "no-cache" }
+  );
 }
 
 export default {
@@ -153,7 +165,11 @@ export default {
         url.searchParams.get("size") || "1K",
         url.searchParams.get("ratio") || "1:1",
         headers,
-        ip
+        ip,
+        {
+          seed: url.searchParams.get("seed"),
+          nonce: url.searchParams.get("nonce") || url.searchParams.get("_"),
+        }
       );
     }
 
@@ -164,7 +180,10 @@ export default {
       } catch {
         return json({ error: "invalid_json" }, 400, headers);
       }
-      return generate(env, data?.prompt, data?.size, data?.ratio, headers, ip);
+      return generate(env, data?.prompt, data?.size, data?.ratio, headers, ip, {
+        seed: data?.seed,
+        nonce: data?.nonce,
+      });
     }
 
     return json({ error: "not_found" }, 404, headers);

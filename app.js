@@ -602,57 +602,66 @@
   });
 
   let lastAiAt = 0;
+  let aiBusy = false;
+  let aiGenSerial = 0;
   async function generateAiImage() {
     readStateFromInputs();
     const panel = $("aiPanel");
     const img = $("aiImage");
     const status = $("aiStatus");
     const btn = $("btnAiGen");
-    const wait = 12000 - (Date.now() - lastAiAt);
+    panel.hidden = false;
+
+    if (aiBusy) {
+      status.textContent = "上一张仍在生成中，请稍候…";
+      return;
+    }
+    const wait = 2500 - (Date.now() - lastAiAt);
     if (lastAiAt && wait > 0) {
-      panel.hidden = false;
       status.textContent = `请稍候约 ${Math.ceil(wait / 1000)} 秒再生成`;
       return;
     }
+
+    aiBusy = true;
+    aiGenSerial += 1;
+    const serial = aiGenSerial;
     const colors = getColors()
       .map((c) => `#${((1 << 24) + (c.r << 16) + (c.g << 8) + c.b).toString(16).slice(1)}`)
       .join(", ");
+    // Each click gets a distinct nonce so prompt/cache never collapse to the first result.
+    const nonce = `s${serial}_${Date.now().toString(36)}`;
+    const seed = (state.seed + serial * 97) % 1000000;
     const prompt = [
       "Original product photo of Dangyangyu jiaotai porcelain,",
       `${vesselName()} vase, through-body ${styleNames[state.style]} marbled clay,`,
       `colors ${colors}, twist ${state.twist}, density ${state.density},`,
+      `belly ${state.belly}, rim ${state.rim}, foot ${state.foot},`,
       "thin clear glaze, dark studio backdrop, ceramic product photography,",
       "not painted decoration, no text no logo, square composition",
     ].join(" ");
-    const seed = state.seed % 1000000;
-    panel.hidden = false;
+
     status.textContent = "正在请求 Agnes…";
     btn.disabled = true;
-    const token = String(Date.now());
-    img.dataset.token = token;
+    img.dataset.token = String(serial);
     try {
-      const result = await window.JiaotaiAI.generateJiaotaiImage(prompt, { seed });
-      if (img.dataset.token !== token) return;
-      img.onload = () => {
-        if (img.dataset.token !== token) return;
-        const via =
-          result.provider === "agnes"
-            ? "Agnes"
-            : `Pollinations 备用（${result.fallbackFrom || "代理不可用"}）`;
-        status.textContent = `AI 样张完成 · ${via} · 种子 ${seed}`;
-        btn.disabled = false;
-        lastAiAt = Date.now();
-      };
-      img.onerror = () => {
-        if (img.dataset.token !== token) return;
-        status.textContent = "图片加载失败，请重试";
-        btn.disabled = false;
-      };
-      img.src = result.url;
+      const result = await window.JiaotaiAI.generateJiaotaiImage(prompt, { seed, nonce });
+      if (img.dataset.token !== String(serial)) return;
+      await window.JiaotaiAI.applyImage(img, result);
+      if (img.dataset.token !== String(serial)) return;
+      const via =
+        result.provider === "agnes"
+          ? "Agnes"
+          : `Pollinations 备用（${result.fallbackFrom || "代理不可用"}）`;
+      status.textContent = `AI 样张完成 · ${via} · 第 ${serial} 次 · 种子 ${seed}`;
+      lastAiAt = Date.now();
     } catch (e) {
-      if (img.dataset.token !== token) return;
-      status.textContent = "生成失败，请确认代理已启动";
-      btn.disabled = false;
+      if (img.dataset.token !== String(serial)) return;
+      status.textContent = `生成失败（${e?.code || e?.message || "error"}），可改参数后重试`;
+    } finally {
+      if (img.dataset.token === String(serial)) {
+        btn.disabled = false;
+        aiBusy = false;
+      }
     }
   }
 

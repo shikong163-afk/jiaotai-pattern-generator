@@ -38,17 +38,26 @@ function normalize(size, ratio) {
   return { size, ratio };
 }
 
-async function generate(env, prompt, size, ratio, headers) {
+async function generate(env, prompt, size, ratio, headers, extras = {}) {
   if (!env.AGNES_API_KEY) return json({ error: "server_misconfigured" }, 503, headers);
   prompt = String(prompt || "").trim();
   if (!prompt || prompt.length > MAX_PROMPT) return json({ error: "invalid_prompt" }, 400, headers);
   ({ size, ratio } = normalize(String(size || "1K"), String(ratio || "1:1")));
+
+  // Keep each request unique so edge/browser caches cannot reuse the first sample.
+  const seed = Number(extras.seed) || 0;
+  const nonce = String(extras.nonce || "").slice(0, 64);
+  if (seed || nonce) {
+    const tag = `[var seed=${seed || "-"} id=${nonce || Date.now()}]`;
+    if (!prompt.includes(tag)) prompt = `${prompt} ${tag}`.slice(0, MAX_PROMPT);
+  }
 
   const upstream = await fetch(AGNES_URL, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${env.AGNES_API_KEY}`,
       "Content-Type": "application/json",
+      "Cache-Control": "no-store",
     },
     body: JSON.stringify({
       model: MODEL,
@@ -74,7 +83,11 @@ async function generate(env, prompt, size, ratio, headers) {
   }
   const imageUrl = parsed?.data?.[0]?.url;
   if (!imageUrl) return json({ error: "empty_image" }, 502, headers);
-  return json({ url: imageUrl, model: MODEL, provider: "agnes" }, 200, headers);
+  return json(
+    { url: imageUrl, model: MODEL, provider: "agnes", seed: seed || undefined, nonce: nonce || undefined },
+    200,
+    { ...headers, "Cache-Control": "no-store, no-cache, must-revalidate", Pragma: "no-cache" }
+  );
 }
 
 export async function onRequest(context) {
@@ -93,7 +106,11 @@ export async function onRequest(context) {
       url.searchParams.get("prompt") || "",
       url.searchParams.get("size") || "1K",
       url.searchParams.get("ratio") || "1:1",
-      headers
+      headers,
+      {
+        seed: url.searchParams.get("seed"),
+        nonce: url.searchParams.get("nonce") || url.searchParams.get("_"),
+      }
     );
   }
 
@@ -104,7 +121,10 @@ export async function onRequest(context) {
     } catch {
       return json({ error: "invalid_json" }, 400, headers);
     }
-    return generate(env, data?.prompt, data?.size, data?.ratio, headers);
+    return generate(env, data?.prompt, data?.size, data?.ratio, headers, {
+      seed: data?.seed,
+      nonce: data?.nonce,
+    });
   }
 
   return json({ error: "method_not_allowed" }, 405, headers);

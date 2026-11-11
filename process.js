@@ -442,20 +442,32 @@
   }
 
   let lastAiAt = 0;
+  let aiBusy = false;
+  let aiGenSerial = 0;
   async function generateAiImage() {
     const img = $("aiImage");
     const frame = $("aiFrame");
     const status = $("aiStatus");
     const btn = $("btnAiGen");
-    const now = Date.now();
-    const wait = 12000 - (now - lastAiAt);
+    const placeholder = frame.querySelector(".ai-placeholder");
+
+    if (aiBusy) {
+      status.textContent = "上一张仍在生成中，请稍候…";
+      return;
+    }
+    const wait = 2500 - (Date.now() - lastAiAt);
     if (lastAiAt && wait > 0) {
       status.textContent = `请稍候约 ${Math.ceil(wait / 1000)} 秒再生成`;
       return;
     }
 
+    aiBusy = true;
+    aiGenSerial += 1;
+    const serial = aiGenSerial;
+    const nonce = `p${serial}_${Date.now().toString(36)}`;
+    const seed = (state.seed + serial * 97) % 1000000;
     const prompt = buildAiPrompt();
-    const seed = state.seed % 1000000;
+
     frame.classList.add("loading");
     const prefer = window.JIAOTAI_AI_PREFER || "agnes";
     status.textContent =
@@ -463,41 +475,32 @@
     btn.disabled = true;
     const badge = $("aiBadge");
     if (badge) badge.textContent = prefer === "agnes" ? "Agnes · 本机代理" : "Pollinations · 线上备用";
-    const placeholder = frame.querySelector(".ai-placeholder");
     if (placeholder) placeholder.hidden = true;
-
-    const token = String(now);
-    img.dataset.token = token;
+    img.dataset.token = String(serial);
 
     try {
-      const result = await window.JiaotaiAI.generateJiaotaiImage(prompt, { seed });
-      if (img.dataset.token !== token) return;
-      img.onload = () => {
-        if (img.dataset.token !== token) return;
-        img.hidden = false;
-        frame.classList.remove("loading");
-        const via =
-          result.provider === "agnes"
-            ? "Agnes Image 2.5"
-            : `备用 Pollinations（原因：${result.fallbackFrom || "代理不可用"}）`;
-        status.textContent = `已生成 · ${via} · 可右键保存`;
-        btn.disabled = false;
-        lastAiAt = Date.now();
-      };
-      img.onerror = () => {
-        if (img.dataset.token !== token) return;
-        frame.classList.remove("loading");
-        status.textContent = "图片加载失败，请重试；程序化预览仍可用。";
-        btn.disabled = false;
-        if (placeholder) placeholder.hidden = false;
-      };
-      img.src = result.url;
-    } catch (e) {
-      if (img.dataset.token !== token) return;
+      const result = await window.JiaotaiAI.generateJiaotaiImage(prompt, { seed, nonce });
+      if (img.dataset.token !== String(serial)) return;
+      await window.JiaotaiAI.applyImage(img, result);
+      if (img.dataset.token !== String(serial)) return;
+      img.hidden = false;
       frame.classList.remove("loading");
-      status.textContent = "生成失败，请确认代理已启动或稍后重试。";
-      btn.disabled = false;
+      const via =
+        result.provider === "agnes"
+          ? "Agnes Image 2.5"
+          : `备用 Pollinations（原因：${result.fallbackFrom || "代理不可用"}）`;
+      status.textContent = `已生成 · ${via} · 第 ${serial} 次 · 可继续改参数再生成`;
+      lastAiAt = Date.now();
+    } catch (e) {
+      if (img.dataset.token !== String(serial)) return;
+      frame.classList.remove("loading");
+      status.textContent = `生成失败（${e?.code || e?.message || "error"}），可改参数后重试；程序化预览仍可用。`;
       if (placeholder) placeholder.hidden = false;
+    } finally {
+      if (img.dataset.token === String(serial)) {
+        btn.disabled = false;
+        aiBusy = false;
+      }
     }
   }
 
