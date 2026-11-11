@@ -445,8 +445,12 @@
     const prompt = buildAiPrompt();
     const seed = state.seed % 1000000;
     frame.classList.add("loading");
-    status.textContent = "正在请求 Agnes（密钥仅在代理端）…";
+    const prefer = window.JIAOTAI_AI_PREFER || "agnes";
+    status.textContent =
+      prefer === "agnes" ? "正在请求 Agnes…" : "正在请求备用生图模型…";
     btn.disabled = true;
+    const badge = $("aiBadge");
+    if (badge) badge.textContent = prefer === "agnes" ? "Agnes · 本机代理" : "Pollinations · 线上备用";
     const placeholder = frame.querySelector(".ai-placeholder");
     if (placeholder) placeholder.hidden = true;
 

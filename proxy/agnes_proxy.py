@@ -1,35 +1,34 @@
 #!/usr/bin/env python3
-"""Agnes image proxy — API key stays on the server, never in the browser or git."""
+"""Agnes image proxy + static site server.
+
+API key stays on the server (.env), never in the browser or git.
+Open http://127.0.0.1:8787/process.html for Agnes-backed generation.
+"""
 
 from __future__ import annotations
 
 import json
+import mimetypes
 import os
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections import defaultdict, deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parent
+SITE_ROOT = ROOT.parent
 ENV_PATH = ROOT / ".env"
 AGNES_URL = "https://api.agnes-ai.cn/v1/images/generations"
 MODEL = "agnes-image-2.5-flash"
 HOST = os.environ.get("AGNES_PROXY_HOST", "127.0.0.1")
 PORT = int(os.environ.get("AGNES_PROXY_PORT", "8787"))
 MAX_PROMPT = 2000
-RATE_LIMIT = 8  # requests
-RATE_WINDOW = 60  # seconds
-ALLOWED_ORIGINS = {
-    "https://shikong163-afk.github.io",
-    "http://127.0.0.1:5500",
-    "http://localhost:5500",
-    "http://127.0.0.1:8787",
-    "http://localhost:8787",
-    "null",  # file:// local open
-}
+RATE_LIMIT = 8
+RATE_WINDOW = 60
 
 
 def load_env() -> None:
@@ -50,12 +49,27 @@ API_KEY = os.environ.get("AGNES_API_KEY", "").strip()
 hits: dict[str, deque[float]] = defaultdict(deque)
 
 
+def origin_allowed(origin: str | None) -> bool:
+    if not origin or origin == "null":
+        return True
+    if origin == "https://shikong163-afk.github.io":
+        return True
+    if origin.startswith("http://127.0.0.1:") or origin.startswith("http://localhost:"):
+        return True
+    if origin in {"http://127.0.0.1", "http://localhost"}:
+        return True
+    return False
+
+
 def cors_headers(origin: str | None) -> dict[str, str]:
-    allowed = origin if origin in ALLOWED_ORIGINS else "https://shikong163-afk.github.io"
+    if origin_allowed(origin) and origin and origin != "null":
+        allow = origin
+    else:
+        allow = "https://shikong163-afk.github.io"
     return {
-        "Access-Control-Allow-Origin": allowed,
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Origin": allow,
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Bypass-Tunnel-Reminder",
         "Access-Control-Max-Age": "86400",
         "Vary": "Origin",
     }
@@ -72,13 +86,65 @@ def rate_ok(ip: str) -> bool:
     return True
 
 
+def normalize_size_ratio(size: str, ratio: str) -> tuple[str, str]:
+    if size not in {"1K", "2K", "3K", "4K", "1024x1024", "1024x768"}:
+        size = "1K"
+    if ratio not in {"1:1", "3:4", "4:3", "16:9", "9:16", "2:3", "3:2", "21:9"}:
+        ratio = "1:1"
+    return size, ratio
+
+
+def call_agnes(prompt: str, size: str, ratio: str) -> dict:
+    size, ratio = normalize_size_ratio(size, ratio)
+    payload = {
+        "model": MODEL,
+        "prompt": prompt,
+        "size": size,
+        "ratio": ratio,
+        "extra_body": {"response_format": "url"},
+    }
+    req = urllib.request.Request(
+        AGNES_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=180) as resp:
+        upstream = json.loads(resp.read().decode("utf-8"))
+    url = (upstream.get("data") or [{}])[0].get("url")
+    if not url:
+        raise RuntimeError("empty_image")
+    return {"url": url, "model": MODEL, "provider": "agnes"}
+
+
+def safe_site_path(url_path: str) -> Path | None:
+    if "?" in url_path:
+        url_path = url_path.split("?", 1)[0]
+    if url_path in ("", "/"):
+        url_path = "/index.html"
+    rel = urllib.parse.unquote(url_path.lstrip("/"))
+    if not rel or ".." in rel.replace("\\", "/").split("/"):
+        return None
+    candidate = (SITE_ROOT / rel).resolve()
+    try:
+        candidate.relative_to(SITE_ROOT.resolve())
+    except ValueError:
+        return None
+    if not candidate.is_file():
+        return None
+    return candidate
+
+
 class Handler(BaseHTTPRequestHandler):
-    server_version = "JiaotaiAgnesProxy/1.0"
+    server_version = "JiaotaiAgnesProxy/1.2"
 
     def log_message(self, fmt: str, *args) -> None:
         print("[%s] %s" % (self.log_date_time_string(), fmt % args))
 
-    def _send(self, code: int, payload: dict, origin: str | None = None) -> None:
+    def _send_json(self, code: int, payload: dict, origin: str | None = None) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
         for k, v in cors_headers(origin).items():
@@ -89,6 +155,16 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _send_file(self, path: Path) -> None:
+        data = path.read_bytes()
+        ctype = mimetypes.guess_type(str(path))[0] or "application/octet-stream"
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        self.wfile.write(data)
+
     def do_OPTIONS(self) -> None:
         origin = self.headers.get("Origin")
         self.send_response(204)
@@ -96,11 +172,34 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header(k, v)
         self.end_headers()
 
+    def _handle_generate(self, prompt: str, size: str, ratio: str, origin: str | None) -> None:
+        if not API_KEY:
+            self._send_json(503, {"error": "server_misconfigured"}, origin)
+            return
+        ip = self.client_address[0]
+        if not rate_ok(ip):
+            self._send_json(429, {"error": "rate_limited", "retry_after": RATE_WINDOW}, origin)
+            return
+        prompt = (prompt or "").strip()
+        if not prompt or len(prompt) > MAX_PROMPT:
+            self._send_json(400, {"error": "invalid_prompt"}, origin)
+            return
+        try:
+            result = call_agnes(prompt, size or "1K", ratio or "1:1")
+            self._send_json(200, result, origin)
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode("utf-8", errors="replace")[:300]
+            self._send_json(502, {"error": "upstream_error", "status": e.code, "detail": detail}, origin)
+        except Exception as e:
+            self._send_json(502, {"error": "upstream_unreachable", "detail": type(e).__name__}, origin)
+
     def do_GET(self) -> None:
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
         origin = self.headers.get("Origin")
-        if path in ("/", "/health"):
-            self._send(
+
+        if path in ("/health", "/api/health"):
+            self._send_json(
                 200,
                 {
                     "ok": True,
@@ -111,91 +210,41 @@ class Handler(BaseHTTPRequestHandler):
                 origin,
             )
             return
-        self._send(404, {"error": "not_found"}, origin)
+
+        if path in ("/generate", "/v1/images/generations", "/api/generate"):
+            qs = parse_qs(parsed.query)
+            prompt = urllib.parse.unquote_plus((qs.get("prompt") or [""])[0])
+            size = (qs.get("size") or ["1K"])[0]
+            ratio = (qs.get("ratio") or ["1:1"])[0]
+            self._handle_generate(prompt, size, ratio, origin)
+            return
+
+        file_path = safe_site_path(path)
+        if file_path is None:
+            self._send_json(404, {"error": "not_found"}, origin)
+            return
+        self._send_file(file_path)
 
     def do_POST(self) -> None:
         origin = self.headers.get("Origin")
         path = urlparse(self.path).path
-        if path not in ("/v1/images/generations", "/generate"):
-            self._send(404, {"error": "not_found"}, origin)
+        if path not in ("/v1/images/generations", "/generate", "/api/generate"):
+            self._send_json(404, {"error": "not_found"}, origin)
             return
-
-        if not API_KEY:
-            self._send(503, {"error": "server_misconfigured"}, origin)
-            return
-
-        ip = self.client_address[0]
-        if not rate_ok(ip):
-            self._send(429, {"error": "rate_limited", "retry_after": RATE_WINDOW}, origin)
-            return
-
         length = int(self.headers.get("Content-Length") or 0)
         if length <= 0 or length > 20000:
-            self._send(400, {"error": "bad_request"}, origin)
+            self._send_json(400, {"error": "bad_request"}, origin)
             return
-
         try:
             raw = self.rfile.read(length)
             data = json.loads(raw.decode("utf-8"))
         except Exception:
-            self._send(400, {"error": "invalid_json"}, origin)
+            self._send_json(400, {"error": "invalid_json"}, origin)
             return
-
-        prompt = str(data.get("prompt") or "").strip()
-        if not prompt or len(prompt) > MAX_PROMPT:
-            self._send(400, {"error": "invalid_prompt"}, origin)
-            return
-
-        size = str(data.get("size") or "1K")
-        if size not in {"1K", "2K", "3K", "4K", "1024x1024", "1024x768"}:
-            size = "1K"
-        ratio = str(data.get("ratio") or "1:1")
-        if ratio not in {"1:1", "3:4", "4:3", "16:9", "9:16", "2:3", "3:2", "21:9"}:
-            ratio = "1:1"
-
-        payload = {
-            "model": MODEL,
-            "prompt": prompt,
-            "size": size,
-            "ratio": ratio,
-            "extra_body": {"response_format": "url"},
-        }
-        req = urllib.request.Request(
-            AGNES_URL,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={
-                "Authorization": f"Bearer {API_KEY}",
-                "Content-Type": "application/json",
-            },
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=180) as resp:
-                upstream = json.loads(resp.read().decode("utf-8"))
-        except urllib.error.HTTPError as e:
-            detail = e.read().decode("utf-8", errors="replace")[:300]
-            self._send(502, {"error": "upstream_error", "status": e.code, "detail": detail}, origin)
-            return
-        except Exception as e:
-            self._send(502, {"error": "upstream_unreachable", "detail": type(e).__name__}, origin)
-            return
-
-        url = None
-        try:
-            url = (upstream.get("data") or [{}])[0].get("url")
-        except Exception:
-            url = None
-        if not url:
-            self._send(502, {"error": "empty_image"}, origin)
-            return
-
-        self._send(
-            200,
-            {
-                "url": url,
-                "model": MODEL,
-                "provider": "agnes",
-            },
+        self._handle_generate(
+            str(data.get("prompt") or ""),
+            str(data.get("size") or "1K"),
+            str(data.get("ratio") or "1:1"),
             origin,
         )
 
@@ -205,8 +254,9 @@ def main() -> None:
         print("Missing AGNES_API_KEY. Put it in proxy/.env (gitignored) or the environment.")
         raise SystemExit(1)
     server = ThreadingHTTPServer((HOST, PORT), Handler)
-    print(f"Agnes proxy listening on http://{HOST}:{PORT}")
-    print("Key is server-side only. Stop with Ctrl+C.")
+    print(f"Agnes proxy + site: http://{HOST}:{PORT}/")
+    print(f"Process page:       http://{HOST}:{PORT}/process.html")
+    print("Key stays server-side only. Stop with Ctrl+C.")
     server.serve_forever()
 
 

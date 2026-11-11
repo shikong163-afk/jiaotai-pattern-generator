@@ -23,14 +23,18 @@
 
 ## Agnes AI 生图（密钥安全）
 
-API Key **绝不能**写进前端或推到 GitHub。本仓库用代理保管密钥：
+API Key **绝不能**写进前端或推到 GitHub。本仓库用本机代理保管密钥：
 
 1. 复制 `proxy/.env.example` 为 `proxy/.env`，填入你的 `AGNES_API_KEY`
-2. 本地启动：`python proxy/agnes_proxy.py`（默认 `http://127.0.0.1:8787`）
-3. 网页通过 `config.js` 里的 `JIAOTAI_AGNES_PROXY` 调用代理；密钥不会出现在浏览器源码里
-4. 线上公网可用 Cloudflare Worker：见 `worker/`，用 `wrangler secret put AGNES_API_KEY` 注入密钥，再把 `config.js` 改成 Worker 的 `/generate` 地址
+2. 启动：`python proxy/agnes_proxy.py`
+3. **用这个地址打开页面**（不要只开 GitHub Pages 指望 Agnes）：
+   - http://127.0.0.1:8787/process.html
+   - http://127.0.0.1:8787/
+4. 密钥只在代理端；网页源码里看不到 Key
 
-代理不可用时，前端会自动回退 Pollinations 免费生图。
+说明：GitHub Pages 是静态站，不能安全存放 Key。线上扫码页会走 Pollinations 备用生图；要 Agnes 请开本机代理地址。
+
+可选公网方案：部署 `worker/`（Cloudflare Worker）并用 `wrangler secret put AGNES_API_KEY`。
 
 若 Key 曾出现在聊天/截图里，请到 Agnes 控制台**立刻重置**。
 
