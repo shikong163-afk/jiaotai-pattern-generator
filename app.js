@@ -636,16 +636,16 @@
   });
 
   let lastAiAt = 0;
-  function generateAiImage() {
+  async function generateAiImage() {
     readStateFromInputs();
     const panel = $("aiPanel");
     const img = $("aiImage");
     const status = $("aiStatus");
     const btn = $("btnAiGen");
-    const wait = 45000 - (Date.now() - lastAiAt);
+    const wait = 12000 - (Date.now() - lastAiAt);
     if (lastAiAt && wait > 0) {
       panel.hidden = false;
-      status.textContent = `免费额度冷却中，约 ${Math.ceil(wait / 1000)} 秒后再试`;
+      status.textContent = `请稍候约 ${Math.ceil(wait / 1000)} 秒再生成`;
       return;
     }
     const colors = getColors()
@@ -659,27 +659,35 @@
       "not painted decoration, no text no logo, square composition",
     ].join(" ");
     const seed = state.seed % 1000000;
-    const url =
-      "https://image.pollinations.ai/prompt/" +
-      encodeURIComponent(prompt) +
-      `?width=768&height=768&seed=${seed}&nologo=true&enhance=true&referrer=jiaotai-pattern-generator`;
     panel.hidden = false;
-    status.textContent = "正在生成…";
+    status.textContent = "正在请求 Agnes…";
     btn.disabled = true;
     const token = String(Date.now());
     img.dataset.token = token;
-    img.onload = () => {
+    try {
+      const result = await window.JiaotaiAI.generateJiaotaiImage(prompt, { seed });
       if (img.dataset.token !== token) return;
-      status.textContent = `AI 样张完成 · 种子 ${seed}`;
-      btn.disabled = false;
-      lastAiAt = Date.now();
-    };
-    img.onerror = () => {
+      img.onload = () => {
+        if (img.dataset.token !== token) return;
+        const via =
+          result.provider === "agnes"
+            ? "Agnes"
+            : `Pollinations 备用（${result.fallbackFrom || "代理不可用"}）`;
+        status.textContent = `AI 样张完成 · ${via} · 种子 ${seed}`;
+        btn.disabled = false;
+        lastAiAt = Date.now();
+      };
+      img.onerror = () => {
+        if (img.dataset.token !== token) return;
+        status.textContent = "图片加载失败，请重试";
+        btn.disabled = false;
+      };
+      img.src = result.url;
+    } catch (e) {
       if (img.dataset.token !== token) return;
-      status.textContent = "生成失败或限流，请 45 秒后重试";
+      status.textContent = "生成失败，请确认代理已启动";
       btn.disabled = false;
-    };
-    img.src = url;
+    }
   }
 
   $("btnGenerate").addEventListener("click", () => {

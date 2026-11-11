@@ -430,49 +430,59 @@
   }
 
   let lastAiAt = 0;
-  function generateAiImage() {
+  async function generateAiImage() {
     const img = $("aiImage");
     const frame = $("aiFrame");
     const status = $("aiStatus");
     const btn = $("btnAiGen");
     const now = Date.now();
-    const wait = 45000 - (now - lastAiAt);
+    const wait = 12000 - (now - lastAiAt);
     if (lastAiAt && wait > 0) {
-      status.textContent = `免费额度冷却中，请约 ${Math.ceil(wait / 1000)} 秒后再试`;
+      status.textContent = `请稍候约 ${Math.ceil(wait / 1000)} 秒再生成`;
       return;
     }
 
     const prompt = buildAiPrompt();
     const seed = state.seed % 1000000;
-    const url =
-      "https://image.pollinations.ai/prompt/" +
-      encodeURIComponent(prompt) +
-      `?width=768&height=768&seed=${seed}&nologo=true&enhance=true&referrer=jiaotai-pattern-generator`;
-
     frame.classList.add("loading");
-    status.textContent = "正在请求免费生图模型…";
+    status.textContent = "正在请求 Agnes（密钥仅在代理端）…";
     btn.disabled = true;
     const placeholder = frame.querySelector(".ai-placeholder");
     if (placeholder) placeholder.hidden = true;
 
     const token = String(now);
     img.dataset.token = token;
-    img.onload = () => {
+
+    try {
+      const result = await window.JiaotaiAI.generateJiaotaiImage(prompt, { seed });
       if (img.dataset.token !== token) return;
-      img.hidden = false;
-      frame.classList.remove("loading");
-      status.textContent = `已生成 · 种子 ${seed} · 可右键保存`;
-      btn.disabled = false;
-      lastAiAt = Date.now();
-    };
-    img.onerror = () => {
+      img.onload = () => {
+        if (img.dataset.token !== token) return;
+        img.hidden = false;
+        frame.classList.remove("loading");
+        const via =
+          result.provider === "agnes"
+            ? "Agnes Image 2.5"
+            : `备用 Pollinations（原因：${result.fallbackFrom || "代理不可用"}）`;
+        status.textContent = `已生成 · ${via} · 可右键保存`;
+        btn.disabled = false;
+        lastAiAt = Date.now();
+      };
+      img.onerror = () => {
+        if (img.dataset.token !== token) return;
+        frame.classList.remove("loading");
+        status.textContent = "图片加载失败，请重试；程序化预览仍可用。";
+        btn.disabled = false;
+        if (placeholder) placeholder.hidden = false;
+      };
+      img.src = result.url;
+    } catch (e) {
       if (img.dataset.token !== token) return;
       frame.classList.remove("loading");
-      status.textContent = "生成失败或触发限流，请 45 秒后重试；程序化预览仍可用。";
+      status.textContent = "生成失败，请确认代理已启动或稍后重试。";
       btn.disabled = false;
       if (placeholder) placeholder.hidden = false;
-    };
-    img.src = url;
+    }
   }
 
   function exportCard() {

@@ -6,3 +6,17 @@ Thumbs.db
 __pycache__/
 .venv/
 node_modules/
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+.dev.vars
+*.pem
+secrets/
+config.local.js
+proxy/.env
+proxy/agnes.key
+
+proxy/DEPLOY.local.txt
+worker/.wrangler/

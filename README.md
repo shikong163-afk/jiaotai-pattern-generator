@@ -21,6 +21,19 @@
 5. 点「生成设计」；可「导出 PNG」或「收入对照」
 6. 复制「AI 提示词」到即梦 / Midjourney 等做二次细化（标注为辅助设计）
 
+## Agnes AI 生图（密钥安全）
+
+API Key **绝不能**写进前端或推到 GitHub。本仓库用代理保管密钥：
+
+1. 复制 `proxy/.env.example` 为 `proxy/.env`，填入你的 `AGNES_API_KEY`
+2. 本地启动：`python proxy/agnes_proxy.py`（默认 `http://127.0.0.1:8787`）
+3. 网页通过 `config.js` 里的 `JIAOTAI_AGNES_PROXY` 调用代理；密钥不会出现在浏览器源码里
+4. 线上公网可用 Cloudflare Worker：见 `worker/`，用 `wrangler secret put AGNES_API_KEY` 注入密钥，再把 `config.js` 改成 Worker 的 `/generate` 地址
+
+代理不可用时，前端会自动回退 Pollinations 免费生图。
+
+若 Key 曾出现在聊天/截图里，请到 Agnes 控制台**立刻重置**。
+
 ## 说明
 
 - 本工具输出的是**设计草稿**，不替代手工绞胎与工坊授权。
