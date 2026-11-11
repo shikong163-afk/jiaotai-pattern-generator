@@ -80,21 +80,21 @@
 </head>
 <body>
   <main class="card">
-    <h1>绞胎纹路生成器</h1>
-    <p>手机扫码即可打开 · 当阳峪绞胎瓷器型 + 纹样设计</p>
+    <h1>绞胎全流程定制</h1>
+    <p>手机扫码即可打开 · 云端 Agnes 生图，电脑关机也能用</p>
     <div id="qr" aria-label="二维码">
-      <img src="./qr.png" width="220" height="220" alt="永久二维码：扫码打开绞胎纹路生成器" />
+      <img src="./qr.png" width="220" height="220" alt="二维码：扫码打开绞胎全流程定制" />
     </div>
-    <p class="url" id="urlText">https://shikong163-afk.github.io/jiaotai-pattern-generator/</p>
+    <p class="url" id="urlText">https://jiaotai-pattern-generator.pages.dev/process</p>
     <div class="actions">
-      <a class="primary" id="openApp" href="https://shikong163-afk.github.io/jiaotai-pattern-generator/">打开生成器</a>
-      <a class="ghost" href="https://shikong163-afk.github.io/jiaotai-pattern-generator/process.html">全流程定制</a>
-      <a class="ghost" href="./qr.png" download="绞胎纹路生成器_永久二维码.png">下载二维码</a>
+      <a class="primary" id="openApp" href="https://jiaotai-pattern-generator.pages.dev/process">打开全流程</a>
+      <a class="ghost" href="https://jiaotai-pattern-generator.pages.dev/">纹样生成器</a>
+      <a class="ghost" href="./qr.png" download="绞胎全流程_云端二维码.png">下载二维码</a>
       <button class="ghost" type="button" id="copyBtn">复制链接</button>
     </div>
   </main>
   <script>
-    const appUrl = "https://shikong163-afk.github.io/jiaotai-pattern-generator/";
+    const appUrl = "https://jiaotai-pattern-generator.pages.dev/process";
     document.getElementById("copyBtn").addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(appUrl);
