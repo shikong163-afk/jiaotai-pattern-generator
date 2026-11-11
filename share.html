@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>扫码使用 · 绞胎纹路生成器</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1c1a17;
+      --deep: #3d5a48;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 28px 16px;
+      font-family: "Source Sans 3", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 500px at 10% 0%, #e7efe6, transparent 55%),
+        linear-gradient(165deg, #f7f3eb, #e8efe8);
+    }
+    .card {
+      width: min(420px, 100%);
+      background: rgba(255,255,255,0.78);
+      border: 1px solid rgba(28,26,23,0.12);
+      border-radius: 22px;
+      padding: 28px 22px 24px;
+      text-align: center;
+      box-shadow: 0 18px 50px rgba(28,26,23,0.1);
+    }
+    h1 {
+      margin: 0;
+      font-family: "Noto Serif SC", serif;
+      font-size: 1.7rem;
+      letter-spacing: 0.06em;
+    }
+    p { margin: 10px 0 0; color: rgba(28,26,23,0.62); line-height: 1.5; }
+    #qr {
+      margin: 22px auto 12px;
+      width: 240px;
+      height: 240px;
+      border-radius: 16px;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(28,26,23,0.1);
+    }
+    #qr img { width: 220px; height: 220px; }
+    .url {
+      word-break: break-all;
+      font-size: 0.86rem;
+      color: var(--deep);
+      font-weight: 600;
+    }
+    .actions {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    a, button {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 11px 16px;
+      font: 600 0.95rem "Source Sans 3", sans-serif;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .primary { background: var(--deep); color: #f4f7f4; }
+    .ghost { background: #fff; color: var(--ink); border: 1px solid rgba(28,26,23,0.12); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>绞胎纹路生成器</h1>
+    <p>手机扫码即可打开 · 当阳峪绞胎瓷器型 + 纹样设计</p>
+    <div id="qr" aria-label="二维码"></div>
+    <p class="url" id="urlText"></p>
+    <div class="actions">
+      <a class="primary" id="openApp" href="./index.html">打开生成器</a>
+      <button class="ghost" type="button" id="copyBtn">复制链接</button>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script>
+    const appUrl = new URL("./index.html", location.href).href;
+    document.getElementById("urlText").textContent = appUrl;
+    document.getElementById("openApp").href = appUrl;
+    const box = document.getElementById("qr");
+    if (window.QRCode) {
+      QRCode.toDataURL(appUrl, { width: 440, margin: 1, color: { dark: "#1c1a17", light: "#ffffff" } })
+        .then((data) => {
+          const img = document.createElement("img");
+          img.src = data;
+          img.alt = "扫码打开绞胎纹路生成器";
+          box.appendChild(img);
+        })
+        .catch(() => { box.textContent = "二维码生成失败，请直接打开链接"; });
+    } else {
+      box.textContent = "请直接打开下方链接";
+    }
+    document.getElementById("copyBtn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(appUrl);
+        document.getElementById("copyBtn").textContent = "已复制";
+      } catch {
+        document.getElementById("copyBtn").textContent = "请手动复制";
+      }
+    });
+  </script>
+</body>
+</html>
