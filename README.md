@@ -21,22 +21,14 @@
 5. 点「生成设计」；可「导出 PNG」或「收入对照」
 6. 复制「AI 提示词」到即梦 / Midjourney 等做二次细化（标注为辅助设计）
 
-## Agnes AI 生图（密钥安全）
+## Agnes AI 生图（密钥安全 / 可脱离电脑）
 
-API Key **绝不能**写进前端或推到 GitHub。本仓库用本机代理保管密钥：
+线上云端：https://jiaotai-pattern-generator.pages.dev/ （Cloudflare Pages + Function，密钥在云端 Secret）
+GitHub Pages 也会请求上述 /generate，电脑关机也能生图。
 
-1. 复制 `proxy/.env.example` 为 `proxy/.env`，填入你的 `AGNES_API_KEY`
-2. 启动：`python proxy/agnes_proxy.py`
-3. **用这个地址打开页面**（不要只开 GitHub Pages 指望 Agnes）：
-   - http://127.0.0.1:8787/process.html
-   - http://127.0.0.1:8787/
-4. 密钥只在代理端；网页源码里看不到 Key
+本机备用：python proxy/agnes_proxy.py → http://127.0.0.1:8787/
 
-说明：GitHub Pages 是静态站，不能安全存放 Key。线上扫码页会走 Pollinations 备用生图；要 Agnes 请开本机代理地址。
 
-可选公网方案：部署 `worker/`（Cloudflare Worker）并用 `wrangler secret put AGNES_API_KEY`。
-
-若 Key 曾出现在聊天/截图里，请到 Agnes 控制台**立刻重置**。
 
 ## 说明
 

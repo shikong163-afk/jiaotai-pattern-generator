@@ -4,18 +4,19 @@
   const port = typeof location !== "undefined" ? location.port : "";
   const isLocal = host === "127.0.0.1" || host === "localhost" || host === "";
   const onProxy = port === "8787";
+  const onPages = host.endsWith("pages.dev");
+  // Cloudflare Pages Function keeps the key server-side (no PC needed).
+  const cloudProxy = "https://jiaotai-pattern-generator.pages.dev/generate";
 
-  if (onProxy) {
-    // Same-origin with python proxy — Agnes works without tunnels.
+  if (onProxy || onPages) {
     window.JIAOTAI_AGNES_PROXY = `${location.origin}/generate`;
     window.JIAOTAI_AI_PREFER = "agnes";
   } else if (isLocal) {
     window.JIAOTAI_AGNES_PROXY = "http://127.0.0.1:8787/generate";
     window.JIAOTAI_AI_PREFER = "agnes";
   } else {
-    // GitHub Pages has no secret-safe public proxy by default.
-    // Skip hanging tunnel calls; use free Pollinations online.
-    window.JIAOTAI_AGNES_PROXY = "";
-    window.JIAOTAI_AI_PREFER = "pollinations";
+    // GitHub Pages → call Cloudflare Function (secret stays in cloud)
+    window.JIAOTAI_AGNES_PROXY = cloudProxy;
+    window.JIAOTAI_AI_PREFER = "agnes";
   }
 })();
