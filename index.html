@@ -15,12 +15,12 @@
 
   <nav class="progress" aria-label="入场进度">
     <button type="button" class="dot active" data-go="1" aria-label="一级：历史"></button>
-    <button type="button" class="dot" data-go="2" aria-label="二级：交互入场" disabled></button>
+    <button type="button" class="dot" data-go="2" aria-label="二级：礼盒入场" disabled></button>
     <button type="button" class="dot" data-go="3" aria-label="三级：进入本体" disabled></button>
   </nav>
 
   <main id="gate" data-stage="1">
-    <!-- Level 1: History (scrollable deep read) -->
+    <!-- Level 1: History accordion -->
     <section class="stage stage-1 is-active" id="stage1" aria-label="一级：绞胎瓷历史">
       <div class="history-layout">
         <div class="stage-inner history">
@@ -30,78 +30,77 @@
               <span class="line">绞胎</span>
               <span class="line accent">表里如一</span>
             </h1>
-            <p class="lede">泥在胎里绞转成纹，不是画上去的花。唐启其制，宋盛其名；当阳峪一脉，把“君子瓷”写进泥土。</p>
-            <p class="scroll-cue" id="scrollCue">向下翻动，细读历史与工艺解读</p>
+            <p class="lede">泥在胎里绞转成纹，不是画上去的花。点开小标题，展开详细解读。</p>
           </header>
 
-          <article class="history-article" aria-label="绞胎瓷详细解读">
-            <section class="hist-block">
-              <h2>何为绞胎</h2>
-              <p>绞胎，又称绞泥。它把两种或多种不同颜色的瓷泥揉绞、叠压、切片，再成型、修坯、施釉、焙烧。纹样不是用笔描绘在表面，而是从胎体内部生长出来——剖开截面，仍能看见同一脉络。</p>
-              <p>因此人们常以“表里如一”形容绞胎：看见的纹，就是胎里的纹；好看之外，更有一层诚实。</p>
-            </section>
+          <div class="accordion" id="historyAccordion" aria-label="绞胎瓷详细解读">
+            <details class="acc-item" open>
+              <summary>何为绞胎</summary>
+              <div class="acc-body">
+                <p>绞胎，又称绞泥。它把两种或多种不同颜色的瓷泥揉绞、叠压、切片，再成型、修坯、施釉、焙烧。纹样不是用笔描绘在表面，而是从胎体内部生长出来——剖开截面，仍能看见同一脉络。</p>
+                <p>因此人们常以“表里如一”形容绞胎：看见的纹，就是胎里的纹；好看之外，更有一层诚实。</p>
+              </div>
+            </details>
 
-            <section class="hist-block">
-              <h2>唐：技法初成</h2>
-              <p>唐代是中国陶瓷工艺大规模试验与交流的时代。多色泥料被有意识地绞合进胎体，器物表面出现天然流动、难以复刻的纹理。早期绞胎多见碗、枕、罐等日常器，纹路相对自由，近于“天工”多、“人巧”少。</p>
-              <p>这一步的关键突破在于：装饰不再只依附于釉面彩绘，而与胎骨同生。器物被打碎后，碎片上的纹依然能对得上——这是绞胎区别于彩绘瓷的根本证据。</p>
-            </section>
+            <details class="acc-item">
+              <summary>唐：技法初成</summary>
+              <div class="acc-body">
+                <p>唐代是中国陶瓷工艺大规模试验与交流的时代。多色泥料被有意识地绞合进胎体，器物表面出现天然流动、难以复刻的纹理。早期绞胎多见碗、枕、罐等日常器，纹路相对自由，近于“天工”多、“人巧”少。</p>
+                <p>关键突破在于：装饰不再只依附于釉面彩绘，而与胎骨同生。器物被打碎后，碎片上的纹依然能对得上——这是绞胎区别于彩绘瓷的根本证据。</p>
+              </div>
+            </details>
 
-            <section class="hist-block">
-              <h2>宋：当阳峪把绞胎做成地方名片</h2>
-              <p>河南焦作修武当阳峪窑，是宋代北方重要窑场之一。在这里，绞胎从“偶然好看的泥纹”，走向更可辨认的纹样体系：鸟羽纹、编织纹、大理石纹、带状绞等，既保留自然绞转，又有窑工可控的节奏与秩序。</p>
-              <p>当阳峪绞胎的魅力，不只在“花纹奇特”，更在于它把地方泥土、窑业组织与审美风尚拧在一起。同一窑址出土器物中，绞胎与白地黑花等品种并存，说明它不是孤立的绝技，而是整套窑业能力中的高辨识度一脉。</p>
-              <p>民间也常把它称作“君子瓷”：纹不伪饰，里外一致。这个称呼更像文化转译——用道德隐喻，帮助普通人立刻读懂工艺伦理。</p>
-            </section>
+            <details class="acc-item">
+              <summary>宋：当阳峪地方名片</summary>
+              <div class="acc-body">
+                <p>河南焦作修武当阳峪窑，是宋代北方重要窑场之一。在这里，绞胎从“偶然好看的泥纹”，走向更可辨认的纹样体系：鸟羽纹、编织纹、大理石纹、带状绞等，既保留自然绞转，又有窑工可控的节奏与秩序。</p>
+                <p>当阳峪绞胎的魅力，不只在“花纹奇特”，更在于它把地方泥土、窑业组织与审美风尚拧在一起。民间也称它为“君子瓷”：纹不伪饰，里外一致。</p>
+              </div>
+            </details>
 
-            <section class="hist-block">
-              <h2>工艺难点：为什么难做、难烧</h2>
-              <ul class="hist-list">
-                <li><strong>收缩不一致</strong>：不同色泥配方、颗粒与含水率不同，干燥与烧成时收缩差大会开裂。</li>
-                <li><strong>纹路可控性</strong>：绞得太乱难读，绞得太匀又失自然；密度与器型必须匹配。</li>
-                <li><strong>成型约束</strong>：异形器（多管、转心、抱月等）观赏性强，但研学短课更宜从梅瓶、玉壶春、胆瓶等稳形入手。</li>
-                <li><strong>釉的分寸</strong>：厚釉会盖住胎纹；薄透明釉或局部留白，更利于“让纹说话”。</li>
-              </ul>
-              <p>所以绞胎从来不是“会画就会做”。它考验的是选土、炼泥、编花、成型、荫干到焙烧的全链路耐心。</p>
-            </section>
+            <details class="acc-item">
+              <summary>工艺难点：为何难做难烧</summary>
+              <div class="acc-body">
+                <ul class="hist-list">
+                  <li><strong>收缩不一致</strong>：不同色泥配方与含水率不同，干燥与烧成时易开裂。</li>
+                  <li><strong>纹路可控性</strong>：绞得太乱难读，太匀又失自然；密度须匹配器型。</li>
+                  <li><strong>成型约束</strong>：异形器观赏性强，研学短课更宜从稳形瓶型入手。</li>
+                  <li><strong>釉的分寸</strong>：厚釉盖纹；薄透明釉更利于“让纹说话”。</li>
+                </ul>
+                <p>绞胎考验的是选土、炼泥、编花、成型、荫干到焙烧的全链路耐心。</p>
+              </div>
+            </details>
 
-            <section class="hist-block">
-              <h2>纹样怎么读</h2>
-              <div class="pattern-grid">
-                <div>
-                  <strong>鸟羽纹</strong>
-                  <p>羽毛状排列，识别度高，经典当阳峪印象之一。</p>
-                </div>
-                <div>
-                  <strong>编织纹</strong>
-                  <p>席编、经纬感强，适合工坊演示与教学讲解。</p>
-                </div>
-                <div>
-                  <strong>大理石绞</strong>
-                  <p>流纹自然，容错较高，适合初学者建立手感。</p>
-                </div>
-                <div>
-                  <strong>带状绞</strong>
-                  <p>条带节奏清晰，利于长器与腹部展开面。</p>
+            <details class="acc-item">
+              <summary>纹样怎么读</summary>
+              <div class="acc-body">
+                <div class="pattern-grid">
+                  <div><strong>鸟羽纹</strong><p>羽毛状排列，经典当阳峪印象。</p></div>
+                  <div><strong>编织纹</strong><p>席编经纬感，适合教学演示。</p></div>
+                  <div><strong>大理石绞</strong><p>流纹自然，初学容错较高。</p></div>
+                  <div><strong>带状绞</strong><p>条带节奏清晰，利于长器。</p></div>
                 </div>
               </div>
-            </section>
+            </details>
 
-            <section class="hist-block">
-              <h2>今：研学、非遗传播与数字预演</h2>
-              <p>今天，当阳峪绞胎同时承担三件事：作为地方文化符号被讲述，作为非遗/手工体验被触摸，作为传播内容被看见。研学现场最怕两极：要么只拍照不理解，要么一上来就挑战高风险器型。</p>
-              <p>数字工具的位置，应是“增强现场”，不是“取代窑火”。先在屏幕上理解表里逻辑、器型与纹样匹配、工艺风险，再把双手伸进泥里——乐趣仍在荫干等待与开窑那一刻。</p>
-              <p>本站接下来的二级入场，会让你亲手“绞”一下；三级则进入可带走的原创方案：全流程工艺卡，或纹样工坊起草。</p>
-            </section>
+            <details class="acc-item">
+              <summary>今：研学与数字预演</summary>
+              <div class="acc-body">
+                <p>今天，当阳峪绞胎同时是地方符号、手工体验与传播内容。数字工具应“增强现场”，不是“取代窑火”：先理解表里逻辑与风险，再把手伸进泥里。</p>
+                <p>下一步：打开瓷器礼盒，迎出一件绞胎器，再进入本体工坊。</p>
+              </div>
+            </details>
 
-            <section class="hist-block note-block">
-              <h2>阅读提示</h2>
-              <p>以上解读用于传播与研学导览，综合公开陶瓷史叙述与当阳峪地方工艺常识；具体窑址分期、标本定名以考古报告与馆藏说明为准。工艺操作请以工坊师傅现场指导为准。</p>
-            </section>
-          </article>
+            <details class="acc-item note-block">
+              <summary>阅读提示</summary>
+              <div class="acc-body">
+                <p>解读用于传播与研学导览；具体窑址分期与标本定名以考古报告与馆藏说明为准。实操请听从工坊师傅指导。</p>
+              </div>
+            </details>
+          </div>
 
-          <div class="cta-row history-cta sticky-cta">
-            <button type="button" class="btn primary" id="toStage2">读完了 · 亲手绞一下</button>
+          <div class="cta-row history-cta">
+            <button type="button" class="btn primary" id="toStage2">继续 · 打开礼盒</button>
             <button type="button" class="btn ghost" id="skipIntro">跳过入场</button>
           </div>
         </div>
@@ -110,31 +109,40 @@
           <div class="history-visual-sticky">
             <canvas id="historyClay" width="360" height="450"></canvas>
             <p class="visual-cap">纹在胎中 · 非绘于表</p>
-            <p class="visual-cap sub" id="historyScrollHint">继续下翻</p>
           </div>
         </aside>
       </div>
     </section>
 
-    <!-- Level 2: Interactive entrance -->
-    <section class="stage stage-2" id="stage2" aria-label="二级：交互入场" hidden>
-      <div class="stage-inner interact">
+    <!-- Level 2: Gift box unfold entrance -->
+    <section class="stage stage-2" id="stage2" aria-label="二级：礼盒入场" hidden>
+      <div class="stage-inner gift-enter">
         <p class="eyebrow">二级入场</p>
-        <h2 class="stage-title">拧一拧，让纹路醒来</h2>
-        <p class="lede short">按住泥面拖动。绞得越充分，入场门开得越开。</p>
+        <h2 class="stage-title">打开瓷器礼盒</h2>
+        <p class="lede short" id="giftHint">点按礼盒，盒盖翻开，四面铺展，迎出绞胎器。</p>
 
-        <div class="twist-board">
-          <canvas id="twistCanvas" width="640" height="640" aria-label="交互绞泥画布"></canvas>
-          <div class="twist-meter" aria-live="polite">
-            <span>绞制进度</span>
-            <strong id="twistPct">0%</strong>
-            <div class="bar"><i id="twistBar"></i></div>
+        <div class="gift-stage" id="giftStage">
+          <div class="gift-scene" id="giftScene" aria-label="瓷器礼盒">
+            <div class="gift-box" id="giftBox">
+              <div class="gift-face gift-base"></div>
+              <button type="button" class="gift-face gift-lid" id="giftLid" aria-label="打开盒盖">
+                <span>当阳峪</span>
+                <small>点按开启</small>
+              </button>
+              <div class="gift-face gift-flap gift-front"></div>
+              <div class="gift-face gift-flap gift-back"></div>
+              <div class="gift-face gift-flap gift-left"></div>
+              <div class="gift-face gift-flap gift-right"></div>
+              <div class="gift-vessel" id="giftVessel" aria-hidden="true">
+                <canvas id="vesselClay" width="220" height="320"></canvas>
+              </div>
+            </div>
           </div>
         </div>
 
-        <p class="hint" id="twistHint">手指或鼠标在泥面上滑动</p>
         <div class="cta-row">
-          <button type="button" class="btn primary" id="toStage3" disabled>纹已成形 · 进入</button>
+          <button type="button" class="btn primary" id="toStage3" disabled>礼成 · 进入本体</button>
+          <button type="button" class="btn ghost" id="reopenGift" hidden>再看一次开盒</button>
           <button type="button" class="btn ghost" id="back1">返回历史</button>
         </div>
       </div>
@@ -148,7 +156,7 @@
           <span class="line">进入当阳峪</span>
           <span class="line accent">数字工坊</span>
         </h2>
-        <p class="lede short">历史与手感都过了。选一条路，开始你的原创方案。</p>
+        <p class="lede short">礼盒已开。选一条路，开始你的原创方案。</p>
 
         <div class="portals">
           <a class="portal primary-portal" href="./process.html">
@@ -164,7 +172,7 @@
         </div>
 
         <div class="cta-row">
-          <button type="button" class="btn ghost" id="back2">再绞一次</button>
+          <button type="button" class="btn ghost" id="back2">再看开盒</button>
         </div>
       </div>
     </section>

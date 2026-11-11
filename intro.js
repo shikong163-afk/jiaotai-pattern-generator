@@ -8,23 +8,9 @@
   const dots = [...document.querySelectorAll(".progress .dot")];
   const unlocked = new Set([1]);
   let stage = 1;
-  let twistProgress = 0;
+  let giftOpened = false;
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  const scrollCue = document.getElementById("scrollCue");
-  const historyScrollHint = document.getElementById("historyScrollHint");
-
-  function syncHistoryScrollHint() {
-    if (stage !== 1) return;
-    const max = document.documentElement.scrollHeight - window.innerHeight;
-    const y = window.scrollY || 0;
-    const nearBottom = max > 0 ? y / max > 0.82 : true;
-    if (scrollCue) scrollCue.classList.toggle("is-hidden", y > 40);
-    if (historyScrollHint) {
-      historyScrollHint.textContent = nearBottom ? "可继续进入绞泥" : "继续下翻";
-    }
-  }
 
   function go(n, { force = false } = {}) {
     if (!force && !unlocked.has(n)) return;
@@ -42,15 +28,10 @@
     });
     document.body.classList.toggle("stage-history", n === 1);
     window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
-    if (n === 1) {
-      startHistoryAnim();
-      requestAnimationFrame(syncHistoryScrollHint);
-    }
-    if (n === 2) resetTwistBoard(false);
+    if (n === 1) startHistoryAnim();
+    if (n === 2) prepareGift(false);
     if (n === 3) sessionStorage.setItem("jiaotai_intro_done", "1");
   }
-
-  window.addEventListener("scroll", syncHistoryScrollHint, { passive: true });
 
   document.getElementById("toStage2").addEventListener("click", () => {
     unlocked.add(2);
@@ -71,7 +52,20 @@
     dot.addEventListener("click", () => go(Number(dot.dataset.go)));
   });
 
-  // ---- Level 1: ambient jiaotai history visual ----
+  // Accordion: one open at a time
+  const accordion = document.getElementById("historyAccordion");
+  if (accordion) {
+    accordion.querySelectorAll("details.acc-item").forEach((item) => {
+      item.addEventListener("toggle", () => {
+        if (!item.open) return;
+        accordion.querySelectorAll("details.acc-item").forEach((other) => {
+          if (other !== item) other.open = false;
+        });
+      });
+    });
+  }
+
+  // ---- Level 1 visual ----
   const historyCanvas = document.getElementById("historyClay");
   const hctx = historyCanvas.getContext("2d", { willReadFrequently: true });
   let historyRaf = 0;
@@ -115,7 +109,6 @@
       }
     }
     hctx.putImageData(img, 0, 0);
-    // soft vignette rim
     const grd = hctx.createRadialGradient(w * 0.5, h * 0.45, w * 0.2, w * 0.5, h * 0.5, w * 0.72);
     grd.addColorStop(0, "rgba(0,0,0,0)");
     grd.addColorStop(1, "rgba(0,0,0,0.28)");
@@ -140,161 +133,93 @@
     historyRaf = requestAnimationFrame(tick);
   }
 
-  // ---- Level 2: interactive twist ----
-  const twistCanvas = document.getElementById("twistCanvas");
-  const tctx = twistCanvas.getContext("2d", { willReadFrequently: true });
-  const twistBar = document.getElementById("twistBar");
-  const twistPct = document.getElementById("twistPct");
-  const twistHint = document.getElementById("twistHint");
+  // ---- Level 2: gift box unfold ----
+  const giftBox = document.getElementById("giftBox");
+  const giftLid = document.getElementById("giftLid");
+  const giftHint = document.getElementById("giftHint");
   const toStage3 = document.getElementById("toStage3");
-  let dragging = false;
-  let lastX = 0;
-  let lastY = 0;
-  let fieldSeed = 11;
-  let strokes = [];
+  const reopenGift = document.getElementById("reopenGift");
+  const vesselCanvas = document.getElementById("vesselClay");
+  const vctx = vesselCanvas.getContext("2d");
 
-  function paintBase() {
-    const w = twistCanvas.width;
-    const h = twistCanvas.height;
-    const img = tctx.createImageData(w, h);
+  function drawVessel() {
+    const w = vesselCanvas.width;
+    const h = vesselCanvas.height;
+    vctx.clearRect(0, 0, w, h);
+    const img = vctx.createImageData(w, h);
     const data = img.data;
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
-        const n = hash2(x * 0.03, y * 0.03, fieldSeed);
-        const band = Math.sin((x * 0.035 + y * 0.01) + n * 2);
-        let r, g, b;
-        if (band > 0.2) {
-          r = 226; g = 214; b = 194;
-        } else if (band > -0.25) {
-          r = 108; g = 138; b = 112;
-        } else {
-          r = 42; g = 40; b = 38;
-        }
+        const xn = (x / w) * 2 - 1;
+        const yn = y / h;
+        // meiping-like silhouette
+        let rx;
+        if (yn < 0.12) rx = 0.18 + yn * 0.6;
+        else if (yn < 0.38) rx = 0.28 + Math.sin(((yn - 0.12) / 0.26) * Math.PI) * 0.42;
+        else if (yn < 0.82) rx = 0.55 - (yn - 0.38) * 0.55;
+        else rx = 0.22 - (yn - 0.82) * 0.2;
+        rx = Math.max(0.08, rx);
+        const inside = Math.abs(xn) <= rx;
         const i = (y * w + x) * 4;
-        data[i] = r;
-        data[i + 1] = g;
-        data[i + 2] = b;
+        if (!inside) {
+          data[i + 3] = 0;
+          continue;
+        }
+        const u = xn / rx;
+        const swirl = Math.sin(u * 4.2 + yn * 14 + Math.sin(yn * 9) * 1.4);
+        let r, g, b;
+        if (swirl > 0.25) {
+          r = 230; g = 218; b = 198;
+        } else if (swirl > -0.2) {
+          r = 95; g = 125; b = 100;
+        } else {
+          r = 40; g = 38; b = 36;
+        }
+        const shade = 0.62 + 0.38 * Math.sqrt(Math.max(0, 1 - u * u));
+        data[i] = r * shade;
+        data[i + 1] = g * shade;
+        data[i + 2] = b * shade;
         data[i + 3] = 255;
       }
     }
-    tctx.putImageData(img, 0, 0);
+    vctx.putImageData(img, 0, 0);
   }
 
-  function applyStroke(x0, y0, x1, y1, force) {
-    const w = twistCanvas.width;
-    const h = twistCanvas.height;
-    const steps = Math.max(4, Math.hypot(x1 - x0, y1 - y0) | 0);
-    for (let s = 0; s <= steps; s++) {
-      const t = s / steps;
-      const cx = x0 + (x1 - x0) * t;
-      const cy = y0 + (y1 - y0) * t;
-      const radius = 18 + force * 22;
-      const img = tctx.getImageData(
-        Math.max(0, cx - radius - 2),
-        Math.max(0, cy - radius - 2),
-        Math.min(w, radius * 2 + 4),
-        Math.min(h, radius * 2 + 4)
-      );
-      const data = img.data;
-      const ow = img.width;
-      const oh = img.height;
-      const ox = Math.max(0, cx - radius - 2);
-      const oy = Math.max(0, cy - radius - 2);
-      const copy = new Uint8ClampedArray(data);
-      for (let y = 0; y < oh; y++) {
-        for (let x = 0; x < ow; x++) {
-          const gx = ox + x;
-          const gy = oy + y;
-          const dx = gx - cx;
-          const dy = gy - cy;
-          const d = Math.hypot(dx, dy);
-          if (d > radius) continue;
-          const fall = 1 - d / radius;
-          const ang = 0.55 * fall * fall * (0.7 + force);
-          const cos = Math.cos(ang);
-          const sin = Math.sin(ang);
-          const sx = Math.round(cx + dx * cos - dy * sin - ox);
-          const sy = Math.round(cy + dx * sin + dy * cos - oy);
-          if (sx < 0 || sy < 0 || sx >= ow || sy >= oh) continue;
-          const i = (y * ow + x) * 4;
-          const j = (sy * ow + sx) * 4;
-          data[i] = copy[j];
-          data[i + 1] = copy[j + 1];
-          data[i + 2] = copy[j + 2];
-        }
-      }
-      tctx.putImageData(img, ox, oy);
-    }
-  }
-
-  function setProgress(v) {
-    twistProgress = Math.max(0, Math.min(1, v));
-    const pct = Math.round(twistProgress * 100);
-    twistBar.style.width = `${pct}%`;
-    twistPct.textContent = `${pct}%`;
-    if (twistProgress >= 0.72) {
-      toStage3.disabled = false;
-      twistHint.textContent = "纹路已醒 · 可以进入本体";
-      twistHint.classList.add("ready");
+  function setGiftOpened(open) {
+    giftOpened = open;
+    giftBox.classList.toggle("is-open", open);
+    toStage3.disabled = !open;
+    reopenGift.hidden = !open;
+    if (open) {
       unlocked.add(3);
+      giftHint.textContent = "礼成。四面铺展，绞胎器已迎出。";
+      giftLid.querySelector("small").textContent = "已开启";
+    } else {
+      giftHint.textContent = "点按礼盒，盒盖翻开，四面铺展，迎出绞胎器。";
+      giftLid.querySelector("small").textContent = "点按开启";
     }
   }
 
-  function resetTwistBoard(hard = true) {
-    if (hard) {
-      fieldSeed = 7 + Math.floor(Math.random() * 90);
-      strokes = [];
-      setProgress(0);
-      toStage3.disabled = true;
-      twistHint.textContent = "手指或鼠标在泥面上滑动";
-      twistHint.classList.remove("ready");
-    }
-    paintBase();
-    strokes.forEach((s) => applyStroke(s.x0, s.y0, s.x1, s.y1, s.force));
+  function prepareGift(hardReset) {
+    drawVessel();
+    if (hardReset || !giftOpened) setGiftOpened(false);
+    else setGiftOpened(true);
   }
 
-  function pointerPos(e) {
-    const rect = twistCanvas.getBoundingClientRect();
-    const scaleX = twistCanvas.width / rect.width;
-    const scaleY = twistCanvas.height / rect.height;
-    const src = e.touches ? e.touches[0] : e;
-    return {
-      x: (src.clientX - rect.left) * scaleX,
-      y: (src.clientY - rect.top) * scaleY,
-    };
+  function openGift() {
+    if (giftOpened) return;
+    setGiftOpened(true);
   }
 
-  function onDown(e) {
-    e.preventDefault();
-    dragging = true;
-    const p = pointerPos(e);
-    lastX = p.x;
-    lastY = p.y;
-  }
-  function onMove(e) {
-    if (!dragging) return;
-    e.preventDefault();
-    const p = pointerPos(e);
-    const dist = Math.hypot(p.x - lastX, p.y - lastY);
-    if (dist < 2) return;
-    const force = Math.min(1, dist / 28);
-    applyStroke(lastX, lastY, p.x, p.y, force);
-    strokes.push({ x0: lastX, y0: lastY, x1: p.x, y1: p.y, force });
-    if (strokes.length > 120) strokes.shift();
-    setProgress(twistProgress + dist * 0.00135);
-    lastX = p.x;
-    lastY = p.y;
-  }
-  function onUp() {
-    dragging = false;
-  }
-
-  twistCanvas.addEventListener("mousedown", onDown);
-  window.addEventListener("mousemove", onMove);
-  window.addEventListener("mouseup", onUp);
-  twistCanvas.addEventListener("touchstart", onDown, { passive: false });
-  twistCanvas.addEventListener("touchmove", onMove, { passive: false });
-  window.addEventListener("touchend", onUp);
+  giftLid.addEventListener("click", openGift);
+  giftBox.addEventListener("click", (e) => {
+    if (!giftOpened && e.target !== giftLid) openGift();
+  });
+  reopenGift.addEventListener("click", () => {
+    setGiftOpened(false);
+    // replay after a beat
+    setTimeout(() => setGiftOpened(true), reduced ? 0 : 280);
+  });
 
   // boot
   const params = new URLSearchParams(location.search);
