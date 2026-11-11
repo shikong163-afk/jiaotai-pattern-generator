@@ -653,7 +653,7 @@
       .join(", ");
     const prompt = [
       "Original product photo of Dangyangyu jiaotai porcelain,",
-      `${vesselNames[state.vessel] || state.vessel} vase, through-body ${styleNames[state.style]} marbled clay,`,
+      `${vesselName()} vase, through-body ${styleNames[state.style]} marbled clay,`,
       `colors ${colors}, twist ${state.twist}, density ${state.density},`,
       "thin clear glaze, dark studio backdrop, ceramic product photography,",
       "not painted decoration, no text no logo, square composition",
