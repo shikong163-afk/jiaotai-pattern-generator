@@ -171,7 +171,22 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
 
-    const ids = ["meiping", "yuhuchun", "danping", "tianqiu", "ganlan", "guanyin", "hulu", "liuye"];
+    const ids = [
+      "meiping",
+      "yuhuchun",
+      "danping",
+      "tianqiu",
+      "ganlan",
+      "guanyin",
+      "hulu",
+      "liuye",
+      "fengwei",
+      "huagu",
+      "jiangjun",
+      "yaoling",
+      "shangping",
+      "congshi",
+    ];
     const spots = [
       { x: 0.08, y: 0.22, s: 0.11, a: 0.07, rot: -6 },
       { x: 0.9, y: 0.18, s: 0.1, a: 0.06, rot: 8 },

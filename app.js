@@ -203,8 +203,17 @@
   }
 
   function lobeShade(nx) {
-    if (state.vessel !== "gualeng" && state.vessel !== "congshi") return 1;
-    if (state.vessel === "congshi") {
+    if (
+      state.vessel !== "gualeng" &&
+      state.vessel !== "gualengguan" &&
+      state.vessel !== "congshi" &&
+      state.vessel !== "fangping" &&
+      state.vessel !== "sifang" &&
+      state.vessel !== "bafang" &&
+      state.vessel !== "zhefang"
+    )
+      return 1;
+    if (state.vessel === "congshi" || state.vessel === "fangping" || state.vessel === "sifang" || state.vessel === "bafang" || state.vessel === "zhefang") {
       const ang = Math.asin(Math.max(-1, Math.min(1, (nx - 0.5) * 2)));
       return 0.9 + 0.1 * Math.abs(Math.cos(ang * 2));
     }
@@ -446,7 +455,22 @@
     const reasons = [];
     let level = "ok";
     let label = "可手工绞制（建议试点）";
-    const hardForms = new Set(["duoguan", "panlong", "zhuanxin", "baoyue", "gualeng"]);
+    const hardForms = new Set([
+      "duoguan",
+      "panlong",
+      "zhuanxin",
+      "baoyue",
+      "gualeng",
+      "shuangliang",
+      "duolian",
+      "jiaotai_ping",
+      "sengmao",
+      "benba",
+      "jishou",
+      "chuji",
+      "lishi",
+      "dingshi",
+    ]);
 
     if (state.colorCount >= 4) {
       reasons.push("四色泥同步控制难度高，建议先做双色或三色试验片。");
