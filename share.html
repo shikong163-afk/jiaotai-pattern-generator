@@ -82,31 +82,18 @@
   <main class="card">
     <h1>绞胎纹路生成器</h1>
     <p>手机扫码即可打开 · 当阳峪绞胎瓷器型 + 纹样设计</p>
-    <div id="qr" aria-label="二维码"></div>
-    <p class="url" id="urlText"></p>
+    <div id="qr" aria-label="二维码">
+      <img src="./qr.png" width="220" height="220" alt="永久二维码：扫码打开绞胎纹路生成器" />
+    </div>
+    <p class="url" id="urlText">https://shikong163-afk.github.io/jiaotai-pattern-generator/</p>
     <div class="actions">
-      <a class="primary" id="openApp" href="./index.html">打开生成器</a>
+      <a class="primary" id="openApp" href="https://shikong163-afk.github.io/jiaotai-pattern-generator/">打开生成器</a>
+      <a class="ghost" href="./qr.png" download="绞胎纹路生成器_永久二维码.png">下载二维码</a>
       <button class="ghost" type="button" id="copyBtn">复制链接</button>
     </div>
   </main>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
   <script>
-    const appUrl = new URL("./index.html", location.href).href;
-    document.getElementById("urlText").textContent = appUrl;
-    document.getElementById("openApp").href = appUrl;
-    const box = document.getElementById("qr");
-    if (window.QRCode) {
-      QRCode.toDataURL(appUrl, { width: 440, margin: 1, color: { dark: "#1c1a17", light: "#ffffff" } })
-        .then((data) => {
-          const img = document.createElement("img");
-          img.src = data;
-          img.alt = "扫码打开绞胎纹路生成器";
-          box.appendChild(img);
-        })
-        .catch(() => { box.textContent = "二维码生成失败，请直接打开链接"; });
-    } else {
-      box.textContent = "请直接打开下方链接";
-    }
+    const appUrl = "https://shikong163-afk.github.io/jiaotai-pattern-generator/";
     document.getElementById("copyBtn").addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(appUrl);
