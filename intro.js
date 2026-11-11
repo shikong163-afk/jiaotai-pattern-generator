@@ -132,37 +132,66 @@
     historyRaf = requestAnimationFrame(tick);
   }
 
-  // ---- Level 2: large gift → Level 3 ----
+  // ---- Level 2: 5:3 gift → suck into Level 3 ----
   const giftBox = document.getElementById("giftBox");
   const giftLid = document.getElementById("giftLid");
   const giftHint = document.getElementById("giftHint");
+  const giftStageEl = document.getElementById("stage2");
+  const suckVeil = document.getElementById("suckVeil");
 
   function resetGift() {
     giftBusy = false;
-    giftBox.classList.remove("is-open", "is-opening");
-    giftHint.textContent = "点按礼盒。盒盖翻开、四面外翻后，直接进入三级本体。";
+    giftBox.classList.remove("is-open", "is-sucking");
+    giftStageEl.classList.remove("is-sucking");
+    if (suckVeil) {
+      suckVeil.classList.remove("is-on");
+      suckVeil.hidden = true;
+    }
+    giftHint.textContent = "点按礼盒。盒盖翻开后会被轻轻吸入，进入三级本体。";
     giftLid.querySelector("small").textContent = "点按开启";
   }
 
   function openGift() {
-    if (giftBusy || giftBox.classList.contains("is-open")) return;
+    if (giftBusy) return;
     giftBusy = true;
-    giftBox.classList.add("is-opening", "is-open");
-    giftHint.textContent = "礼盒铺展中…";
-    giftLid.querySelector("small").textContent = "开启中";
     unlocked.add(3);
-    const delay = reduced ? 0 : 1050;
+
+    // phase 1: unfold
+    giftBox.classList.add("is-open");
+    giftHint.textContent = "礼盒铺展…准备进入";
+    giftLid.querySelector("small").textContent = "开启中";
+
+    const t1 = reduced ? 0 : 780;
+    const t2 = reduced ? 0 : 720;
+    const t3 = reduced ? 0 : 420;
+
     setTimeout(() => {
-      go(3, { force: true });
-      giftBusy = false;
-    }, delay);
+      // phase 2: suck inward
+      giftHint.textContent = "被迎入盒中…";
+      giftBox.classList.add("is-sucking");
+      giftStageEl.classList.add("is-sucking");
+      if (suckVeil) {
+        suckVeil.hidden = false;
+        requestAnimationFrame(() => suckVeil.classList.add("is-on"));
+      }
+
+      setTimeout(() => {
+        // phase 3: land on stage 3 from inside
+        go(3, { force: true });
+        if (suckVeil) {
+          suckVeil.classList.remove("is-on");
+          setTimeout(() => {
+            suckVeil.hidden = true;
+          }, t3);
+        }
+        giftBusy = false;
+      }, t2);
+    }, t1);
   }
 
   giftLid.addEventListener("click", openGift);
-  giftBox.addEventListener("click", (e) => {
-    if (e.target.closest(".gift-lid") || !giftBox.classList.contains("is-open")) {
-      openGift();
-    }
+  giftBox.addEventListener("click", () => {
+    if (!giftBusy) openGift();
   });
 
   // boot

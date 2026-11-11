@@ -119,12 +119,15 @@
       <div class="stage-inner gift-enter">
         <p class="eyebrow" id="giftEyebrow">二级入场</p>
         <h2 class="stage-title" id="giftTitle">打开瓷器礼盒</h2>
-        <p class="lede short" id="giftHint">点按礼盒。盒盖翻开、四面外翻后，直接进入三级本体。</p>
+        <p class="lede short" id="giftHint">点按礼盒。盒盖翻开后会被轻轻吸入，进入三级本体。</p>
 
         <div class="gift-stage" id="giftStage">
           <div class="gift-scene" id="giftScene" aria-label="瓷器礼盒">
             <div class="gift-box" id="giftBox">
               <div class="gift-face gift-base">
+                <div class="gift-tunnel" aria-hidden="true">
+                  <i></i><i></i><i></i>
+                </div>
                 <div class="gift-inner-glow" aria-hidden="true"></div>
               </div>
               <button type="button" class="gift-face gift-lid" id="giftLid" aria-label="打开盒盖">
@@ -139,21 +142,22 @@
           </div>
         </div>
 
-        <div class="cta-row">
+        <div class="cta-row" id="giftActions">
           <button type="button" class="btn ghost" id="back1">返回历史</button>
         </div>
       </div>
+      <div class="suck-veil" id="suckVeil" hidden aria-hidden="true"></div>
     </section>
 
     <!-- Level 3: Enter body (revealed from gift) -->
     <section class="stage stage-3" id="stage3" aria-label="三级：进入本体" hidden>
-      <div class="stage-inner enter from-gift">
+      <div class="stage-inner enter from-gift" id="stage3Inner">
         <p class="eyebrow">三级 · 本体</p>
         <h2 class="brand-title compact">
           <span class="line">进入当阳峪</span>
           <span class="line accent">数字工坊</span>
         </h2>
-        <p class="lede short">礼盒已开。选一条路，开始你的原创方案。</p>
+        <p class="lede short">你已被迎入盒中工坊。选一条路，开始原创方案。</p>
 
         <div class="portals">
           <a class="portal primary-portal" href="./process.html">
