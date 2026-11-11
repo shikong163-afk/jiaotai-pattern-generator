@@ -135,7 +135,6 @@
   // ---- Level 2: 5:3 gift → suck into Level 3 ----
   const giftBox = document.getElementById("giftBox");
   const giftLid = document.getElementById("giftLid");
-  const giftHint = document.getElementById("giftHint");
   const giftStageEl = document.getElementById("stage2");
   const suckVeil = document.getElementById("suckVeil");
 
@@ -147,7 +146,6 @@
       suckVeil.classList.remove("is-on");
       suckVeil.hidden = true;
     }
-    giftHint.textContent = "点按礼盒。盒盖翻开后会被轻轻吸入，进入三级本体。";
     giftLid.querySelector("small").textContent = "点按开启";
   }
 
@@ -158,7 +156,6 @@
 
     // phase 1: unfold
     giftBox.classList.add("is-open");
-    giftHint.textContent = "礼盒铺展…准备进入";
     giftLid.querySelector("small").textContent = "开启中";
 
     const t1 = reduced ? 0 : 780;
@@ -167,7 +164,6 @@
 
     setTimeout(() => {
       // phase 2: suck inward
-      giftHint.textContent = "被迎入盒中…";
       giftBox.classList.add("is-sucking");
       giftStageEl.classList.add("is-sucking");
       if (suckVeil) {
