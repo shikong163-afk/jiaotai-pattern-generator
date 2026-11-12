@@ -14,35 +14,35 @@
   ];
 
   const SOILS = [
-    { id: "taihang", name: "太行矸石系", note: "骨感硬朗", emoji: "⛰" },
-    { id: "local-kaolin", name: "本地高岭土", note: "细腻温润", emoji: "🤍" },
-    { id: "mix", name: "高岭+皂土", note: "可塑性好", emoji: "🌀" },
+    { id: "taihang", name: "太行矸石系", note: "骨感硬朗", hue: "#6b5a4a", form: "chunk" },
+    { id: "local-kaolin", name: "本地高岭土", note: "细腻温润", hue: "#f0e6d4", form: "soft" },
+    { id: "mix", name: "高岭+皂土", note: "可塑性好", hue: "#a89070", form: "swirl" },
   ];
   const TWISTS = [
-    { id: "feather", name: "鸟羽纹", note: "经典识别度高" },
-    { id: "weave", name: "编织纹", note: "席编演示友好" },
-    { id: "marble", name: "大理石绞", note: "自然流纹" },
-    { id: "ribbon", name: "带状绞", note: "条带节奏" },
+    { id: "feather", name: "鸟羽纹", note: "经典识别度高", motif: "feather" },
+    { id: "weave", name: "编织纹", note: "席编演示友好", motif: "weave" },
+    { id: "marble", name: "大理石绞", note: "自然流纹", motif: "marble" },
+    { id: "ribbon", name: "带状绞", note: "条带节奏", motif: "ribbon" },
   ];
   const FORMS = [
-    { id: "slab", name: "泥片编贴", note: "短课首选", icon: "▦" },
-    { id: "wheel", name: "拉坯成型", note: "完整体验", icon: "◎" },
-    { id: "hybrid", name: "绞片+修坯", note: "平衡成功率", icon: "◈" },
+    { id: "slab", name: "泥片编贴", note: "短课首选", motif: "slab" },
+    { id: "wheel", name: "拉坯成型", note: "完整体验", motif: "wheel" },
+    { id: "hybrid", name: "绞片+修坯", note: "平衡成功率", motif: "hybrid" },
   ];
   const DRYS = [
-    { id: "slow", name: "慢荫干", note: "4–5 天+" },
-    { id: "standard", name: "常规荫干", note: "工坊节奏" },
-    { id: "controlled", name: "控湿分段", note: "精细异形" },
+    { id: "slow", name: "慢荫干", note: "4–5 天+", motif: "slow" },
+    { id: "standard", name: "常规荫干", note: "工坊节奏", motif: "standard" },
+    { id: "controlled", name: "控湿分段", note: "精细异形", motif: "controlled" },
   ];
   const GLAZES = [
-    { id: "clear-thin", name: "薄透明釉", note: "护纹显纹" },
-    { id: "clear", name: "全器透明釉", note: "光泽更强" },
-    { id: "none", name: "无釉素胎", note: "泥色本色" },
+    { id: "clear-thin", name: "薄透明釉", note: "护纹显纹", motif: "thin" },
+    { id: "clear", name: "全器透明釉", note: "光泽更强", motif: "full" },
+    { id: "none", name: "无釉素胎", note: "泥色本色", motif: "bisque" },
   ];
   const FIRES = [
-    { id: "classic", name: "经典高温", note: "1340–1360℃" },
-    { id: "hold", name: "中温保温", note: "降急升风险" },
-    { id: "slow-cool", name: "缓冷优先", note: "降温更稳" },
+    { id: "classic", name: "经典高温", note: "1340–1360℃", motif: "hot" },
+    { id: "hold", name: "中温保温", note: "降急升风险", motif: "hold" },
+    { id: "slow-cool", name: "缓冷优先", note: "降温更稳", motif: "cool" },
   ];
 
   const DEFAULTS = {
@@ -66,6 +66,9 @@
     seed: Date.now() % 100000000,
     dryProgress: 0,
     fireTemp: 60,
+    fireProgress: 0,
+    fireDone: false,
+    cleared: {},
     marks: [],
   };
 
