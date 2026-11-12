@@ -22,11 +22,11 @@ body {
     linear-gradient(165deg, #f7f3eb 0%, #ebe4d8 52%, #e3ebe4 100%);
   overflow-x: hidden;
 }
-body.stage-history {
-  overflow-y: auto;
-}
-body:not(.stage-history) {
+body.gate-boot {
   overflow-y: hidden;
+}
+body:not(.gate-boot) {
+  overflow-y: auto;
 }
 
 .grain, .veil, .bg-vessels {
@@ -100,8 +100,8 @@ main#gate {
   max-width: 1180px;
   margin: 0 auto;
 }
-.stage-2.is-active,
-.stage-3.is-active {
+.stage-gift.is-active,
+.stage-start.is-active {
   min-height: 100vh;
   place-items: center;
   overflow: auto;
@@ -351,15 +351,11 @@ main#gate {
   width: min(920px, 100%);
   transition: opacity 0.55s ease, filter 0.55s ease, transform 0.7s ease;
 }
-.stage-2.is-sucking .gift-enter {
+.stage-gift.is-sucking .gift-enter {
   opacity: 0;
   filter: blur(10px);
   transform: scale(1.08);
   pointer-events: none;
-}
-.stage-2.is-sucking #giftActions {
-  opacity: 0;
-  transition: opacity 0.35s ease;
 }
 
 .gift-stage {
@@ -534,7 +530,7 @@ main#gate {
   100% { transform: scale(1.35); filter: blur(8px); opacity: 1; }
 }
 
-.stage-3 .from-gift {
+.stage-start .from-gift {
   animation: emergeFromGift 1.05s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 @keyframes emergeFromGift {
@@ -555,10 +551,80 @@ main#gate {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gift-lid, .gift-flap, .gift-inner-glow, .gift-box, .gift-scene, .suck-veil, .stage-3 .from-gift, .gift-tunnel i {
+  .gift-lid, .gift-flap, .gift-inner-glow, .gift-box, .gift-scene, .suck-veil, .stage-start .from-gift, .gift-tunnel i {
     transition: none !important;
     animation: none !important;
   }
+}
+
+.gift-brand { text-align: center; }
+.gift-enter { text-align: center; }
+.gift-lede { margin-left: auto; margin-right: auto; }
+.journey-cta-line {
+  margin: 8px 0 0;
+  color: var(--mist);
+  letter-spacing: 0.08em;
+  font-size: 0.92rem;
+}
+.journey-hero-line {
+  margin: 18px 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 3.6vw, 1.75rem);
+  color: var(--deep);
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  line-height: 1.45;
+}
+.journey-map {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.journey-map li {
+  display: grid;
+  gap: 4px;
+  padding: 14px 12px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.62);
+  border: 1px solid var(--line);
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+  animation: portalIn 0.55s ease both;
+  animation-delay: calc(var(--i, 0) * 0.05s);
+}
+.journey-map li span {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  color: var(--deep);
+  font-weight: 700;
+}
+.start-cta { justify-content: center; }
+.start-cta .btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+.btn.pulse {
+  animation: ctaPulse 2.2s ease-in-out infinite;
+  box-shadow: 0 12px 32px rgba(61,90,72,0.28);
+}
+.btn.textish {
+  display: block;
+  margin: 18px auto 0;
+  background: transparent;
+  border: 0;
+  color: var(--mist);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+@keyframes ctaPulse {
+  0%, 100% { transform: translateY(0); box-shadow: 0 12px 32px rgba(61,90,72,0.24); }
+  50% { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(61,90,72,0.34); }
+}
+
+@media (max-width: 560px) {
+  .journey-map { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 .portals {

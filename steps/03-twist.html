@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>绞泥编花 · 绞胎定制之旅</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../journey.css" />
+</head>
+<body class="journey" data-step="twist">
+  <div class="j-grain" aria-hidden="true"></div>
+  <div class="j-shell">
+    <header class="j-top">
+      <a class="j-brand" href="../index.html">当阳峪 · 旅程</a>
+      <span class="j-mark" id="jMark">印记 0/9</span>
+    </header>
+    <nav class="j-rail" id="jRail" aria-label="九关进度"></nav>
+    <div class="j-hero">
+      <p class="j-kicker" id="jKicker"></p>
+      <h1 class="j-title" id="jTitle"></h1>
+      <p class="j-desc" id="jDesc"></p>
+    </div>
+    <main class="j-stage">
+      <div class="j-viz" id="jViz">
+        <canvas id="jPreview" width="640" height="640" aria-label="成瓷预览"></canvas>
+        <div class="j-fx" id="jFx" aria-hidden="true"></div>
+        <p class="j-viz-cap" id="jVizCap">预览生成中</p>
+      </div>
+      <section class="j-panel" id="jPanel"></section>
+    </main>
+    <nav class="j-nav">
+      <a class="j-btn" id="jPrev" href="#">上一关</a>
+      <a class="j-btn primary" id="jNext" href="#">下一关</a>
+    </nav>
+  </div>
+  <div class="j-toast" id="jToast" role="status"></div>
+  <script src="../vessels.js"></script>
+  <script src="../journey-core.js"></script>
+  <script src="../journey-page.js"></script>
+</body>
+</html>
