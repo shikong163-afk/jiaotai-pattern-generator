@@ -427,7 +427,8 @@
         ${choiceHtml(J.SOILS, "soil")}
         <div class="j-field"><label>署名（可选）</label><input type="text" id="author" maxlength="20" placeholder="例如：控" value="${state.author}" /></div>
         <div class="j-field"><label>一句心愿（可选）</label><textarea id="wish" maxlength="80" placeholder="想做一件送给谁的瓷器？">${state.wish}</textarea></div>
-        <p class="j-tip">点选土源即可通关。三捧土形态各异：矸石棱角、高岭圆润、复配绞纹。</p>`;
+        <div class="j-play"><button type="button" class="j-play-btn" id="actSoil">确认采选 · 进入下一关</button></div>
+        <p class="j-tip">可先点开三种土看特写，再确认采选通关。矸石棱角、高岭圆润、复配绞纹，形态各异。</p>`;
     } else if (stepId === "refine") {
       html = `
         <h3>炼泥台 · 揉出色泥</h3>
@@ -524,6 +525,13 @@
       if (el) el.addEventListener("click", fn);
     };
 
+    act("actSoil", () => {
+      burstParticles();
+      showCloseup("soil", state.soil);
+      toast(`已采选 · ${J.labelOf(J.SOILS, state.soil)}`);
+      scheduleDraw();
+      goNextSoon("泥脉已定，进入下一关");
+    });
     act("actKnead", () => {
       state.seed = (state.seed + 211) % 100000000;
       persist();
@@ -614,11 +622,11 @@
         persist();
         renderPanel();
         showCloseup(key, id);
-        hideCloseupSoon();
+        // 选土：停留看特写，不自动收起、不立刻跳关
+        if (key !== "soil") hideCloseupSoon();
         scheduleDraw(key === "fire" ? { fireGlow: true } : {});
         toast(`已选 · ${btn.querySelector("strong")?.textContent || ""}`);
 
-        if (key === "soil") goNextSoon("泥脉已定，进入下一关");
         if (key === "form") goNextSoon("成型路径已定，进入下一关");
         if (key === "glaze") {
           glazeFlash();
@@ -726,6 +734,24 @@
       duration: 420,
       easing: "ease-out",
     });
+  }
+
+  function burstParticles() {
+    const fx = $("jFx");
+    if (!fx) return;
+    fx.innerHTML = "";
+    const hue = J.SOILS.find((x) => x.id === state.soil)?.hue || "#c4a484";
+    for (let i = 0; i < 14; i++) {
+      const d = document.createElement("i");
+      d.style.cssText = `position:absolute;width:8px;height:8px;border-radius:50%;background:${hue};left:50%;top:50%;opacity:0.9;transform:translate(-50%,-50%);transition:transform 0.7s ease,opacity 0.7s ease;`;
+      fx.appendChild(d);
+      requestAnimationFrame(() => {
+        const ang = (Math.PI * 2 * i) / 14;
+        const r = 80 + Math.random() * 70;
+        d.style.transform = `translate(calc(-50% + ${Math.cos(ang) * r}px), calc(-50% + ${Math.sin(ang) * r}px))`;
+        d.style.opacity = "0";
+      });
+    }
   }
 
   function glazeFlash() {
@@ -897,13 +923,13 @@
   scheduleDraw(stepId === "fire" ? { fireGlow: true } : {});
   bindVizGestures();
 
-  // show current selection closeup briefly on enter
+  // 进入关卡时展示当前选项特写；选土关不自动收起，方便连点对比
   if (stepId === "soil") showCloseup("soil", state.soil);
   if (stepId === "twist") showCloseup("twist", state.twist);
   if (stepId === "form") showCloseup("form", state.form);
   if (stepId === "glaze") showCloseup("glaze", state.glaze);
   if (stepId === "dry") showCloseup("dry", state.dry);
-  if (["soil", "twist", "form", "glaze", "dry"].includes(stepId)) hideCloseupSoon();
+  if (["twist", "form", "glaze", "dry"].includes(stepId)) hideCloseupSoon();
 
   persist();
 })();
