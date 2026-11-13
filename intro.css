@@ -633,6 +633,26 @@ main#gate {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+.gift-open-voice {
+  margin: 14px 0 0;
+  min-height: 1.5em;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(1.12rem, 2.6vw, 1.45rem);
+  letter-spacing: 0.16em;
+  color: #6a3f28;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition:
+    opacity var(--gift-vessel-ms) ease var(--gift-vessel-delay),
+    transform var(--gift-vessel-ms) ease var(--gift-vessel-delay);
+}
+.gift-enter:has(.gift-box.is-open) .gift-open-voice {
+  opacity: 1;
+  transform: none;
+}
 
 @media (max-height: 900px) {
   .gift-stage {
@@ -659,6 +679,7 @@ main#gate {
   .sleeve,
   .gift-inner-glow,
   .gift-vessel,
+  .gift-open-voice,
   .gift-shadow,
   .stage-start .from-gift,
   .btn.pulse,

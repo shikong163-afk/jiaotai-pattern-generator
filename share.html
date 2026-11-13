@@ -7,7 +7,8 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./cards/vessel-card.css" />
   <style>
     :root {
       --ink: #1c1a17;
@@ -17,14 +18,24 @@
     body {
       margin: 0;
       min-height: 100vh;
-      display: grid;
-      place-items: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 22px;
       padding: 28px 16px;
       font-family: "Source Sans 3", "PingFang SC", "Microsoft YaHei", sans-serif;
       color: var(--ink);
       background:
         radial-gradient(900px 500px at 10% 0%, #e7efe6, transparent 55%),
         linear-gradient(165deg, #f7f3eb, #e8efe8);
+    }
+    .share-sheet { width: min(460px, 100%); }
+    .share-note {
+      margin: 0 0 8px;
+      text-align: center;
+      font-family: "Noto Serif SC", serif;
+      letter-spacing: 0.08em;
+      color: rgba(28, 26, 23, 0.62);
     }
     .card {
       width: min(420px, 100%);
@@ -80,6 +91,15 @@
   </style>
 </head>
 <body>
+  <section class="share-sheet" id="shareCardSheet">
+    <p class="share-note" id="shareNote">这一轮的出窑器物卡</p>
+    <div id="shareCard"></div>
+    <div class="actions" id="shareCardActions" hidden>
+      <button class="primary" type="button" id="saveCardBtn">保存器物卡</button>
+      <button class="ghost" type="button" id="shareCardBtn">转发器物卡</button>
+      <button class="ghost" type="button" id="copyCardBtn">复制链接</button>
+    </div>
+  </section>
   <main class="card">
     <h1>当阳峪绞胎</h1>
     <p>扫码进入三阶入场：历史 → 交互绞泥 → 进入工坊</p>
@@ -94,6 +114,10 @@
       <button class="ghost" type="button" id="copyBtn">复制链接</button>
     </div>
   </main>
+  <script src="./vessels.js"></script>
+  <script src="./journey-core.js"></script>
+  <script src="./cards/qrcode-generator.js"></script>
+  <script src="./cards/vessel-card.js"></script>
   <script>
     const appUrl = "https://jiaotai-pattern-generator.pages.dev/";
     document.getElementById("copyBtn").addEventListener("click", async () => {
@@ -104,6 +128,43 @@
         document.getElementById("copyBtn").textContent = "请手动复制";
       }
     });
+
+    const sheet = document.getElementById("shareCardSheet");
+    const note = document.getElementById("shareNote");
+    const host = document.getElementById("shareCard");
+    const actions = document.getElementById("shareCardActions");
+    let journeyState = null;
+    try {
+      journeyState = localStorage.getItem("jiaotai_journey_v1");
+    } catch {
+      journeyState = null;
+    }
+    if (!journeyState || !window.JiaotaiJourney || !window.JiaotaiVesselCard) {
+      note.textContent = "走完九关，器物卡会留在这里。";
+    } else {
+      const state = window.JiaotaiJourney.loadState();
+      window.JiaotaiVesselCard.mount(host, state);
+      actions.hidden = false;
+      document.getElementById("saveCardBtn").addEventListener("click", () => {
+        window.JiaotaiVesselCard.download(state);
+      });
+      document.getElementById("shareCardBtn").addEventListener("click", async () => {
+        try {
+          await window.JiaotaiVesselCard.share(state);
+        } catch (err) {
+          if (!err || err.name !== "AbortError") document.getElementById("shareCardBtn").textContent = "请改用保存";
+        }
+      });
+      document.getElementById("copyCardBtn").addEventListener("click", async () => {
+        const btn = document.getElementById("copyCardBtn");
+        try {
+          await navigator.clipboard.writeText(appUrl);
+          btn.textContent = "已复制";
+        } catch {
+          btn.textContent = "请手动复制";
+        }
+      });
+    }
   </script>
 </body>
 </html>

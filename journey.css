@@ -451,6 +451,33 @@ body.journey {
   transform: translateX(-50%) translateY(0);
 }
 
+.j-craft {
+  margin: 4px 0 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(28, 26, 23, 0.9);
+  color: #f7f3eb;
+  text-align: center;
+  pointer-events: none;
+}
+.j-craft .j-voice {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  line-height: 1.45;
+}
+.j-craft .j-fact {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(247, 243, 235, 0.78);
+}
+.j-craft .j-fact:empty {
+  display: none;
+  margin: 0;
+}
+
 .j-finish-id {
   font-family: var(--font-display);
   font-size: 1.15rem;
