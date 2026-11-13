@@ -832,4 +832,14 @@ main#gate {
   .stage-start .from-gift {
     animation: none !important;
   }
+
+  /* Enter animations are what bring these from opacity 0 to 1. */
+  .stage.is-active,
+  .timeline li,
+  .history-visual,
+  .portal,
+  .journey-map li,
+  .stage-start .from-gift {
+    opacity: 1;
+  }
 }
