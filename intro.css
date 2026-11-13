@@ -450,7 +450,6 @@ main#gate {
 .tray {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, #7e4c32, #6a3f28);
 }
 .gift-box::before,
 .gift-box::after,
@@ -490,43 +489,44 @@ main#gate {
   font-style: normal;
 }
 .tray-back {
-  left: 8%;
-  right: 8%;
-  top: 7%;
-  bottom: 30%;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
   background: linear-gradient(180deg, #ece2d0, #dccaaa);
-  box-shadow: inset 0 0 0 1px rgba(176, 138, 79, 0.55);
+  box-shadow: inset 0 4px 0 #7a4a30;
 }
 .tray-floor {
-  left: 14%;
-  right: 14%;
-  bottom: 22%;
-  height: 24%;
+  left: 18%;
+  right: 18%;
+  bottom: calc(var(--H) * 0.18);
+  height: 22%;
   background: #cdb894;
   z-index: 1;
 }
 .tray-side-l,
 .tray-side-r {
-  top: 7%;
+  top: 0;
   bottom: 0;
-  width: 18%;
+  width: 22%;
   z-index: 1;
 }
 .tray-side-l {
   left: 0;
-  background: linear-gradient(90deg, #7a4a30 0 28%, #d4c09e 28% 100%);
-  clip-path: polygon(0 0, 100% 6%, 100% 72%, 0 100%);
+  background: #d4c09e;
+  clip-path: polygon(0 0, 100% 82%, 100% 100%, 0 100%);
 }
 .tray-side-r {
   right: 0;
-  background: linear-gradient(270deg, #7a4a30 0 28%, #c9b38f 28% 100%);
-  clip-path: polygon(0 6%, 100% 0, 100% 100%, 0 72%);
+  background: #c9b38f;
+  clip-path: polygon(0 82%, 100% 0, 100% 100%, 0 100%);
 }
 .tray-lip {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 26%;
+  height: calc(var(--H) * 0.18);
   z-index: 2;
   background: #7a4a30;
   box-shadow: inset 0 1px 0 #b08a4f;
@@ -547,9 +547,9 @@ main#gate {
   position: absolute;
   z-index: 3;
   left: 50%;
-  bottom: calc(var(--H) * 0.2);
-  width: calc(var(--H) * 0.62 * 120 / 140);
-  height: calc(var(--H) * 0.62);
+  bottom: calc(var(--H) * 0.18 - var(--H) * 0.72 * 6 / 140);
+  width: calc(var(--H) * 0.72 * 120 / 140);
+  height: calc(var(--H) * 0.72);
   pointer-events: none;
   background: url("assets/jiaotai-jar.svg") center / contain no-repeat;
   opacity: 0.6;
@@ -614,12 +614,18 @@ main#gate {
 .sl-right { font-style: normal; }
 
 @keyframes sleeveLift {
-  0% { transform: translateY(0); opacity: 1; }
-  40% { transform: translateY(calc(var(--H) * -0.35)); opacity: 1; }
-  100% { transform: translateY(calc(var(--H) * -0.9)); opacity: 0; }
+  0% { transform: translateY(0); }
+  40% { transform: translateY(calc(var(--H) * -0.35)); }
+  100% { transform: translateY(calc(var(--H) * -0.9)); }
+}
+@keyframes sleeveFade {
+  0%, 40% { opacity: 1; }
+  100% { opacity: 0; }
 }
 .gift-box.is-open .sleeve {
-  animation: sleeveLift var(--gift-lid-ms) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation:
+    sleeveLift var(--gift-lid-ms) cubic-bezier(0.22, 1, 0.36, 1) forwards,
+    sleeveFade var(--gift-lid-ms) linear forwards;
   pointer-events: none;
 }
 .gift-box.is-open .gift-inner-glow { opacity: 1; }
