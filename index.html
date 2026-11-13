@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>当阳峪绞胎 · 启程</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -38,46 +39,59 @@
 
         <div class="gift-stage" id="giftStage">
           <div class="gift-scene" id="giftScene" aria-label="工坊礼匣">
-            <div class="gift-plinth" aria-hidden="true"></div>
+            <div class="gift-shadow" aria-hidden="true"></div>
+            <div class="gift-plinth" aria-hidden="true"><i class="pl-top"></i><i class="pl-front"></i><i class="pl-right"></i></div>
             <div class="gift-box" id="giftBox">
-              <div class="gift-thickness" aria-hidden="true"></div>
-              <div class="gift-face gift-base">
-                <div class="gift-inner-glow" aria-hidden="true"></div>
-                <div class="gift-vessel" aria-hidden="true">
-                  <svg class="gift-vessel-svg" viewBox="0 0 120 160" aria-hidden="true">
-                    <defs>
-                      <clipPath id="giftJarClip">
-                        <path d="M60 10 C67 10 69 15 68 21 C67 28 64 32 66 38 C74 42 96 54 98 82 C100 112 84 146 60 148 C36 146 20 112 22 82 C24 54 46 42 54 38 C56 32 53 28 52 21 C51 15 53 10 60 10 Z" />
-                      </clipPath>
-                    </defs>
-                    <g clip-path="url(#giftJarClip)">
-                      <rect width="120" height="160" fill="#f4efe6" />
-                      <path fill="#5c3a28" d="M18 150 C8 118 28 96 24 70 C20 46 40 36 52 28 C58 40 34 58 30 84 C26 112 40 136 18 150 Z" />
-                      <path fill="#efe4d4" d="M34 146 C22 112 46 88 40 62 C36 42 54 30 62 22 C70 40 52 56 56 82 C60 112 52 134 34 146 Z" />
-                      <path fill="#6b4632" d="M70 24 C86 36 78 58 92 72 C108 88 112 118 96 146 C78 128 86 104 74 82 C64 62 58 40 70 24 Z" />
-                      <path fill="#f7f1e6" d="M62 30 C78 44 70 66 84 80 C98 96 100 122 84 144 C70 124 78 102 66 84 C56 66 52 44 62 30 Z" />
-                      <path fill="#5c3a28" d="M51 14 C55 22 65 22 69 14 C71 26 66 36 60 40 C54 36 49 26 51 14 Z" />
-                      <path fill="#efe4d4" d="M54 16 C57 24 63 24 66 16 C67 26 63 32 60 34 C57 32 53 26 54 16 Z" />
-                      <path fill="#3f2a1e" d="M48 48 C58 38 66 58 60 74 C54 92 40 100 36 118 C48 108 58 92 62 74 C66 58 58 46 48 48 Z" />
-                      <path fill="#c9b496" d="M44 70 C52 60 64 78 58 96 C52 116 38 124 34 140 C46 126 56 108 58 90 C60 76 52 68 44 70 Z" />
-                      <path fill="#8a5a40" d="M76 78 C88 68 98 88 92 108 C86 128 74 138 78 150 C90 132 96 112 90 94 C86 82 80 76 76 78 Z" />
-                    </g>
-                    <path d="M52 18 C56 13 64 13 68 18" fill="none" stroke="#f7f3eb" stroke-width="2.2" stroke-linecap="round" />
-                  </svg>
-                </div>
+              <i class="wall wall-front" aria-hidden="true"></i>
+              <i class="wall wall-back" aria-hidden="true"></i>
+              <i class="wall wall-left" aria-hidden="true"></i>
+              <i class="wall wall-right" aria-hidden="true"></i>
+              <div class="gift-floor" aria-hidden="true"><div class="gift-inner-glow"></div></div>
+              <div class="gift-flap gift-front" aria-hidden="true"></div>
+              <div class="gift-flap gift-back" aria-hidden="true"></div>
+              <div class="gift-flap gift-left" aria-hidden="true"></div>
+              <div class="gift-flap gift-right" aria-hidden="true"></div>
+              <div class="gift-vessel" aria-hidden="true">
+                <svg class="gift-vessel-svg" viewBox="0 0 120 140" preserveAspectRatio="none" aria-hidden="true">
+                  <defs>
+                    <clipPath id="giftJarClip" clipPathUnits="userSpaceOnUse">
+                      <path d="M48 6h24v8c0 3 4 5 10 8c20 9 32 24 32 46c0 26-14 46-24 58v8H30v-8c-10-12-24-32-24-58c0-22 12-37 32-46c6-3 10-5 10-8z" />
+                    </clipPath>
+                  </defs>
+                  <g clip-path="url(#giftJarClip)">
+                    <rect width="120" height="140" fill="#5a3826" />
+                    <path fill="#f4efe6" d="M -3.8 -69.7 L 4.6 -61.6 L 13.1 -53.7 L 21.7 -45.8 L 30.5 -38.2 L 39.4 -30.8 L 48.4 -23.5 L 57.7 -16.5 L 67.1 -9.6 L 76.6 -2.9 L 86.2 3.6 L 95.9 10.1 L 105.7 16.5 L 115.4 22.9 L 125.1 29.3 L 134.8 35.8 L 144.4 42.4 L 153.9 49.2 L 163.2 56.1 L 172.3 63.3 L 169.7 66.6 L 160.5 59.4 L 151.2 52.5 L 141.8 45.7 L 132.2 39.1 L 122.5 32.6 L 112.8 26.2 L 103.0 19.8 L 93.3 13.4 L 83.6 6.9 L 73.9 0.4 L 64.4 -6.3 L 55.0 -13.2 L 45.8 -20.2 L 36.7 -27.5 L 27.8 -34.9 L 19.1 -42.6 L 10.4 -50.4 L 2.0 -58.3 L -6.4 -66.4 Z" />
+                    <path fill="#f7f1e6" d="M -9.3 -62.8 L -0.9 -54.8 L 7.5 -46.8 L 16.2 -39.0 L 24.9 -31.3 L 33.8 -23.9 L 42.9 -16.6 L 52.1 -9.6 L 61.5 -2.7 L 71.0 3.9 L 80.7 10.5 L 90.4 17.0 L 100.1 23.4 L 109.9 29.8 L 119.6 36.2 L 129.3 42.7 L 138.9 49.3 L 148.3 56.1 L 157.6 63.0 L 166.8 70.1 L 163.0 74.8 L 153.9 67.7 L 144.5 60.7 L 135.1 54.0 L 125.5 47.4 L 115.8 40.9 L 106.1 34.4 L 96.3 28.1 L 86.6 21.7 L 76.9 15.2 L 67.2 8.6 L 57.7 1.9 L 48.3 -4.9 L 39.1 -12.0 L 30.0 -19.2 L 21.1 -26.7 L 12.4 -34.3 L 3.8 -42.1 L -4.7 -50.1 L -13.1 -58.2 Z" />
+                    <path fill="#efe4d4" d="M -15.8 -54.9 L -7.4 -46.8 L 1.1 -38.8 L 9.7 -31.0 L 18.5 -23.4 L 27.4 -15.9 L 36.5 -8.7 L 45.7 -1.6 L 55.1 5.2 L 64.6 11.9 L 74.2 18.5 L 83.9 24.9 L 93.7 31.3 L 103.4 37.7 L 113.2 44.1 L 122.9 50.6 L 132.4 57.3 L 141.9 64.0 L 151.2 71.0 L 160.4 78.1 L 158.4 80.6 L 149.2 73.5 L 139.9 66.5 L 130.4 59.8 L 120.8 53.1 L 111.2 46.6 L 101.4 40.2 L 91.7 33.8 L 81.9 27.4 L 72.2 21.0 L 62.6 14.4 L 53.1 7.7 L 43.7 0.8 L 34.5 -6.2 L 25.4 -13.4 L 16.5 -20.9 L 7.7 -28.5 L -0.9 -36.3 L -9.4 -44.3 L -17.8 -52.4 Z" />
+                    <path fill="#f4efe6" d="M -21.3 -48.0 L -12.9 -39.9 L -4.4 -32.0 L 4.2 -24.2 L 12.9 -16.5 L 21.9 -9.1 L 30.9 -1.8 L 40.2 5.2 L 49.5 12.1 L 59.1 18.8 L 68.7 25.3 L 78.4 31.8 L 88.1 38.2 L 97.9 44.6 L 107.6 51.0 L 117.3 57.5 L 126.9 64.1 L 136.3 70.9 L 145.7 77.8 L 154.8 85.0 L 151.4 89.2 L 142.3 82.0 L 132.9 75.1 L 123.5 68.3 L 113.9 61.7 L 104.2 55.2 L 94.5 48.8 L 84.7 42.4 L 75.0 36.0 L 65.3 29.5 L 55.7 23.0 L 46.1 16.3 L 36.8 9.4 L 27.5 2.4 L 18.5 -4.9 L 9.5 -12.3 L 0.8 -19.9 L -7.8 -27.8 L -16.3 -35.7 L -24.7 -43.8 Z" />
+                    <path fill="#f3eee6" d="M -27.1 -40.8 L -18.7 -32.8 L -10.2 -24.8 L -1.6 -17.0 L 7.1 -9.3 L 16.1 -1.9 L 25.1 5.3 L 34.4 12.4 L 43.7 19.3 L 53.3 25.9 L 62.9 32.5 L 72.6 39.0 L 82.3 45.4 L 92.1 51.8 L 101.8 58.2 L 111.5 64.7 L 121.1 71.3 L 130.6 78.1 L 139.9 85.0 L 149.0 92.1 L 146.6 95.1 L 137.5 88.0 L 128.2 81.0 L 118.7 74.3 L 109.1 67.7 L 99.4 61.2 L 89.7 54.7 L 79.9 48.3 L 70.2 41.9 L 60.5 35.5 L 50.9 28.9 L 41.4 22.2 L 32.0 15.4 L 22.7 8.3 L 13.7 1.1 L 4.8 -6.4 L -4.0 -14.0 L -12.6 -21.8 L -21.1 -29.8 L -29.5 -37.9 Z" />
+                    <path fill="#f4efe6" d="M -32.8 -33.8 L -24.4 -25.7 L -15.9 -17.8 L -7.3 -10.0 L 1.5 -2.3 L 10.4 5.1 L 19.5 12.4 L 28.7 19.4 L 38.1 26.3 L 47.6 33.0 L 57.2 39.5 L 66.9 46.0 L 76.7 52.4 L 86.4 58.8 L 96.2 65.2 L 105.8 71.7 L 115.4 78.3 L 124.9 85.1 L 134.2 92.0 L 143.4 99.2 L 139.1 104.5 L 129.9 97.3 L 120.6 90.4 L 111.1 83.6 L 101.6 77.0 L 91.9 70.5 L 82.1 64.1 L 72.4 57.7 L 62.6 51.3 L 52.9 44.8 L 43.3 38.3 L 33.8 31.6 L 24.4 24.7 L 15.2 17.7 L 6.1 10.4 L -2.8 3.0 L -11.6 -4.7 L -20.2 -12.5 L -28.7 -20.4 L -37.1 -28.5 Z" />
+                    <path fill="#e7dcc8" d="M -39.3 -25.7 L -30.9 -17.6 L -22.4 -9.7 L -13.8 -1.8 L -5.1 5.8 L 3.8 13.2 L 12.9 20.5 L 22.1 27.5 L 31.5 34.4 L 41.0 41.1 L 50.7 47.6 L 60.4 54.1 L 70.1 60.5 L 79.9 66.9 L 89.6 73.3 L 99.3 79.8 L 108.9 86.4 L 118.3 93.2 L 127.7 100.1 L 136.8 107.3 L 135.1 109.5 L 125.9 102.3 L 116.6 95.4 L 107.1 88.6 L 97.5 82.0 L 87.9 75.5 L 78.1 69.1 L 68.4 62.7 L 58.6 56.3 L 48.9 49.8 L 39.3 43.3 L 29.8 36.6 L 20.4 29.7 L 11.1 22.7 L 2.1 15.4 L -6.8 8.0 L -15.6 0.3 L -24.2 -7.5 L -32.7 -15.4 L -41.1 -23.5 Z" />
+                    <path fill="#f7f1e6" d="M -44.9 -18.8 L -36.5 -10.8 L -28.0 -2.8 L -19.4 5.0 L -10.6 12.7 L -1.7 20.1 L 7.4 27.3 L 16.6 34.4 L 26.0 41.2 L 35.5 47.9 L 45.1 54.5 L 54.8 61.0 L 64.6 67.4 L 74.3 73.8 L 84.1 80.2 L 93.7 86.7 L 103.3 93.3 L 112.8 100.1 L 122.1 107.0 L 131.3 114.1 L 128.4 117.7 L 119.2 110.6 L 109.9 103.6 L 100.4 96.9 L 90.8 90.3 L 81.2 83.8 L 71.4 77.3 L 61.7 71.0 L 51.9 64.6 L 42.2 58.1 L 32.6 51.5 L 23.1 44.8 L 13.7 38.0 L 4.5 30.9 L -4.6 23.7 L -13.5 16.2 L -22.3 8.6 L -30.9 0.8 L -39.4 -7.2 L -47.8 -15.3 Z" />
+                    <path fill="#f4efe6" d="M -50.7 -11.7 L -42.3 -3.6 L -33.8 4.4 L -25.2 12.2 L -16.4 19.8 L -7.5 27.3 L 1.6 34.5 L 10.8 41.6 L 20.2 48.4 L 29.7 55.1 L 39.3 61.7 L 49.0 68.1 L 58.8 74.5 L 68.5 80.9 L 78.3 87.4 L 87.9 93.9 L 97.5 100.5 L 107.0 107.2 L 116.3 114.2 L 125.5 121.3 L 121.8 125.8 L 112.7 118.7 L 103.3 111.8 L 93.9 105.0 L 84.3 98.4 L 74.6 91.9 L 64.9 85.5 L 55.1 79.1 L 45.4 72.7 L 35.7 66.2 L 26.0 59.6 L 16.5 52.9 L 7.1 46.1 L -2.1 39.0 L -11.2 31.8 L -20.1 24.4 L -28.8 16.7 L -37.4 8.9 L -45.9 0.9 L -54.3 -7.1 Z" />
+                    <path fill="#efe6d8" d="M -56.6 -4.3 L -48.2 3.7 L -39.7 11.7 L -31.1 19.5 L -22.3 27.2 L -13.4 34.6 L -4.4 41.9 L 4.9 48.9 L 14.3 55.8 L 23.8 62.4 L 33.4 69.0 L 43.1 75.5 L 52.9 81.9 L 62.6 88.3 L 72.4 94.7 L 82.0 101.2 L 91.6 107.8 L 101.1 114.6 L 110.4 121.5 L 119.6 128.6 L 117.4 131.3 L 108.2 124.2 L 98.9 117.2 L 89.5 110.5 L 79.9 103.8 L 70.2 97.3 L 60.5 90.9 L 50.7 84.5 L 41.0 78.1 L 31.3 71.7 L 21.6 65.1 L 12.1 58.4 L 2.7 51.5 L -6.5 44.5 L -15.6 37.3 L -24.5 29.8 L -33.2 22.2 L -41.8 14.4 L -50.3 6.4 L -58.7 -1.7 Z" />
+                    <path fill="#f4efe6" d="M -62.0 2.4 L -53.6 10.5 L -45.1 18.4 L -36.5 26.2 L -27.8 33.9 L -18.8 41.3 L -9.8 48.6 L -0.5 55.6 L 8.8 62.5 L 18.4 69.2 L 28.0 75.7 L 37.7 82.2 L 47.4 88.6 L 57.2 95.0 L 66.9 101.4 L 76.6 107.9 L 86.2 114.5 L 95.7 121.3 L 105.0 128.2 L 114.1 135.3 L 109.7 140.8 L 100.6 133.7 L 91.2 126.7 L 81.8 120.0 L 72.2 113.4 L 62.5 106.9 L 52.8 100.4 L 43.0 94.0 L 33.3 87.6 L 23.6 81.2 L 14.0 74.6 L 4.4 67.9 L -4.9 61.1 L -14.2 54.0 L -23.3 46.8 L -32.2 39.3 L -40.9 31.7 L -49.5 23.9 L -58.0 15.9 L -66.4 7.8 Z" />
+                    <path fill="#f7f1e6" d="M -68.9 11.0 L -60.5 19.0 L -52.1 27.0 L -43.4 34.8 L -34.7 42.5 L -25.8 49.9 L -16.7 57.1 L -7.5 64.2 L 1.9 71.0 L 11.4 77.7 L 21.1 84.3 L 30.8 90.8 L 40.5 97.2 L 50.3 103.6 L 60.0 110.0 L 69.7 116.5 L 79.3 123.1 L 88.7 129.9 L 98.0 136.8 L 107.2 143.9 L 104.7 147.0 L 95.5 139.9 L 86.2 133.0 L 76.7 126.2 L 67.2 119.6 L 57.5 113.1 L 47.8 106.7 L 38.0 100.3 L 28.2 93.9 L 18.5 87.4 L 8.9 80.9 L -0.6 74.2 L -10.0 67.3 L -19.2 60.3 L -28.3 53.0 L -37.2 45.6 L -46.0 37.9 L -54.6 30.1 L -63.1 22.2 L -71.5 14.1 Z" />
+                    <path fill="#efe4d4" d="M -74.9 18.3 L -66.5 26.4 L -58.0 34.3 L -49.4 42.1 L -40.6 49.8 L -31.7 57.2 L -22.6 64.5 L -13.4 71.5 L -4.0 78.4 L 5.5 85.1 L 15.1 91.6 L 24.8 98.1 L 34.6 104.5 L 44.3 110.9 L 54.1 117.3 L 63.8 123.8 L 73.3 130.4 L 82.8 137.2 L 92.1 144.1 L 101.3 151.3 L 98.0 155.3 L 88.8 148.2 L 79.5 141.2 L 70.1 134.5 L 60.5 127.9 L 50.8 121.4 L 41.1 114.9 L 31.3 108.6 L 21.6 102.1 L 11.9 95.7 L 2.2 89.1 L -7.3 82.4 L -16.7 75.6 L -25.9 68.5 L -35.0 61.3 L -43.9 53.8 L -52.6 46.2 L -61.3 38.4 L -69.7 30.4 L -78.1 22.3 Z" />
+                    <path fill="#f4efe6" d="M -80.8 25.6 L -72.4 33.7 L -63.9 41.7 L -55.3 49.5 L -46.5 57.1 L -37.6 64.6 L -28.5 71.8 L -19.3 78.8 L -9.9 85.7 L -0.4 92.4 L 9.2 99.0 L 18.9 105.4 L 28.7 111.8 L 38.4 118.2 L 48.2 124.6 L 57.8 131.1 L 67.4 137.8 L 76.9 144.5 L 86.2 151.5 L 95.4 158.6 L 93.5 160.9 L 84.3 153.8 L 75.0 146.9 L 65.5 140.1 L 55.9 133.5 L 46.3 127.0 L 36.5 120.6 L 26.8 114.2 L 17.0 107.8 L 7.3 101.3 L -2.3 94.7 L -11.8 88.0 L -21.2 81.2 L -30.4 74.1 L -39.5 66.9 L -48.4 59.5 L -57.2 51.8 L -65.8 44.0 L -74.3 36.0 L -82.7 28.0 Z" />
+                    <path fill="#f3eee6" d="M -85.7 31.7 L -77.3 39.8 L -68.8 47.7 L -60.2 55.6 L -51.4 63.2 L -42.5 70.6 L -33.5 77.9 L -24.2 84.9 L -14.8 91.8 L -5.3 98.5 L 4.3 105.0 L 14.0 111.5 L 23.8 117.9 L 33.5 124.3 L 43.2 130.7 L 52.9 137.2 L 62.5 143.8 L 72.0 150.6 L 81.3 157.5 L 90.4 164.7 L 86.5 169.5 L 77.4 162.4 L 68.1 155.4 L 58.6 148.7 L 49.0 142.1 L 39.3 135.6 L 29.6 129.1 L 19.8 122.7 L 10.1 116.3 L 0.4 109.9 L -9.2 103.3 L -18.7 96.6 L -28.1 89.8 L -37.4 82.7 L -46.4 75.5 L -55.3 68.0 L -64.1 60.4 L -72.7 52.6 L -81.2 44.6 L -89.6 36.5 Z" />
+                  </g>
+                </svg>
+                <i class="jar-rim"></i>
+                <i class="jar-foot"></i>
               </div>
-              <button type="button" class="gift-face gift-lid" id="giftLid" aria-label="打开盒盖">
-                <span>当阳峪</span>
-                <i class="gift-corner c-tl" aria-hidden="true"></i>
-                <i class="gift-corner c-tr" aria-hidden="true"></i>
-                <i class="gift-corner c-bl" aria-hidden="true"></i>
-                <i class="gift-corner c-br" aria-hidden="true"></i>
-                <i class="gift-clasp" aria-hidden="true"></i>
+              <button type="button" class="gift-lid" id="giftLid" aria-label="打开盒盖">
+                <i class="lid-top">
+                  <span>当阳峪</span>
+                  <i class="gift-corner c-tl" aria-hidden="true"></i>
+                  <i class="gift-corner c-tr" aria-hidden="true"></i>
+                  <i class="gift-corner c-bl" aria-hidden="true"></i>
+                  <i class="gift-corner c-br" aria-hidden="true"></i>
+                </i>
+                <i class="lid-front" aria-hidden="true"><i class="gift-clasp" aria-hidden="true"></i></i>
+                <i class="lid-right" aria-hidden="true"></i>
+                <i class="lid-under" aria-hidden="true"></i>
               </button>
-              <div class="gift-face gift-flap gift-front"></div>
-              <div class="gift-face gift-flap gift-back"></div>
-              <div class="gift-face gift-flap gift-left"></div>
-              <div class="gift-face gift-flap gift-right"></div>
             </div>
           </div>
         </div>
