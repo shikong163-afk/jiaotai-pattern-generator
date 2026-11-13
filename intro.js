@@ -40,34 +40,41 @@
 
   const backGift = document.getElementById("backGift");
   if (backGift) {
-    backGift.addEventListener("click", () => go(1, { force: true }));
+    backGift.addEventListener("click", () => {
+      resetGift();
+      go(1, { force: true });
+    });
   }
   dots.forEach((dot) => {
     dot.addEventListener("click", () => go(Number(dot.dataset.go)));
   });
 
-  // Lid 950ms + pause 400ms, then stage-2 fade 850ms. Same numbers as intro.css.
+  // Sleeve 950ms + pause 400ms, then stage-2 fade 850ms. Same numbers as intro.css.
   const giftBox = document.getElementById("giftBox");
   const giftLid = document.getElementById("giftLid");
   const giftStageEl = document.getElementById("stage1");
   const tReveal = reduced ? 0 : 1350;
   const tEnter = reduced ? 0 : 850;
+  let revealTimer = 0;
+  let enterTimer = 0;
 
   function resetGift() {
     giftBusy = false;
-    giftBox.classList.remove("is-open", "is-sucking");
-    giftStageEl.classList.remove("is-sucking");
+    clearTimeout(revealTimer);
+    clearTimeout(enterTimer);
+    if (giftBox) giftBox.classList.remove("is-open", "is-sucking");
+    if (giftStageEl) giftStageEl.classList.remove("is-sucking");
   }
 
   function openGift() {
-    if (giftBusy) return;
+    if (giftBusy || stage !== 1) return;
     giftBusy = true;
     unlocked.add(2);
     giftBox.classList.add("is-open");
 
-    setTimeout(() => {
+    revealTimer = setTimeout(() => {
       go(2, { force: true });
-      setTimeout(() => {
+      enterTimer = setTimeout(() => {
         resetGift();
       }, tEnter);
     }, tReveal);
@@ -79,6 +86,13 @@
   });
   giftBox.addEventListener("click", () => {
     if (!giftBusy) openGift();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || e.repeat) return;
+    if (stage !== 1 || giftBusy) return;
+    const tag = e.target && e.target.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "A") return;
+    openGift();
   });
 
   // Animate journey map chips
