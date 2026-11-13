@@ -15,8 +15,14 @@
   <canvas class="bg-vessels" id="bgVessels" aria-hidden="true"></canvas>
 
   <nav class="progress" aria-label="启程进度">
-    <button type="button" class="dot active" data-go="1" aria-label="工坊礼匣"></button>
-    <button type="button" class="dot" data-go="2" aria-label="定制启程" disabled></button>
+    <button type="button" class="dot active" data-go="1">
+      <span class="dot-mark" aria-hidden="true"></span>
+      <span class="dot-label">工坊礼匣</span>
+    </button>
+    <button type="button" class="dot" data-go="2" disabled>
+      <span class="dot-mark" aria-hidden="true"></span>
+      <span class="dot-label">定制启程</span>
+    </button>
   </nav>
 
   <main id="gate" data-stage="1">
@@ -32,16 +38,41 @@
 
         <div class="gift-stage" id="giftStage">
           <div class="gift-scene" id="giftScene" aria-label="工坊礼匣">
+            <div class="gift-plinth" aria-hidden="true"></div>
             <div class="gift-box" id="giftBox">
+              <div class="gift-thickness" aria-hidden="true"></div>
               <div class="gift-face gift-base">
-                <div class="gift-tunnel" aria-hidden="true">
-                  <i></i><i></i><i></i>
-                </div>
                 <div class="gift-inner-glow" aria-hidden="true"></div>
+                <div class="gift-vessel" aria-hidden="true">
+                  <svg class="gift-vessel-svg" viewBox="0 0 120 160" aria-hidden="true">
+                    <defs>
+                      <clipPath id="giftJarClip">
+                        <path d="M60 10 C67 10 69 15 68 21 C67 28 64 32 66 38 C74 42 96 54 98 82 C100 112 84 146 60 148 C36 146 20 112 22 82 C24 54 46 42 54 38 C56 32 53 28 52 21 C51 15 53 10 60 10 Z" />
+                      </clipPath>
+                    </defs>
+                    <g clip-path="url(#giftJarClip)">
+                      <rect width="120" height="160" fill="#f4efe6" />
+                      <path fill="#5c3a28" d="M18 150 C8 118 28 96 24 70 C20 46 40 36 52 28 C58 40 34 58 30 84 C26 112 40 136 18 150 Z" />
+                      <path fill="#efe4d4" d="M34 146 C22 112 46 88 40 62 C36 42 54 30 62 22 C70 40 52 56 56 82 C60 112 52 134 34 146 Z" />
+                      <path fill="#6b4632" d="M70 24 C86 36 78 58 92 72 C108 88 112 118 96 146 C78 128 86 104 74 82 C64 62 58 40 70 24 Z" />
+                      <path fill="#f7f1e6" d="M62 30 C78 44 70 66 84 80 C98 96 100 122 84 144 C70 124 78 102 66 84 C56 66 52 44 62 30 Z" />
+                      <path fill="#5c3a28" d="M51 14 C55 22 65 22 69 14 C71 26 66 36 60 40 C54 36 49 26 51 14 Z" />
+                      <path fill="#efe4d4" d="M54 16 C57 24 63 24 66 16 C67 26 63 32 60 34 C57 32 53 26 54 16 Z" />
+                      <path fill="#3f2a1e" d="M48 48 C58 38 66 58 60 74 C54 92 40 100 36 118 C48 108 58 92 62 74 C66 58 58 46 48 48 Z" />
+                      <path fill="#c9b496" d="M44 70 C52 60 64 78 58 96 C52 116 38 124 34 140 C46 126 56 108 58 90 C60 76 52 68 44 70 Z" />
+                      <path fill="#8a5a40" d="M76 78 C88 68 98 88 92 108 C86 128 74 138 78 150 C90 132 96 112 90 94 C86 82 80 76 76 78 Z" />
+                    </g>
+                    <path d="M52 18 C56 13 64 13 68 18" fill="none" stroke="#f7f3eb" stroke-width="2.2" stroke-linecap="round" />
+                  </svg>
+                </div>
               </div>
               <button type="button" class="gift-face gift-lid" id="giftLid" aria-label="打开盒盖">
                 <span>当阳峪</span>
-                <small>点按开启</small>
+                <i class="gift-corner c-tl" aria-hidden="true"></i>
+                <i class="gift-corner c-tr" aria-hidden="true"></i>
+                <i class="gift-corner c-bl" aria-hidden="true"></i>
+                <i class="gift-corner c-br" aria-hidden="true"></i>
+                <i class="gift-clasp" aria-hidden="true"></i>
               </button>
               <div class="gift-face gift-flap gift-front"></div>
               <div class="gift-face gift-flap gift-back"></div>
@@ -53,7 +84,6 @@
 
         <p class="journey-cta-line" id="giftHint">开启后，即可踏上九关定制旅程</p>
       </div>
-      <div class="suck-veil" id="suckVeil" hidden aria-hidden="true"></div>
     </section>
 
     <!-- 启程页 -->

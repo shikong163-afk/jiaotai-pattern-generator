@@ -88,6 +88,16 @@ body.journey {
   background: var(--deep);
   transform: scaleY(1.6);
 }
+.j-rail.is-locked {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.j-rail a.is-locked {
+  background: rgba(28,26,23,0.12);
+  pointer-events: none;
+  cursor: default;
+  transform: none;
+}
 
 .j-hero {
   text-align: center;
@@ -192,6 +202,12 @@ body.journey {
   transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .j-choice:active { transform: scale(0.98); }
+.j-choice:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+}
 .j-choice.active {
   border-color: rgba(61,90,72,0.55);
   box-shadow: 0 0 0 3px rgba(61,90,72,0.12);
@@ -301,6 +317,11 @@ body.journey {
   border: 1px solid var(--line);
   box-shadow: none;
 }
+.j-play-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
 .j-gauge {
   height: 12px;
   border-radius: 999px;
@@ -314,6 +335,9 @@ body.journey {
   background: linear-gradient(90deg, #c4a484, #3d5a48);
   transition: width 0.12s linear;
 }
+.j-gauge.is-wait > i {
+  background: rgba(28,26,23,0.18);
+}
 .j-gauge.fire > i {
   background: linear-gradient(90deg, #c47a4a, #e07a3a, #f0c36a);
 }
@@ -322,6 +346,10 @@ body.journey {
   font-size: 0.84rem;
   color: var(--deep);
   font-weight: 700;
+}
+.j-fire-meta.is-wait {
+  color: var(--mist);
+  font-weight: 600;
 }
 
 .j-closeup {
@@ -396,6 +424,7 @@ body.journey {
   color: #f7f3eb;
   box-shadow: 0 12px 28px rgba(61,90,72,0.28);
 }
+.j-nav .j-btn { width: 100%; }
 .j-btn:disabled {
   opacity: 0.4;
   pointer-events: none;
@@ -440,6 +469,7 @@ body.journey {
   min-height: 160px;
   object-fit: cover;
 }
+.j-ai img[hidden] { display: none; }
 .j-ai-status {
   margin: 8px 0;
   font-size: 0.82rem;

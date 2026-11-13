@@ -72,15 +72,36 @@
     marks: [],
   };
 
-  function loadState() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { ...DEFAULTS, seed: Date.now() % 100000000 };
-      return { ...DEFAULTS, ...JSON.parse(raw) };
-    } catch {
-      return { ...DEFAULTS };
-    }
+function cloneState(base) {
+  return {
+    ...base,
+    cleared: { ...(base.cleared || {}) },
+    marks: Array.isArray(base.marks) ? base.marks.slice() : [],
+  };
+}
+
+function freshState() {
+  return cloneState({ ...DEFAULTS, seed: Date.now() % 100000000 });
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return freshState();
+    return cloneState({ ...DEFAULTS, ...JSON.parse(raw) });
+  } catch {
+    return freshState();
   }
+}
+
+function resetState() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* ignore quota / private mode */
+  }
+  return freshState();
+}
 
   function saveState(state) {
     try {
@@ -312,6 +333,7 @@
     FIRES,
     loadState,
     saveState,
+    resetState,
     labelOf,
     dossierId,
     originalityScore,
