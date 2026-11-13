@@ -46,57 +46,31 @@
     dot.addEventListener("click", () => go(Number(dot.dataset.go)));
   });
 
-  // ---- Gift box: 5:3 → suck into start map ----
+  // Lid 950ms + pause 400ms, then stage-2 fade 850ms. Same numbers as intro.css.
   const giftBox = document.getElementById("giftBox");
   const giftLid = document.getElementById("giftLid");
   const giftStageEl = document.getElementById("stage1");
-  const suckVeil = document.getElementById("suckVeil");
+  const tReveal = reduced ? 0 : 1350;
+  const tEnter = reduced ? 0 : 850;
 
   function resetGift() {
     giftBusy = false;
     giftBox.classList.remove("is-open", "is-sucking");
     giftStageEl.classList.remove("is-sucking");
-    if (suckVeil) {
-      suckVeil.classList.remove("is-on");
-      suckVeil.hidden = true;
-    }
-    const tip = giftLid.querySelector("small");
-    if (tip) tip.textContent = "点按开启";
   }
 
   function openGift() {
     if (giftBusy) return;
     giftBusy = true;
     unlocked.add(2);
-
     giftBox.classList.add("is-open");
-    const tip = giftLid.querySelector("small");
-    if (tip) tip.textContent = "开启中";
-
-    const t1 = reduced ? 0 : 780;
-    const t2 = reduced ? 0 : 720;
-    const t3 = reduced ? 0 : 420;
 
     setTimeout(() => {
-      giftBox.classList.add("is-sucking");
-      giftStageEl.classList.add("is-sucking");
-      if (suckVeil) {
-        suckVeil.hidden = false;
-        requestAnimationFrame(() => suckVeil.classList.add("is-on"));
-      }
-
+      go(2, { force: true });
       setTimeout(() => {
-        go(2, { force: true });
-        if (suckVeil) {
-          suckVeil.classList.remove("is-on");
-          setTimeout(() => {
-            suckVeil.hidden = true;
-          }, t3);
-        }
-        giftBusy = false;
         resetGift();
-      }, t2);
-    }, t1);
+      }, tEnter);
+    }, tReveal);
   }
 
   giftLid.addEventListener("click", (e) => {

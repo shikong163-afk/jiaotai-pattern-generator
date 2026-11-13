@@ -15,8 +15,14 @@
   <canvas class="bg-vessels" id="bgVessels" aria-hidden="true"></canvas>
 
   <nav class="progress" aria-label="启程进度">
-    <button type="button" class="dot active" data-go="1" aria-label="工坊礼匣"></button>
-    <button type="button" class="dot" data-go="2" aria-label="定制启程" disabled></button>
+    <button type="button" class="dot active" data-go="1">
+      <span class="dot-mark" aria-hidden="true"></span>
+      <span class="dot-label">工坊礼匣</span>
+    </button>
+    <button type="button" class="dot" data-go="2" disabled>
+      <span class="dot-mark" aria-hidden="true"></span>
+      <span class="dot-label">定制启程</span>
+    </button>
   </nav>
 
   <main id="gate" data-stage="1">
@@ -32,28 +38,31 @@
 
         <div class="gift-stage" id="giftStage">
           <div class="gift-scene" id="giftScene" aria-label="工坊礼匣">
+            <div class="gift-plinth" aria-hidden="true"></div>
             <div class="gift-box" id="giftBox">
+              <div class="gift-thickness" aria-hidden="true"></div>
               <div class="gift-face gift-base">
-                <div class="gift-tunnel" aria-hidden="true">
-                  <i></i><i></i><i></i>
-                </div>
                 <div class="gift-inner-glow" aria-hidden="true"></div>
+                <div class="gift-vessel" aria-hidden="true"></div>
               </div>
               <button type="button" class="gift-face gift-lid" id="giftLid" aria-label="打开盒盖">
                 <span>当阳峪</span>
-                <small>点按开启</small>
               </button>
               <div class="gift-face gift-flap gift-front"></div>
               <div class="gift-face gift-flap gift-back"></div>
               <div class="gift-face gift-flap gift-left"></div>
               <div class="gift-face gift-flap gift-right"></div>
+              <i class="gift-corner c-tl" aria-hidden="true"></i>
+              <i class="gift-corner c-tr" aria-hidden="true"></i>
+              <i class="gift-corner c-bl" aria-hidden="true"></i>
+              <i class="gift-corner c-br" aria-hidden="true"></i>
+              <i class="gift-clasp" aria-hidden="true"></i>
             </div>
           </div>
         </div>
 
         <p class="journey-cta-line" id="giftHint">开启后，即可踏上九关定制旅程</p>
       </div>
-      <div class="suck-veil" id="suckVeil" hidden aria-hidden="true"></div>
     </section>
 
     <!-- 启程页 -->

@@ -11,9 +11,23 @@
   const $ = (id) => document.getElementById(id);
   let drawTimer = 0;
   let advancing = false;
+  let advanceTimer = 0;
   let fireRaf = 0;
   let fireSpeed = 1;
   let fireRunning = false;
+  let dryRaf = 0;
+  let dryRunning = false;
+  const DRY_MS = { slow: 12000, standard: 8000, controlled: 10000 };
+  const FIRE_MS = 10000;
+  const REDUCED_MS = 400;
+
+  function reducedMotion() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function barBusy() {
+    return dryRunning || fireRunning || advancing;
+  }
 
   function toast(msg) {
     const el = $("jToast");
@@ -41,8 +55,17 @@
     const rail = $("jRail");
     if (!rail) return;
     const idx = J.stepIndex(stepId);
+    const busy = barBusy();
+    rail.classList.toggle("is-locked", busy);
     rail.innerHTML = J.STEPS.map((s, i) => {
-      const cls = i === idx ? "now" : i < idx || state.cleared[s.id] ? "done" : "";
+      const now = i === idx;
+      const done = !now && !!state.cleared[s.id];
+      const open = now || done || i === idx - 1;
+      const interactive = open && !busy;
+      const cls = [now ? "now" : "", done ? "done" : "", open ? "" : "is-locked"].filter(Boolean).join(" ");
+      if (!interactive) {
+        return `<a class="${cls}" aria-disabled="true" tabindex="-1" title="${s.title}">${s.no}</a>`;
+      }
       return `<a class="${cls}" href="./${s.file}" title="${s.title}">${s.no}</a>`;
     }).join("");
   }
@@ -63,9 +86,149 @@
     setMark(stepId);
     persist();
     toast(label || "通关！即将进入下一关…");
-    setTimeout(() => {
+    lockRunningUi();
+    advanceTimer = setTimeout(() => {
       location.href = `./${next}`;
     }, 1100);
+  }
+
+  function settleTimedStage() {
+    let changed = false;
+    if (stepId === "dry") {
+      const p = Number(state.dryProgress) || 0;
+      if (p >= 100) {
+        if (state.dryProgress !== 100) {
+          state.dryProgress = 100;
+          changed = true;
+        }
+        if (!state.cleared.dry) {
+          state.cleared.dry = true;
+          changed = true;
+        }
+      } else {
+        if (p !== 0) {
+          state.dryProgress = 0;
+          changed = true;
+        }
+        if (state.cleared.dry) {
+          delete state.cleared.dry;
+          changed = true;
+        }
+      }
+    }
+    if (stepId === "fire") {
+      const p = Number(state.fireProgress) || 0;
+      if (state.fireDone || p >= 100) {
+        if (!state.fireDone || state.fireProgress !== 100 || state.fireTemp !== 100) {
+          state.fireDone = true;
+          state.fireProgress = 100;
+          state.fireTemp = 100;
+          changed = true;
+        }
+        if (!state.cleared.fire) {
+          state.cleared.fire = true;
+          changed = true;
+        }
+      } else {
+        if (p !== 0 || state.fireDone || state.fireTemp !== 60) {
+          state.fireProgress = 0;
+          state.fireDone = false;
+          state.fireTemp = 60;
+          changed = true;
+        }
+        if (state.cleared.fire) {
+          delete state.cleared.fire;
+          changed = true;
+        }
+      }
+    }
+    if (changed) persist();
+  }
+
+  function stageComplete() {
+    if (stepId === "dry") return (Number(state.dryProgress) || 0) >= 100;
+    if (stepId === "fire") return !!state.fireDone && (Number(state.fireProgress) || 0) >= 100;
+    return !!state.cleared[stepId];
+  }
+
+  function hasLegalChoice() {
+    const inList = (list, id) => list.some((item) => item.id === id);
+    if (stepId === "soil") return inList(J.SOILS, state.soil);
+    if (stepId === "refine") {
+      const n = Number(state.colorCount);
+      const hex = (value) => /^#[0-9a-fA-F]{6}$/.test(String(value || ""));
+      return n >= 2 && n <= 3 && hex(state.c1) && hex(state.c2) && (n === 2 || hex(state.c3));
+    }
+    if (stepId === "twist") return inList(J.TWISTS, state.twist);
+    if (stepId === "vessel") return (window.JIAOTAI_VESSELS || []).some((v) => v.id === state.vessel);
+    if (stepId === "form") return inList(J.FORMS, state.form);
+    if (stepId === "dry") return inList(J.DRYS, state.dry);
+    if (stepId === "glaze") return inList(J.GLAZES, state.glaze);
+    if (stepId === "fire") return inList(J.FIRES, state.fire);
+    return false;
+  }
+
+  function confirmControls(tip, extra) {
+    const ready = hasLegalChoice();
+    return `
+      <div class="j-play">
+        <button type="button" class="j-play-btn" id="actConfirm"${ready ? "" : " disabled"}>确定</button>
+        ${extra || ""}
+      </div>
+      <p class="j-tip">${tip}</p>`;
+  }
+
+  function syncNav() {
+    const btnPrev = $("jPrev");
+    const btnNext = $("jNext");
+    const locked = barBusy();
+    if (btnPrev) btnPrev.disabled = locked;
+    if (!btnNext) return;
+    if (stepId === "finish") {
+      btnNext.disabled = false;
+      btnNext.textContent = "重新开始";
+      return;
+    }
+    btnNext.textContent = "下一关";
+    btnNext.disabled = locked || !stageComplete();
+  }
+
+  function lockRunningUi() {
+    document.querySelectorAll("#jPanel .j-choice, #jPanel input, #jPanel textarea").forEach((el) => {
+      el.disabled = true;
+    });
+    document.querySelectorAll("#jPanel button").forEach((btn) => {
+      if (btn.id === "actBoost" && fireRunning && !state.fireDone) {
+        btn.disabled = false;
+        return;
+      }
+      btn.disabled = true;
+    });
+    const confirm = $("actConfirm");
+    if (confirm) {
+      confirm.disabled = true;
+      confirm.textContent = "进行中";
+    }
+    syncNav();
+    buildRail();
+  }
+
+  function restartJourney() {
+    cancelAnimationFrame(fireRaf);
+    cancelAnimationFrame(dryRaf);
+    fireRunning = false;
+    dryRunning = false;
+    fireSpeed = 1;
+    if (advanceTimer) clearTimeout(advanceTimer);
+    advancing = false;
+    const img = $("aiImage");
+    if (img) {
+      img.hidden = true;
+      img.removeAttribute("src");
+    }
+    if (typeof J.resetState === "function") J.resetState();
+    else localStorage.removeItem("jiaotai_journey_v1");
+    location.href = "../index.html";
   }
 
   /* —— unique option icons (SVG) —— */
@@ -427,8 +590,7 @@
         ${choiceHtml(J.SOILS, "soil")}
         <div class="j-field"><label>署名（可选）</label><input type="text" id="author" maxlength="20" placeholder="例如：控" value="${state.author}" /></div>
         <div class="j-field"><label>一句心愿（可选）</label><textarea id="wish" maxlength="80" placeholder="想做一件送给谁的瓷器？">${state.wish}</textarea></div>
-        <div class="j-play"><button type="button" class="j-play-btn" id="actSoil">确认采选 · 进入下一关</button></div>
-        <p class="j-tip">可先点开三种土看特写，再确认采选通关。矸石棱角、高岭圆润、复配绞纹，形态各异。</p>`;
+        ${confirmControls("确认后进入下一关。可先点开三种土看特写。")}`;
     } else if (stepId === "refine") {
       html = `
         <h3>炼泥台 · 揉出色泥</h3>
@@ -439,10 +601,7 @@
           <label>泥色2<input type="color" id="c2" value="${state.c2}" /></label>
           <label>泥色3<input type="color" id="c3" value="${state.c3}" /></label>
         </div>
-        <div class="j-play">
-          <button type="button" class="j-play-btn" id="actKnead">揉泥通关</button>
-          <button type="button" class="j-play-btn alt" id="actSwap">互换主次色</button>
-        </div>
+        ${confirmControls("确认后进入下一关", `<button type="button" class="j-play-btn alt" id="actSwap">互换主次色</button>`)}
         <p class="j-tip">${meta.tip}</p>`;
     } else if (stepId === "twist") {
       html = `
@@ -452,8 +611,7 @@
           <input type="range" id="strength" min="20" max="90" value="${state.strength}" /></div>
         <div class="j-field"><label>纹路密度 <b id="densityVal">${state.density}</b></label>
           <input type="range" id="density" min="20" max="90" value="${state.density}" /></div>
-        <div class="j-play"><button type="button" class="j-play-btn" id="actTwist">确认编花通关</button></div>
-        <p class="j-tip">每种纹样有独立特写。也可在预览区左右滑动绞转。</p>`;
+        ${confirmControls("确认后进入下一关。也可在预览区左右滑动绞转。")}`;
     } else if (stepId === "vessel") {
       html = `
         <h3>器型库 · 图文选型</h3>
@@ -462,40 +620,40 @@
           <input type="range" id="belly" min="0" max="500" value="${state.belly}" /></div>
         <div class="j-field"><label>口沿 <b id="rimVal">${state.rim}</b></label>
           <input type="range" id="rim" min="0" max="500" value="${state.rim}" /></div>
-        <p class="j-tip">选定任一器型即通关，并展示器型特写。</p>`;
+        ${confirmControls("确认后进入下一关")}`;
     } else if (stepId === "form") {
       html = `
         <h3>成型路径</h3>
         ${choiceHtml(J.FORMS, "form")}
-        <p class="j-tip">点选成型方式即可通关，各有独立工具特写。</p>`;
+        ${confirmControls("确认后进入下一关")}`;
     } else if (stepId === "dry") {
+      const dryPct = Math.round(Number(state.dryProgress) || 0);
+      const dryDone = dryPct >= 100;
       html = `
         <h3>荫干节奏</h3>
         ${choiceHtml(J.DRYS, "dry")}
-        <div class="j-field"><label>荫干进度 <b id="dryVal">${state.dryProgress || 0}%</b></label></div>
-        <div class="j-gauge"><i id="dryBar" style="width:${state.dryProgress || 0}%"></i></div>
-        <div class="j-play">
-          <button type="button" class="j-play-btn" id="actDry">推进荫干</button>
-          <button type="button" class="j-play-btn alt" id="actDryReset">重新荫干</button>
-        </div>
-        <p class="j-tip">进度到 100% 自动通关。</p>`;
+        <div class="j-field"><label>荫干进度 <b id="dryVal">${dryPct}%</b></label></div>
+        <div class="j-gauge${dryDone ? "" : " is-wait"}" id="dryGauge"><i id="dryBar" style="width:${dryPct}%"></i></div>
+        <p class="j-fire-meta${dryDone ? "" : " is-wait"}" id="dryMeta">${dryDone ? "荫干完成" : "等待确定后开始"}</p>
+        ${confirmControls("确认后开始荫干")}`;
     } else if (stepId === "glaze") {
       html = `
         <h3>施釉方案</h3>
         ${choiceHtml(J.GLAZES, "glaze")}
-        <p class="j-tip">点选釉面方案即通关，并播放点釉特写。</p>`;
+        ${confirmControls("确认后进入下一关")}`;
     } else if (stepId === "fire") {
-      const pct = Math.round(state.fireProgress || 0);
+      const pct = Math.round(Number(state.fireProgress) || 0);
+      const done = !!state.fireDone || pct >= 100;
+      const boost = reducedMotion()
+        ? ""
+        : `<button type="button" class="j-play-btn alt" id="actBoost" disabled>手动加速</button>`;
       html = `
-        <h3>自动焙烧</h3>
+        <h3>焙烧曲线</h3>
         ${choiceHtml(J.FIRES, "fire")}
         <div class="j-field"><label>窑火进度 <b id="fireVal">${pct}%</b></label></div>
-        <div class="j-gauge fire"><i id="fireBar" style="width:${pct}%"></i></div>
-        <p class="j-fire-meta" id="fireMeta">${state.fireDone ? "烧成完成" : "自动烧制中 · 标准 10 秒"}</p>
-        <div class="j-play">
-          <button type="button" class="j-play-btn" id="actBoost" ${state.fireDone ? "disabled" : ""}>手动加速</button>
-        </div>
-        <p class="j-tip">选择曲线后自动烧制；不加速约 10 秒完成，可随时加速。</p>`;
+        <div class="j-gauge${done ? " fire" : " is-wait"}" id="fireGauge"><i id="fireBar" style="width:${pct}%"></i></div>
+        <p class="j-fire-meta${done ? "" : " is-wait"}" id="fireMeta">${done ? "烧成完成" : "请选择曲线后点确定开始"}</p>
+        ${confirmControls("确认后开始焙烧", boost)}`;
     } else {
       const id = J.dossierId(state);
       html = `
@@ -506,8 +664,13 @@
         <div class="j-ai">
           <img id="aiImage" alt="AI 样张" hidden />
           <p class="j-ai-status" id="aiStatus">可生成 AI 产品摄影样张</p>
-          <button type="button" class="j-play-btn" id="btnAiGen">生成 AI 样张</button>
-          <button type="button" class="j-play-btn alt" id="btnExport" style="margin-top:8px">导出原创工艺卡</button>
+          <div class="j-play">
+            <button type="button" class="j-play-btn alt" id="btnAiGen">生成 AI 样张</button>
+            <button type="button" class="j-play-btn alt" id="btnExport">导出原创工艺卡</button>
+          </div>
+          <div class="j-play">
+            <button type="button" class="j-play-btn" id="actRestart">重新开始</button>
+          </div>
         </div>
         <p class="j-tip">${meta.tip}</p>`;
     }
@@ -525,24 +688,9 @@
       if (el) el.addEventListener("click", fn);
     };
 
-    act("actSoil", () => {
-      burstParticles();
-      showCloseup("soil", state.soil);
-      toast(`已采选 · ${J.labelOf(J.SOILS, state.soil)}`);
-      scheduleDraw();
-      goNextSoon("泥脉已定，进入下一关");
-    });
-    act("actKnead", () => {
-      state.seed = (state.seed + 211) % 100000000;
-      persist();
-      showCloseup("refine");
-      hideCloseupSoon();
-      kneadPulse();
-      toast("泥色已揉匀");
-      scheduleDraw();
-      goNextSoon("炼泥完成，进入下一关");
-    });
+    act("actConfirm", onConfirm);
     act("actSwap", () => {
+      if (barBusy()) return;
       const t = state.c1;
       state.c1 = state.c2;
       state.c2 = t;
@@ -553,94 +701,110 @@
       scheduleDraw();
       toast("主次色已互换");
     });
-    act("actTwist", () => {
-      state.strength = Math.min(90, state.strength + 8);
-      state.seed = (state.seed + 97) % 100000000;
-      persist();
-      showCloseup("twist", state.twist);
-      hideCloseupSoon();
-      scheduleDraw();
-      goNextSoon("编花完成，进入下一关");
-    });
-    act("actDry", () => {
-      const step = state.dry === "slow" ? 14 : state.dry === "controlled" ? 12 : 18;
-      state.dryProgress = Math.min(100, (state.dryProgress || 0) + step);
-      persist();
-      const bar = $("dryBar");
-      const lab = $("dryVal");
-      if (bar) bar.style.width = `${state.dryProgress}%`;
-      if (lab) lab.textContent = `${state.dryProgress}%`;
-      showCloseup("dry", state.dry);
-      hideCloseupSoon();
-      scheduleDraw();
-      if (state.dryProgress >= 100) goNextSoon("荫干完成，进入下一关");
-      else toast(`荫干 ${state.dryProgress}%`);
-    });
-    act("actDryReset", () => {
-      state.dryProgress = 0;
-      persist();
-      renderPanel();
-      scheduleDraw();
-    });
     act("actBoost", () => {
       if (state.fireDone || !fireRunning) return;
       fireSpeed = Math.min(6, fireSpeed + 1.8);
       toast(`加速 ×${fireSpeed.toFixed(1)}`);
+      paintFire();
     });
     act("btnAiGen", generateAi);
     act("btnExport", exportCard);
+    act("actRestart", () => restartJourney());
 
     if (stepId === "vessel" && window.JiaotaiVesselUI) {
       window.JiaotaiVesselUI.mountVesselPicker($("vesselPicker"), {
         selectedId: state.vessel,
         compact: true,
         onSelect: (v) => {
+          if (barBusy()) return;
           state.vessel = v.id;
           persist();
           showCloseup("vessel");
           hideCloseupSoon();
           scheduleDraw();
           toast(`器型：${v.name}`);
-          goNextSoon("器型已定，进入下一关");
+          const confirm = $("actConfirm");
+          if (confirm) confirm.disabled = !hasLegalChoice();
         },
       });
     }
 
-    if (stepId === "fire" && !state.fireDone) startAutoFire();
     if (stepId === "fire" && state.fireDone) {
+      setKilnGlow(0.12 + 0.35);
       scheduleDraw({ fireGlow: true });
+    } else if (stepId === "fire") {
+      setKilnGlow(0);
     }
+  }
+
+  function onConfirm() {
+    if (barBusy() || !hasLegalChoice()) return;
+    if (stepId === "soil") {
+      burstParticles();
+      showCloseup("soil", state.soil);
+      scheduleDraw();
+      goNextSoon("泥脉已定，进入下一关");
+      return;
+    }
+    if (stepId === "refine") {
+      showCloseup("refine");
+      hideCloseupSoon();
+      kneadPulse();
+      scheduleDraw();
+      goNextSoon("炼泥完成，进入下一关");
+      return;
+    }
+    if (stepId === "twist") {
+      showCloseup("twist", state.twist);
+      hideCloseupSoon();
+      scheduleDraw();
+      goNextSoon("编花完成，进入下一关");
+      return;
+    }
+    if (stepId === "vessel") {
+      showCloseup("vessel");
+      hideCloseupSoon();
+      scheduleDraw();
+      goNextSoon("器型已定，进入下一关");
+      return;
+    }
+    if (stepId === "form") {
+      showCloseup("form", state.form);
+      hideCloseupSoon();
+      scheduleDraw();
+      goNextSoon("成型路径已定，进入下一关");
+      return;
+    }
+    if (stepId === "glaze") {
+      glazeFlash();
+      showCloseup("glaze", state.glaze);
+      hideCloseupSoon();
+      scheduleDraw();
+      goNextSoon("施釉完成，进入下一关");
+      return;
+    }
+    if (stepId === "dry") {
+      startAutoDry();
+      return;
+    }
+    if (stepId === "fire") startAutoFire();
   }
 
   function panelChoices() {
     document.querySelectorAll(".j-choice").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (barBusy()) return;
         const key = btn.dataset.key;
         const id = btn.dataset.id;
         state[key] = id;
-        if (key === "twist") state.seed = (state.seed + 137) % 100000000;
         persist();
         renderPanel();
         showCloseup(key, id);
-        // 选土：停留看特写，不自动收起、不立刻跳关
+        // 选土：停留看特写，方便连点对比
         if (key !== "soil") hideCloseupSoon();
-        scheduleDraw(key === "fire" ? { fireGlow: true } : {});
+        if (key === "glaze") glazeFlash();
+        scheduleDraw(key === "fire" && state.fireDone ? { fireGlow: true } : {});
         toast(`已选 · ${btn.querySelector("strong")?.textContent || ""}`);
-
-        if (key === "form") goNextSoon("成型路径已定，进入下一关");
-        if (key === "glaze") {
-          glazeFlash();
-          goNextSoon("施釉完成，进入下一关");
-        }
-        if (key === "fire") {
-          // restart fire with new curve if not done
-          if (!state.fireDone) {
-            state.fireProgress = 0;
-            fireSpeed = 1;
-            persist();
-            startAutoFire(true);
-          }
-        }
       });
     });
   }
@@ -650,6 +814,7 @@
       const el = $(id);
       if (!el) return;
       el.addEventListener("input", () => {
+        if (barBusy()) return;
         if (id === "author" || id === "wish") state[id] = el.value;
         else if (id === "c1" || id === "c2" || id === "c3") state[id] = el.value;
         else {
@@ -674,47 +839,132 @@
     });
   }
 
-  function startAutoFire(forceRestart = false) {
-    if (fireRunning && !forceRestart) return;
-    if (state.fireDone && !forceRestart) return;
-    if (forceRestart) {
-      cancelAnimationFrame(fireRaf);
-      state.fireDone = false;
-      state.fireProgress = 0;
+  function setKilnGlow(opacity) {
+    const fx = $("jFx");
+    if (!fx) return;
+    if (!opacity) {
+      fx.innerHTML = "";
+      return;
+    }
+    fx.innerHTML = `<div class="j-kiln-glow" style="opacity:${opacity}"></div>`;
+  }
+
+  function paintDry() {
+    const value = Math.min(100, Number(state.dryProgress) || 0);
+    const pct = Math.round(value);
+    const done = value >= 100;
+    const waiting = !dryRunning && !done;
+    const bar = $("dryBar");
+    const lab = $("dryVal");
+    const meta = $("dryMeta");
+    const gauge = $("dryGauge");
+    if (bar) bar.style.width = `${value}%`;
+    if (lab) lab.textContent = `${pct}%`;
+    if (gauge) gauge.classList.toggle("is-wait", waiting);
+    if (meta) {
+      meta.classList.toggle("is-wait", waiting);
+      meta.textContent = done ? "荫干完成" : dryRunning ? `荫干中 · ${pct}%` : "等待确定后开始";
+    }
+  }
+
+  function paintFire() {
+    const value = Math.min(100, Number(state.fireProgress) || 0);
+    const pct = Math.round(value);
+    const done = !!state.fireDone || value >= 100;
+    const running = fireRunning && !done;
+    const waiting = !running && !done;
+    const bar = $("fireBar");
+    const lab = $("fireVal");
+    const meta = $("fireMeta");
+    const gauge = $("fireGauge");
+    if (bar) bar.style.width = `${value}%`;
+    if (lab) lab.textContent = `${pct}%`;
+    if (gauge) {
+      gauge.classList.toggle("is-wait", waiting);
+      gauge.classList.toggle("fire", running || done);
+    }
+    if (meta) {
+      meta.classList.toggle("is-wait", waiting);
+      if (done) meta.textContent = "烧成完成";
+      else if (running) {
+        const duration = reducedMotion() ? REDUCED_MS : FIRE_MS;
+        meta.textContent =
+          fireSpeed > 1.05
+            ? `加速烧制中 ×${fireSpeed.toFixed(1)}`
+            : `自动烧制中 · 约 ${Math.max(0, ((100 - value) / 100) * (duration / 1000)).toFixed(1)} 秒`;
+      } else meta.textContent = "请选择曲线后点确定开始";
+    }
+    const boost = $("actBoost");
+    if (boost) boost.disabled = !(running && !reducedMotion());
+  }
+
+  function startAutoDry() {
+    if (dryRunning || advancing) return;
+    if ((Number(state.dryProgress) || 0) >= 100) {
+      goNextSoon("荫干完成，进入下一关");
+      return;
+    }
+    dryRunning = true;
+    state.dryProgress = 0;
+    const duration = reducedMotion() ? REDUCED_MS : DRY_MS[state.dry] || 8000;
+    paintDry();
+    lockRunningUi();
+    let last = performance.now();
+    const tick = (now) => {
+      if (!dryRunning) return;
+      const dt = Math.max(0, now - last);
+      last = now;
+      state.dryProgress = Math.min(100, (Number(state.dryProgress) || 0) + (dt / duration) * 100);
+      paintDry();
+      scheduleDraw();
+      if (state.dryProgress >= 100) {
+        dryRunning = false;
+        state.dryProgress = 100;
+        persist();
+        paintDry();
+        showCloseup("dry", state.dry);
+        hideCloseupSoon();
+        goNextSoon("荫干完成，进入下一关");
+        return;
+      }
+      persist();
+      dryRaf = requestAnimationFrame(tick);
+    };
+    dryRaf = requestAnimationFrame(tick);
+  }
+
+  function startAutoFire() {
+    if (fireRunning || advancing) return;
+    if (state.fireDone) {
+      goNextSoon("焙烧完成，出窑见瓷");
+      return;
     }
     fireRunning = true;
     fireSpeed = 1;
-    const duration = 10000; // 10s without boost
+    state.fireProgress = 0;
+    state.fireDone = false;
+    state.fireTemp = 30;
+    const duration = reducedMotion() ? REDUCED_MS : FIRE_MS;
+    paintFire();
+    setKilnGlow(0.12);
+    lockRunningUi();
     let last = performance.now();
     const tick = (now) => {
       if (!fireRunning) return;
-      const dt = Math.min(80, now - last);
+      const dt = Math.max(0, now - last);
       last = now;
-      state.fireProgress = Math.min(100, (state.fireProgress || 0) + (dt / duration) * 100 * fireSpeed);
+      state.fireProgress = Math.min(100, (Number(state.fireProgress) || 0) + (dt / duration) * 100 * fireSpeed);
       state.fireTemp = Math.round(30 + state.fireProgress * 0.7);
-      const bar = $("fireBar");
-      const lab = $("fireVal");
-      const metaEl = $("fireMeta");
-      if (bar) bar.style.width = `${state.fireProgress}%`;
-      if (lab) lab.textContent = `${Math.round(state.fireProgress)}%`;
-      if (metaEl) {
-        metaEl.textContent =
-          fireSpeed > 1.05
-            ? `加速烧制中 ×${fireSpeed.toFixed(1)}`
-            : `自动烧制中 · 约 ${Math.max(0, ((100 - state.fireProgress) / 100) * (duration / 1000)).toFixed(1)} 秒`;
-      }
+      paintFire();
       scheduleDraw({ fireGlow: true });
-      // kiln glow overlay
-      const fx = $("jFx");
-      if (fx) {
-        const a = 0.12 + (state.fireProgress / 100) * 0.35;
-        fx.innerHTML = `<div class="j-kiln-glow" style="opacity:${a}"></div>`;
-      }
+      setKilnGlow(0.12 + (state.fireProgress / 100) * 0.35);
       if (state.fireProgress >= 100) {
         fireRunning = false;
         state.fireDone = true;
         state.fireProgress = 100;
+        state.fireTemp = 100;
         persist();
+        paintFire();
         showCloseup("fire", state.fire);
         hideCloseupSoon();
         toast("烧成！");
@@ -771,7 +1021,7 @@
       viz.setPointerCapture?.(e.pointerId);
     });
     viz.addEventListener("pointermove", (e) => {
-      if (x0 == null) return;
+      if (x0 == null || barBusy()) return;
       const dx = e.clientX - x0;
       if (Math.abs(dx) > 18) {
         state.strength = Math.max(20, Math.min(90, state.strength + Math.sign(dx) * 2));
@@ -885,6 +1135,7 @@
   }
 
   // boot
+  settleTimedStage();
   ensureCloseupHost();
   $("jKicker").textContent = `第 ${meta.no} 关 · ${meta.verb}`;
   $("jTitle").textContent = meta.title;
@@ -894,33 +1145,31 @@
   const btnPrev = $("jPrev");
   const btnNext = $("jNext");
   if (btnPrev) {
-    if (prev) btnPrev.href = `./${prev}`;
-    else {
-      btnPrev.href = "../index.html?enter=1";
-      btnPrev.textContent = "返回启程";
-    }
+    if (!prev) btnPrev.textContent = "返回启程";
+    btnPrev.addEventListener("click", () => {
+      if (btnPrev.disabled) return;
+      location.href = prev ? `./${prev}` : "../index.html?enter=1";
+    });
   }
   if (btnNext) {
-    if (next) {
-      btnNext.href = `./${next}`;
-      btnNext.textContent = "下一关";
-      btnNext.addEventListener("click", () => {
-        state.cleared[stepId] = true;
-        setMark(stepId);
-        persist();
-      });
-    } else {
-      btnNext.href = "./01-soil.html";
-      btnNext.textContent = "再走一趟";
-    }
+    btnNext.addEventListener("click", () => {
+      if (btnNext.disabled) return;
+      if (stepId === "finish") {
+        restartJourney();
+        return;
+      }
+      if (!stageComplete() || !next) return;
+      location.href = `./${next}`;
+    });
   }
+  syncNav();
 
   const mark = $("jMark");
   if (mark) mark.textContent = `印记 ${(state.marks || []).length}/9`;
 
   buildRail();
   renderPanel();
-  scheduleDraw(stepId === "fire" ? { fireGlow: true } : {});
+  scheduleDraw(stepId === "fire" && state.fireDone ? { fireGlow: true } : {});
   bindVizGestures();
 
   // 进入关卡时展示当前选项特写；选土关不自动收起，方便连点对比
