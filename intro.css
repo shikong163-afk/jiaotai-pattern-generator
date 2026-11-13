@@ -454,9 +454,9 @@ main#gate {
 .gift-vessel {
   position: absolute;
   left: 50%;
-  top: 52%;
-  width: 34%;
-  height: 74%;
+  top: 54%;
+  width: 30%;
+  height: 72%;
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.92);
   transition:
@@ -464,44 +464,18 @@ main#gate {
     transform var(--gift-vessel-ms) ease var(--gift-vessel-delay);
   pointer-events: none;
 }
-.gift-vessel::before {
-  content: "";
-  position: absolute;
-  left: 8%;
-  right: 8%;
-  top: 22%;
-  bottom: 4%;
-  border-radius: 48% 48% 42% 42% / 28% 28% 46% 46%;
-  background:
-    radial-gradient(circle at 32% 28%, rgba(232, 220, 200, 0.85), transparent 34%),
-    repeating-linear-gradient(
-      118deg,
-      #5a3a28 0 5px,
-      #c4a484 5px 8px,
-      #e8dcc8 8px 12px,
-      #5a3a28 12px 17px
-    );
-  box-shadow:
-    inset 0 0 0 3px #f4efe6,
-    inset 0 -10px 0 #f7f3eb;
-}
-.gift-vessel::after {
-  content: "";
-  position: absolute;
-  left: 34%;
-  width: 32%;
-  top: 0;
-  height: 26%;
-  border-radius: 46% 46% 28% 28%;
-  background: linear-gradient(#f7f3eb, #e8dcc8);
-  box-shadow: 0 0 0 2px #f4efe6;
+.gift-vessel-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 .gift-lid {
   appearance: none;
   border: 0;
   padding: 0;
   cursor: pointer;
-  background: linear-gradient(165deg, #4a3728, #2c2118 55%, #1a1410);
+  background: linear-gradient(165deg, #2c241f, #14110f 55%, #0c0b0a);
   color: #f4efe6;
   display: grid;
   place-content: center;
@@ -519,9 +493,13 @@ main#gate {
   border-radius: inherit;
   pointer-events: none;
   transform: translateZ(1px);
-  background:
-    repeating-linear-gradient(92deg, rgba(244, 239, 230, 0.07) 0 1px, transparent 1px 14px),
-    linear-gradient(165deg, #4a3728, #2c2118 55%, #1a1410);
+  background: repeating-linear-gradient(
+    96deg,
+    rgba(244, 239, 230, 0.03) 0 1px,
+    transparent 1px 10px,
+    rgba(244, 239, 230, 0.035) 10px 11px,
+    transparent 11px 28px
+  );
   backface-visibility: hidden;
 }
 .gift-lid::after {
@@ -529,7 +507,7 @@ main#gate {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, #f4efe6, #e8dcc8 48%, #c4a484);
+  background: linear-gradient(180deg, #c4a484, #b08968 55%, #a89070);
   transform: rotateX(180deg) translateZ(1px);
   backface-visibility: hidden;
 }
@@ -558,19 +536,28 @@ main#gate {
     opacity 0.35s ease;
   z-index: 2;
 }
-.gift-front { transform-origin: bottom center; }
-.gift-back { transform-origin: top center; }
-.gift-left { transform-origin: left center; }
-.gift-right { transform-origin: right center; }
+.gift-front,
+.gift-back {
+  height: 22%;
+}
+.gift-front { inset: auto 0 0 0; transform-origin: bottom center; }
+.gift-back { inset: 0 0 auto 0; transform-origin: top center; }
+.gift-left,
+.gift-right {
+  width: 14%;
+}
+.gift-left { inset: 0 auto 0 0; transform-origin: left center; }
+.gift-right { inset: 0 0 0 auto; transform-origin: right center; }
 .gift-corner {
   position: absolute;
-  z-index: 6;
+  z-index: 3;
   display: block;
   width: 18px;
   height: 18px;
   pointer-events: none;
   border: 2px solid var(--gold);
   font-style: normal;
+  transform: translateZ(3px);
 }
 .gift-corner.c-tl { top: 7px; left: 7px; border-right: 0; border-bottom: 0; }
 .gift-corner.c-tr { top: 7px; right: 7px; border-left: 0; border-bottom: 0; }
@@ -578,13 +565,13 @@ main#gate {
 .gift-corner.c-br { bottom: 7px; right: 7px; border-left: 0; border-top: 0; }
 .gift-clasp {
   position: absolute;
-  z-index: 7;
+  z-index: 3;
   display: block;
   left: 50%;
-  bottom: 9px;
+  bottom: 8px;
   width: 14px;
   height: 20px;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateZ(3px);
   border-radius: 2px;
   pointer-events: none;
   font-style: normal;
@@ -597,10 +584,10 @@ main#gate {
   pointer-events: none;
 }
 .gift-box.is-open .gift-flap { opacity: 1; }
-.gift-box.is-open .gift-front { transform: rotateX(75deg); }
-.gift-box.is-open .gift-back { transform: rotateX(-75deg); }
-.gift-box.is-open .gift-left { transform: rotateY(-75deg); }
-.gift-box.is-open .gift-right { transform: rotateY(75deg); }
+.gift-box.is-open .gift-front { transform: rotateX(30deg); }
+.gift-box.is-open .gift-back { transform: rotateX(-30deg); }
+.gift-box.is-open .gift-left { transform: rotateY(-38deg); }
+.gift-box.is-open .gift-right { transform: rotateY(38deg); }
 .gift-box.is-open .gift-inner-glow {
   opacity: 1;
   transform: scale(1);
