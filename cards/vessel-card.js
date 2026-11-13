@@ -35,7 +35,7 @@
     let maxY = -1;
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        if (data[(y * width + x) * 4 + 3] > 16) {
+        if (data[(y * width + x) * 4 + 3] > 8) {
           if (x < minX) minX = x;
           if (y < minY) minY = y;
           if (x > maxX) maxX = x;
@@ -44,24 +44,14 @@
       }
     }
     if (maxX < 0) return null;
-    const pad = 4;
-    minX = Math.max(0, minX - pad);
-    minY = Math.max(0, minY - pad);
-    maxX = Math.min(width - 1, maxX + pad);
-    maxY = Math.min(height - 1, maxY + pad);
     const cw = maxX - minX + 1;
     const ch = maxY - minY + 1;
+    const pad = 10;
     const out = document.createElement("canvas");
-    out.width = cw;
-    out.height = ch;
-    out.getContext("2d").drawImage(src, minX, minY, cw, ch, 0, 0, cw, ch);
-    let boxH = 389;
-    let boxW = Math.max(1, Math.round(boxH * (cw / ch)));
-    if (boxW > 700) {
-      boxW = 700;
-      boxH = Math.max(1, Math.round(boxW * (ch / cw)));
-    }
-    return { url: out.toDataURL("image/png"), canvas: out, width: boxW, height: boxH };
+    out.width = cw + pad * 2;
+    out.height = ch + pad * 2;
+    out.getContext("2d").drawImage(src, minX, minY, cw, ch, pad, pad, cw, ch);
+    return { url: out.toDataURL("image/png"), canvas: out, width: out.width, height: out.height };
   }
 
   function qrCanvas() {
@@ -124,14 +114,12 @@
       node("i", "glow")
     );
     const shot = cropVessel(state);
+    const slot = node("div", "vessel-slot");
     const vessel = node("img", "vessel");
     vessel.alt = "";
-    if (shot) {
-      vessel.src = shot.url;
-      vessel.style.width = `${shot.width}px`;
-      vessel.style.height = `${shot.height}px`;
-    }
-    niche.appendChild(vessel);
+    if (shot) vessel.src = shot.url;
+    slot.appendChild(vessel);
+    niche.appendChild(slot);
 
     const archive = node("div", "archive");
     archive.textContent = lib.dossierId(state);
@@ -502,9 +490,15 @@
 
     const shot = cropVessel(state);
     if (shot) {
-      const vx = x + 450 - 7 - shot.width / 2;
-      const vy = y + 540 - 99 - shot.height;
-      ctx.drawImage(shot.canvas, vx, vy, shot.width, shot.height);
+      const slotW = 900 - 14;
+      const slotH = 421;
+      const slotTop = 20;
+      const scale = Math.min(slotW / shot.canvas.width, slotH / shot.canvas.height);
+      const dw = shot.canvas.width * scale;
+      const dh = shot.canvas.height * scale;
+      const vx = x + slotW / 2 - dw / 2;
+      const vy = y + slotTop + slotH - dh;
+      ctx.drawImage(shot.canvas, vx, vy, dw, dh);
     }
     ctx.restore();
   }
