@@ -85,11 +85,28 @@
     state.cleared[stepId] = true;
     setMark(stepId);
     persist();
-    toast(label || "通关！即将进入下一关…");
+    showCraftNote(label);
     lockRunningUi();
     advanceTimer = setTimeout(() => {
       location.href = `./${next}`;
     }, 1100);
+  }
+
+  function showCraftNote() {
+    const host = $("jCraft");
+    if (!host || !meta.voice) return;
+    const voice = host.querySelector(".j-voice");
+    const fact = host.querySelector(".j-fact");
+    if (voice) voice.textContent = meta.voice;
+    if (fact) fact.textContent = "";
+    host.hidden = false;
+    host.classList.add("show");
+    host.classList.remove("has-fact");
+    window.setTimeout(() => {
+      if (!advancing || !fact) return;
+      fact.textContent = meta.fact || "";
+      host.classList.add("has-fact");
+    }, 280);
   }
 
   function settleTimedStage() {
@@ -171,6 +188,10 @@
   function confirmControls(tip, extra) {
     const ready = hasLegalChoice();
     return `
+      <div class="j-craft" id="jCraft" hidden>
+        <p class="j-voice"></p>
+        <p class="j-fact"></p>
+      </div>
       <div class="j-play">
         <button type="button" class="j-play-btn" id="actConfirm"${ready ? "" : " disabled"}>确定</button>
         ${extra || ""}
@@ -656,17 +677,23 @@
         ${confirmControls("确认后开始焙烧", boost)}`;
     } else {
       const id = J.dossierId(state);
+      const wish = state.wish.trim();
       html = `
-        <h3>出窑 · 原创档案</h3>
+        <h3>出窑 · 器物卡</h3>
         <p class="j-finish-id">${id}</p>
-        <p class="j-tip">创作者：${state.author.trim() || "未署名"} · 独特性 ${J.originalityScore(state)}/100</p>
-        <p class="j-tip">心愿：${state.wish.trim() || "（未填写）"}</p>
+        <p class="j-tip">创作者：${escapeHtml(state.author.trim() || "未署名")} · 独特性 ${J.originalityScore(state)}/100</p>
+        ${wish ? `<p class="j-tip">心愿：${escapeHtml(wish)}</p>` : ""}
+        <div id="vesselCardMount"></div>
+        <div class="j-play">
+          <button type="button" class="j-play-btn" id="btnMakeCard">生成我的器物卡</button>
+          <button type="button" class="j-play-btn alt" id="btnShareCard">转发器物卡</button>
+          <button type="button" class="j-play-btn alt" id="btnCopyLink">复制链接</button>
+        </div>
         <div class="j-ai">
           <img id="aiImage" alt="AI 样张" hidden />
           <p class="j-ai-status" id="aiStatus">可生成 AI 产品摄影样张</p>
           <div class="j-play">
             <button type="button" class="j-play-btn alt" id="btnAiGen">生成 AI 样张</button>
-            <button type="button" class="j-play-btn alt" id="btnExport">导出原创工艺卡</button>
           </div>
           <div class="j-play">
             <button type="button" class="j-play-btn" id="actRestart">重新开始</button>
@@ -708,8 +735,14 @@
       paintFire();
     });
     act("btnAiGen", generateAi);
-    act("btnExport", exportCard);
+    act("btnMakeCard", () => saveVesselCard());
+    act("btnShareCard", () => shareVesselCard());
+    act("btnCopyLink", () => copyHomeLink());
     act("actRestart", () => restartJourney());
+    if (stepId === "finish" && window.JiaotaiVesselCard) {
+      const host = $("vesselCardMount");
+      if (host) window.JiaotaiVesselCard.mount(host, state);
+    }
 
     if (stepId === "vessel" && window.JiaotaiVesselUI) {
       window.JiaotaiVesselUI.mountVesselPicker($("vesselPicker"), {
@@ -1080,58 +1113,41 @@
     }
   }
 
-  function exportCard() {
-    const canvas = document.createElement("canvas");
-    canvas.width = 1080;
-    canvas.height = 1920;
-    const ctx = canvas.getContext("2d");
-    const id = J.dossierId(state);
-    const pad = 72;
-    const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    bg.addColorStop(0, "#f8f4ec");
-    bg.addColorStop(1, "#efe8da");
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#3d5a48";
-    ctx.fillRect(0, 0, canvas.width, 180);
-    ctx.fillStyle = "#f7f3eb";
-    ctx.font = "700 48px Noto Serif SC, serif";
-    ctx.fillText("绞胎原创工艺卡", pad, 88);
-    ctx.fillStyle = "#1c1a17";
-    ctx.font = "700 28px Source Sans 3, sans-serif";
-    ctx.fillText(id, pad, 240);
-    const rows = [
-      ["创作者", state.author.trim() || "匿名创作者"],
-      ["选土", J.labelOf(J.SOILS, state.soil)],
-      ["编花", J.labelOf(J.TWISTS, state.twist)],
-      ["器型", J.vesselName(state)],
-      ["成型", J.labelOf(J.FORMS, state.form)],
-      ["荫干", J.labelOf(J.DRYS, state.dry)],
-      ["施釉", J.labelOf(J.GLAZES, state.glaze)],
-      ["焙烧", J.labelOf(J.FIRES, state.fire)],
-    ];
-    let y = 310;
-    rows.forEach(([k, v]) => {
-      ctx.fillStyle = "#7a7368";
-      ctx.font = "600 22px Source Sans 3, sans-serif";
-      ctx.fillText(k, pad, y);
-      ctx.fillStyle = "#1c1a17";
-      ctx.font = "500 24px Source Sans 3, sans-serif";
-      ctx.fillText(String(v).slice(0, 28), pad + 170, y);
-      y += 48;
-    });
-    const preview = $("jPreview");
-    if (preview) {
-      ctx.fillStyle = "#1a1a1a";
-      ctx.fillRect(pad, y + 20, 460, 460);
-      ctx.drawImage(preview, pad + 8, y + 28, 444, 444);
-    }
-    const a = document.createElement("a");
-    a.download = `${id}.png`;
-    a.href = canvas.toDataURL("image/png");
-    a.click();
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  async function saveVesselCard() {
+    if (!window.JiaotaiVesselCard) return;
+    await window.JiaotaiVesselCard.download(state);
     setMark("finish");
-    toast("工艺卡已导出");
+    toast("器物卡已保存");
+  }
+
+  async function shareVesselCard() {
+    if (!window.JiaotaiVesselCard) return;
+    try {
+      const mode = await window.JiaotaiVesselCard.share(state);
+      setMark("finish");
+      toast(mode === "shared" ? "已打开转发" : "器物卡已保存，可再转发图片");
+    } catch (err) {
+      if (err && err.name === "AbortError") return;
+      toast("转发未完成，请改用保存");
+    }
+  }
+
+  async function copyHomeLink() {
+    const url = (window.JiaotaiVesselCard && window.JiaotaiVesselCard.HOME) || J.HOME_URL;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast("礼匣链接已复制");
+    } catch {
+      toast(url);
+    }
   }
 
   // boot

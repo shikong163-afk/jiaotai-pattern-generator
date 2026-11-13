@@ -1,15 +1,25 @@
 (() => {
   const STORAGE_KEY = "jiaotai_journey_v1";
 
+  // 策划终稿见 docs/youth-heritage-copy.md。出处只留在该文件和这里，不印到页面或器物卡。
+  const GIFT_OPEN_VOICE = "纹在胎里，打开才看见。";
+  const KILN_NOTE = "当阳峪窑在河南修武。绞胎瓷花纹表里如一，人称瓷中君子，源于唐、兴于宋。";
+  const KILN_NOTE_SUB = "透花瓷 · 开窑见纹";
+  // 碑文「时惟当阳工巧，世利瓷器。」本轮不上卡。非遗官网用「世利瓷器」，不要改成「世利兹器」。
+  // soil：https://www.ihchina.cn/project_details/14740.html 「以太行山特有的矸石为制瓷原料，有选土、炼泥……等 30 多道工序。」
+  // refine / twist / fire：同上非遗名录页。twist 的「表里如一」亦见河南博物院当阳峪窑绞胎瓷碗说明。
+  // vessel / form / glaze：河南博物院当阳峪窑绞胎瓷碗；口沿白釉另见故宫修武窑绞胎罐。
+  // dry：非遗名录页工序「修胎、荫干、打磨、施釉、焙烧」，页面未给荫干天数。
+
   const STEPS = [
-    { id: "soil", no: "01", file: "01-soil.html", title: "选土", verb: "采选泥脉", desc: "点选土源，为自己的君子瓷定下第一道底子。", tip: "研学现场多用已炼泥；这里记录你的原料偏好。" },
-    { id: "refine", no: "02", file: "02-refine.html", title: "炼泥调色", verb: "揉出配色", desc: "把泥色拖进炼泥台，揉成你的专属色泥。", tip: "双色起步最稳；色差适中才易读纹。" },
-    { id: "twist", no: "03", file: "03-twist.html", title: "绞泥编花", verb: "绞转成纹", desc: "滑动绞盘，让纹样从胎里长出来。", tip: "纹不在表面，而在胎骨之中。" },
-    { id: "vessel", no: "04", file: "04-vessel.html", title: "选定器型", verb: "择形立器", desc: "从图文库挑选瓶型，微调腹径与口沿。", tip: "入门稳形优先；异形适合观赏。" },
-    { id: "form", no: "05", file: "05-form.html", title: "成型修胎", verb: "塑形修坯", desc: "选定成型路径，感受不同手感与风险。", tip: "短课多用泥片；深度营可拉坯。" },
-    { id: "dry", no: "06", file: "06-dry.html", title: "荫干打磨", verb: "静候干成", desc: "推动荫干进度，学会慢，才能不裂。", tip: "急干是开裂高发区。" },
-    { id: "glaze", no: "07", file: "07-glaze.html", title: "施釉方案", verb: "薄釉显纹", desc: "点按施釉，让透明釉护纹而不盖纹。", tip: "君子瓷优先薄透明釉。" },
-    { id: "fire", no: "08", file: "08-fire.html", title: "焙烧曲线", verb: "窑火考验", desc: "拨动窑温曲线，预演烧成风险。", tip: "真实烧窑仍由窑工执行。" },
+    { id: "soil", no: "01", file: "01-soil.html", title: "选土", verb: "采选泥脉", desc: "点选土源，为自己的君子瓷定下第一道底子。", tip: "研学现场多用已炼泥；这里记录你的原料偏好。", voice: "先把土选对，纹才有底子。", fact: "当阳峪绞胎以太行山特有的矸石为原料，从选土起手。" },
+    { id: "refine", no: "02", file: "02-refine.html", title: "炼泥调色", verb: "揉出配色", desc: "把泥色拖进炼泥台，揉成你的专属色泥。", tip: "双色起步最稳；色差适中才易读纹。", voice: "两种泥遇见，才开始有自己的颜色。", fact: "绞胎由两种或两种以上不同颜色的瓷泥相间糅合而成。" },
+    { id: "twist", no: "03", file: "03-twist.html", title: "绞泥编花", verb: "绞转成纹", desc: "滑动绞盘，让纹样从胎里长出来。", tip: "纹不在表面，而在胎骨之中。", voice: "纹不画在表面，是从胎里绞出来的。", fact: "花纹由胎而生、表里如一，一胎一面，不可复制。" },
+    { id: "vessel", no: "04", file: "04-vessel.html", title: "选定器型", verb: "择形立器", desc: "从图文库挑选瓶型，微调腹径与口沿。", tip: "入门稳形优先；异形适合观赏。", voice: "先立住形，纹才有地方安放。", fact: "当阳峪绞胎的主要器型是碗、杯、盘、罐、瓷枕这类日用小件。" },
+    { id: "form", no: "05", file: "05-form.html", title: "成型修胎", verb: "塑形修坯", desc: "选定成型路径，感受不同手感与风险。", tip: "短课多用泥片；深度营可拉坯。", voice: "形可以改，纹要跟着胎走。", fact: "色泥糅合、折叠、相绞之后，再拉坯或模压成型，并经修胎。" },
+    { id: "dry", no: "06", file: "06-dry.html", title: "荫干打磨", verb: "静候干成", desc: "推动荫干进度，学会慢，才能不裂。", tip: "急干是开裂高发区。", voice: "慢一点，坯才站得住。", fact: "施釉之前，还要经过荫干和打磨。" },
+    { id: "glaze", no: "07", file: "07-glaze.html", title: "施釉方案", verb: "薄釉显纹", desc: "点按施釉，让透明釉护纹而不盖纹。", tip: "君子瓷优先薄透明釉。", voice: "釉要薄，是为了把纹让出来。", fact: "相绞成型后再施一层透明釉，口沿常留一圈白釉。" },
+    { id: "fire", no: "08", file: "08-fire.html", title: "焙烧曲线", verb: "窑火考验", desc: "拨动窑温曲线，预演烧成风险。", tip: "真实烧窑仍由窑工执行。", voice: "交到火里，才知道这一面能不能留下。", fact: "编花和高温烧造都要求极精确，故成品率低。" },
     { id: "finish", no: "09", file: "09-finish.html", title: "出窑成瓷", verb: "开匣见瓷", desc: "生成唯一档案号与可带走的原创工艺卡。", tip: "数字预演增强现场，不替代窑火。" },
   ];
 
@@ -249,35 +259,81 @@ function resetState() {
     const ctx = canvas.getContext("2d");
     const w = canvas.width,
       h = canvas.height;
-    const g = ctx.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0, "#2b2925");
-    g.addColorStop(1, "#0d0c0b");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w, h);
+    const cutout = !!opts.cutout;
+    if (cutout) {
+      ctx.clearRect(0, 0, w, h);
+    } else {
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, "#2b2925");
+      g.addColorStop(1, "#0d0c0b");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    }
 
     const radiusFn = window.jiaotaiVesselRadius;
     if (!radiusFn) return;
 
     const colors = [state.c1, state.c2, state.c3].slice(0, state.colorCount).map(hexToRgb);
     const img = ctx.createImageData(w, h);
-    const cx = w * 0.5,
-      top = h * 0.1,
-      bot = h * 0.9,
-      scale = w * 0.92;
+    const cx = w * 0.5;
+    // Stage preview keeps the 10%–90% well. The card cutout paints the whole profile in frame.
+    const top = cutout ? 2 : h * 0.1;
+    const bot = cutout ? h - 3 : h * 0.9;
+    const scale = w * 0.92;
     const feather = 3.0;
     const glazeBoost = state.glaze === "none" ? 0.92 : state.glaze === "clear" ? 1.08 : 1.02;
     const dryFade = 0.85 + (Number(state.dryProgress) || 0) / 100 * 0.15;
+    const belly = state.belly / 500;
+    const rim = state.rim / 500;
+    const footArg = 0.14;
+    const mouthR = radiusFn(0, state.vessel, belly, rim, footArg);
+    const footR = radiusFn(1, state.vessel, belly, rim, footArg);
+
+    // Card only: a short flared 口沿 above the existing mouth, and a 圈足 that steps out
+    // then drops as a vertical ring. The stage preview still uses radiusFn unchanged.
+    function cardRadius(t) {
+      const lipEnd = 0.06;
+      const footStart = 0.92;
+      if (t <= lipEnd) {
+        const u = t / lipEnd;
+        const lip = mouthR * 1.55;
+        if (u < 0.62) return lip;
+        return lip + (mouthR - lip) * ((u - 0.62) / 0.38);
+      }
+      if (t >= footStart) {
+        const u = (t - footStart) / (1 - footStart);
+        const ankle = footR * 0.72;
+        const ring = footR * 1.38;
+        if (u < 0.22) return footR + (ankle - footR) * (u / 0.22);
+        if (u < 0.42) return ankle + (ring - ankle) * ((u - 0.22) / 0.2);
+        return ring;
+      }
+      return radiusFn((t - lipEnd) / (footStart - lipEnd), state.vessel, belly, rim, footArg);
+    }
 
     for (let y = 0; y < h; y++) {
       const t = (y - top) / (bot - top);
-      if (t < -0.02 || t > 1.02) continue;
-      const tc = Math.max(0, Math.min(1, t));
-      const r = radiusFn(tc, state.vessel, state.belly / 500, state.rim / 500, 0.14) * scale;
+      let tc;
+      let r;
+      if (cutout) {
+        if (t < 0 || t > 1) continue;
+        r = cardRadius(t) * scale;
+        tc = t <= 0.06 ? 0 : t >= 0.92 ? 1 : (t - 0.06) / 0.86;
+      } else {
+        if (t < -0.02 || t > 1.02) continue;
+        tc = Math.max(0, Math.min(1, t));
+        r = radiusFn(tc, state.vessel, belly, rim, footArg) * scale;
+      }
       for (let x = 0; x < w; x++) {
         const dx = x - cx;
         const dist = r - Math.abs(dx);
-        let a = Math.max(0, Math.min(1, (dist + feather) / (feather * 1.8)));
-        a *= Math.max(0, Math.min(1, (t + 0.02) / 0.04)) * Math.max(0, Math.min(1, (1.02 - t) / 0.04));
+        let a;
+        if (cutout) {
+          a = dist >= 1 ? 1 : dist > 0 ? dist : 0;
+        } else {
+          a = Math.max(0, Math.min(1, (dist + feather) / (feather * 1.8)));
+          a *= Math.max(0, Math.min(1, (t + 0.02) / 0.04)) * Math.max(0, Math.min(1, (1.02 - t) / 0.04));
+        }
         if (a <= 0.02) continue;
         const xn = Math.max(-1, Math.min(1, dx / Math.max(r, 1)));
         const u = 0.5 + Math.asin(xn) / Math.PI;
@@ -292,11 +348,18 @@ function resetState() {
           shade += (Number(state.fireTemp) || 0) / 100 * 0.08;
         }
         const i = (y * w + x) * 4;
-        const bg = 20;
-        img.data[i] = c.r * shade * a + bg * (1 - a);
-        img.data[i + 1] = c.g * shade * a + bg * (1 - a);
-        img.data[i + 2] = c.b * shade * a + bg * (1 - a);
-        img.data[i + 3] = 255;
+        if (cutout) {
+          img.data[i] = c.r * shade;
+          img.data[i + 1] = c.g * shade;
+          img.data[i + 2] = c.b * shade;
+          img.data[i + 3] = Math.round(255 * a);
+        } else {
+          const bg = 20;
+          img.data[i] = c.r * shade * a + bg * (1 - a);
+          img.data[i + 1] = c.g * shade * a + bg * (1 - a);
+          img.data[i + 2] = c.b * shade * a + bg * (1 - a);
+          img.data[i + 3] = 255;
+        }
       }
     }
     ctx.putImageData(img, 0, 0);
@@ -324,6 +387,10 @@ function resetState() {
   }
 
   window.JiaotaiJourney = {
+    GIFT_OPEN_VOICE,
+    KILN_NOTE,
+    KILN_NOTE_SUB,
+    HOME_URL: "https://jiaotai-pattern-generator.pages.dev/",
     STEPS,
     SOILS,
     TWISTS,
