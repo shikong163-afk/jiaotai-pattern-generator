@@ -275,24 +275,65 @@ function resetState() {
 
     const colors = [state.c1, state.c2, state.c3].slice(0, state.colorCount).map(hexToRgb);
     const img = ctx.createImageData(w, h);
-    const cx = w * 0.5,
-      top = h * 0.1,
-      bot = h * 0.9,
-      scale = w * 0.92;
+    const cx = w * 0.5;
+    // Stage preview keeps the 10%–90% well. The card cutout paints the whole profile in frame.
+    const top = cutout ? 2 : h * 0.1;
+    const bot = cutout ? h - 3 : h * 0.9;
+    const scale = w * 0.92;
     const feather = 3.0;
     const glazeBoost = state.glaze === "none" ? 0.92 : state.glaze === "clear" ? 1.08 : 1.02;
     const dryFade = 0.85 + (Number(state.dryProgress) || 0) / 100 * 0.15;
+    const belly = state.belly / 500;
+    const rim = state.rim / 500;
+    const footArg = 0.14;
+    const mouthR = radiusFn(0, state.vessel, belly, rim, footArg);
+    const footR = radiusFn(1, state.vessel, belly, rim, footArg);
+
+    // Card only: a short flared 口沿 above the existing mouth, and a 圈足 that steps out
+    // then drops as a vertical ring. The stage preview still uses radiusFn unchanged.
+    function cardRadius(t) {
+      const lipEnd = 0.06;
+      const footStart = 0.92;
+      if (t <= lipEnd) {
+        const u = t / lipEnd;
+        const lip = mouthR * 1.55;
+        if (u < 0.62) return lip;
+        return lip + (mouthR - lip) * ((u - 0.62) / 0.38);
+      }
+      if (t >= footStart) {
+        const u = (t - footStart) / (1 - footStart);
+        const ankle = footR * 0.72;
+        const ring = footR * 1.38;
+        if (u < 0.22) return footR + (ankle - footR) * (u / 0.22);
+        if (u < 0.42) return ankle + (ring - ankle) * ((u - 0.22) / 0.2);
+        return ring;
+      }
+      return radiusFn((t - lipEnd) / (footStart - lipEnd), state.vessel, belly, rim, footArg);
+    }
 
     for (let y = 0; y < h; y++) {
       const t = (y - top) / (bot - top);
-      if (t < -0.02 || t > 1.02) continue;
-      const tc = Math.max(0, Math.min(1, t));
-      const r = radiusFn(tc, state.vessel, state.belly / 500, state.rim / 500, 0.14) * scale;
+      let tc;
+      let r;
+      if (cutout) {
+        if (t < 0 || t > 1) continue;
+        r = cardRadius(t) * scale;
+        tc = t <= 0.06 ? 0 : t >= 0.92 ? 1 : (t - 0.06) / 0.86;
+      } else {
+        if (t < -0.02 || t > 1.02) continue;
+        tc = Math.max(0, Math.min(1, t));
+        r = radiusFn(tc, state.vessel, belly, rim, footArg) * scale;
+      }
       for (let x = 0; x < w; x++) {
         const dx = x - cx;
         const dist = r - Math.abs(dx);
-        let a = Math.max(0, Math.min(1, (dist + feather) / (feather * 1.8)));
-        a *= Math.max(0, Math.min(1, (t + 0.02) / 0.04)) * Math.max(0, Math.min(1, (1.02 - t) / 0.04));
+        let a;
+        if (cutout) {
+          a = dist >= 1 ? 1 : dist > 0 ? dist : 0;
+        } else {
+          a = Math.max(0, Math.min(1, (dist + feather) / (feather * 1.8)));
+          a *= Math.max(0, Math.min(1, (t + 0.02) / 0.04)) * Math.max(0, Math.min(1, (1.02 - t) / 0.04));
+        }
         if (a <= 0.02) continue;
         const xn = Math.max(-1, Math.min(1, dx / Math.max(r, 1)));
         const u = 0.5 + Math.asin(xn) / Math.PI;
