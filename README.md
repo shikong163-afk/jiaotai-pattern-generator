@@ -5,6 +5,7 @@
 ## 在线使用（扫码）
 
 - 云端推荐：https://jiaotai-pattern-generator.pages.dev/
+- 透花瓷工作坊（GitHub Pages）：https://shikong163-afk.github.io/jiaotai-pattern-generator/workshop/
 - 三阶入场：`index.html`（历史 → 交互绞泥 → 进入本体）
 - 纹样生成器：`studio.html`
 - 全流程定制：`process.html`（选土→出窑，个性化原创工艺卡）
