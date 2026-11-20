@@ -682,8 +682,41 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
     },
   };
 
+  /* ---------------- 工序小木牌 ---------------- */
+  // 九个工序各有一块小木牌，站在场景里也看得见；文字用程序化 Canvas，不引外部图。
+  function stationTag(label, parent, x, y, z, ry, postH) {
+    const c = C(512, 128), ctx = c.getContext('2d');
+    ctx.fillStyle = '#e7dcc4'; ctx.fillRect(0, 0, 512, 128);
+    ctx.strokeStyle = 'rgba(92,66,42,0.7)'; ctx.lineWidth = 5; ctx.strokeRect(8, 8, 496, 112);
+    ctx.strokeStyle = 'rgba(160,52,40,0.5)'; ctx.lineWidth = 2; ctx.strokeRect(18, 18, 476, 92);
+    ctx.fillStyle = '#2d231a';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '600 46px "KaiTi","STKaiti","SimSun",serif';
+    ctx.fillText(label, 256, 68);
+    const tex = new THREE.CanvasTexture(c);
+    if (THREE.sRGBEncoding !== undefined) tex.encoding = THREE.sRGBEncoding;
+    tex.anisotropy = 8;
+
+    const g = new THREE.Group();
+    g.position.set(x || 0, y || 0, z || 0);
+    g.rotation.y = ry || 0;
+    const board = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.145, 0.035), toon(0x3b291c));
+    board.castShadow = true; board.receiveShadow = true;
+    g.add(board);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(0.455, 0.102),
+      new THREE.MeshBasicMaterial({ map: tex }));
+    face.position.z = 0.019;
+    g.add(face);
+    if (postH) {
+      G.box(0.032, postH, 0.032, toon(0x4a3423), 0, -postH / 2 - 0.072, 0, g, { os: 0.0011 });
+    }
+    (parent || WB.root).add(g);
+    return g;
+  }
+
   WB.C = C; WB.toon = toon; WB.std = std; WB.basic = basic;
   WB.outline = outline; WB.G = G; WB.GRAD = GRAD;
+  WB.stationTag = stationTag;
   WB.root = null;
 })();
 
@@ -1300,8 +1333,16 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
       });
       P.chimneyTop = new THREE.Vector3(kx + 0.06, 3.14, kz - 0.38);
 
+      // 窑前火钳与水桶，给焙烧工位一点手边气
+      G.cyl(0.012, 0.012, 1.15, 5, toon(0x6b5a44), -0.95, 0.68, 2.15, kiln, { os: 0.0009, rz: 0.28, rx: 0.1 });
+      G.box(0.11, 0.025, 0.05, toon(0x8d8577), -1.12, 1.20, 2.22, kiln, { os: 0.0008, rz: 0.28 });
+      G.cyl(0.17, 0.14, 0.24, 14, toon(0x4f5752), 1.05, 0.12, 2.18, kiln, { os: 0.0011 });
+      G.cyl(0.145, 0.145, 0.01, 14, std(0x384b4e, 0.05, 0.7, { env: 1.8 }), 1.05, 0.235, 2.18, kiln, { line: false });
+      WB.stationTag('08 · 焙烧曲线', kiln, -1.90, 1.32, 1.26, 0.24, 0.96).userData.station = 'fire';
+
       WB.pickables = WB.pickables || {};
       WB.pickables.kiln = kiln;
+      WB.pickables.fire = kiln;
 
       // 窑侧砖堆
       for (let i = 0; i < 3; i++) {
@@ -1467,6 +1508,13 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
       room.add(showcase);
       WB.pickables = WB.pickables || {};
       WB.pickables.shelf = showcase;
+      WB.pickables.vessel = showcase;
+      // 整座器型架都可点：一块透明的拾取面，不改变画面。
+      const pickPanel = new THREE.Mesh(new THREE.PlaneGeometry(W, 2.2),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
+      pickPanel.position.set(cx, FLOOR + 1.18, z + 0.24);
+      pickPanel.userData.station = 'vessel';
+      showcase.add(pickPanel);
 
       // 小圈足：分层足墙 + 一圈押边，避免直接裁在层板上
       function footRing(x, y, z, r, mat) {
@@ -1535,6 +1583,7 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
       const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.13), toon(0xffffff, { map: WB.tex.price(), unique: true }));
       tag.position.set(1.95, FLOOR + 1.1, z + 0.25); tag.rotation.y = -0.12;
       room.add(tag);
+      WB.stationTag('04 · 选定器型', showcase, 1.98, FLOOR + 2.14, z + 0.30, -0.16, 0).userData.station = 'vessel';
     })();
 
     /* ================= 拉坯区：辘轳车 ================= */
@@ -1577,10 +1626,24 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
       G.cyl(0.13, 0.11, 0.11, 16, toon(0x6a6f6a), 0.62, 0.055, 0.42, g, { os: 0.0013 });
       const w2 = new THREE.Mesh(new THREE.CircleGeometry(0.115, 18), std(0x2c3b40, 0.08, 0.7, { env: 1.4 }));
       w2.rotation.x = -Math.PI / 2; w2.position.set(0.62, 0.105, 0.42); g.add(w2);
+      // 接泥盘与修胎刀架，强化「成型修胎」工位
+      G.cyl(0.58, 0.58, 0.035, 24, toon(0x5c5041), 0, 0.055, 0, g, { os: 0.0012 });
+      G.box(0.5, 0.05, 0.16, darkWood(), -0.72, 0.86, 0.34, g, { os: 0.0011 });
+      for (let i = 0; i < 3; i++) {
+        G.cyl(0.012, 0.012, 0.22, 6, toon(0x9d8d70), -0.84 + i * 0.11, 0.99, 0.34, g, { os: 0.0008, rz: R(-0.2, 0.2) });
+        G.cyl(0.018, 0.012, 0.05, 6, toon(0x6b3f26), -0.84 + i * 0.11, 1.11, 0.34, g, { os: 0.0008 });
+      }
+      // 旁边的木凳与一只修好的坯
+      G.box(0.38, 0.06, 0.34, woodMat(), -0.95, 0.52, 0.72, g, { os: 0.0012 });
+      [[-1.1, 0.58], [-0.8, 0.58], [-1.1, 0.86], [-0.8, 0.86]].forEach(p => {
+        G.box(0.045, 0.5, 0.045, darkWood(), p[0], 0.26, p[1], g, { os: 0.001 });
+      });
+      WB.stationTag('05 · 成型修胎', g, 0.32, 1.28, 0.46, 0, 0.34).userData.station = 'form';
 
       g.userData.pickName = 'wheel';
       WB.pickables = WB.pickables || {};
       WB.pickables.wheel = g;
+      WB.pickables.form = g;
     })();
 
     /* ================= 揉泥台 ================= */
@@ -1633,10 +1696,42 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
       for (let i = 0; i < 10; i++) {
         G.box(R(0.02, 0.05), 0.012, R(0.02, 0.05), toon(0x3e3630), R(-0.5, 0.5), 0.865, R(-0.3, 0.3), g, { line: false });
       }
+      // 炼泥调色：两只釉亮小碗盛色泥，旁边一团待揉的暖赭泥
+      [[-0.52, 0.15, 0x2b2724], [-0.38, 0.38, 0xa8764a]].forEach((b, i) => {
+        G.cyl(0.075, 0.06, 0.045, 14, toon(0xded2bd), b[0], 0.89, b[1], g, { os: 0.0010 });
+        const s = new THREE.Mesh(new THREE.CircleGeometry(0.062, 14), std(b[2], 0.55, 0.02, { env: 0.5 }));
+        s.rotation.x = -Math.PI / 2; s.position.set(b[0], 0.915, b[1]); g.add(s);
+      });
+      G.sph(0.125, toon(0x9d6b43), 0.62, 0.905, 0.28, g, { sy: 0.6, os: 0.0011 });
+      WB.stationTag('02 · 炼泥调色', g, -0.26, 1.10, 0.50, 0, 0.22).userData.station = 'refine';
+
+      // 绞泥编花：同一张揉泥台的右端，两条绞好的泥条与一片切开的纹样
+      const twist = new THREE.Group();
+      twist.userData.station = 'twist';
+      twist.position.set(0.56, 0.90, -0.04);
+      g.add(twist);
+      const twMap = WB.tex.marble(21); twMap.repeat.set(2.2, 0.8);
+      const twMat = std(0xffffff, 0.7, 0.03, { map: twMap, env: 0.55 });
+      for (let i = 0; i < 2; i++) {
+        const log = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.30, 18), twMat);
+        log.rotation.z = Math.PI / 2;
+        log.rotation.y = i ? 0.22 : -0.18;
+        log.position.set(i * 0.04, 0.05 + i * 0.10, i * 0.09 - 0.04);
+        log.castShadow = true; log.receiveShadow = true;
+        twist.add(log); WB.outline(log, 0.0010);
+      }
+      const slice = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.022, 20),
+        std(0xffffff, 0.62, 0.04, { map: WB.tex.marble(22), env: 0.6, side: THREE.DoubleSide }));
+      slice.rotation.x = Math.PI / 2.4; slice.rotation.z = 0.35;
+      slice.position.set(0.08, 0.20, 0.06);
+      slice.castShadow = true; twist.add(slice); WB.outline(slice, 0.0011);
+      WB.stationTag('03 · 绞泥编花', g, 0.60, 1.10, 0.50, 0, 0.22).userData.station = 'twist';
 
       g.userData.pickName = 'wedging';
       WB.pickables = WB.pickables || {};
       WB.pickables.wedging = g;
+      WB.pickables.refine = g;
+      WB.pickables.twist = twist;
     })();
 
     /* ================= 修坯台 ================= */
@@ -1911,6 +2006,65 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
       cloth.castShadow = true;
       g.add(cloth);
       P.cloths.push({ mesh: cloth, base: geo.attributes.position.clone(), amp: 0.075, axis: 'x' });
+      // 顶部遮雨棚：让「荫干」在雨里也站得住
+      G.box(W + 0.35, 0.055, D + 0.34, woodMat(), 0, 1.86, 0.02, g, { os: 0.0013 });
+      G.box(W + 0.4, 0.03, D + 0.4, darkWood(), 0, 1.90, 0.02, g, { os: 0.0012 });
+      // 架前地上的两只大坯，表面记着荫干的湿度
+      [[-0.62, 0.72, 0x8d806a], [0.68, 0.78, 0xa29278]].forEach((q, i) => {
+        lathe([[0.02, 0], [0.14, 0.01], [0.18, 0.07], [0.19, 0.2], [0.17, 0.34], [0.15, 0.37]],
+          toon(q[2], { flat: true }), g, q[0], 0.02, q[1], 20);
+      });
+      // 一只倒扣的素坯与木尺，给工序一个尺度
+      lathe([[0.02, 0], [0.12, 0.01], [0.15, 0.06], [0.14, 0.12], [0.13, 0.13]],
+        greenClothMat, g, 0.02, 0.02, 0.72, 16).rotation.x = Math.PI;
+      G.box(0.42, 0.02, 0.06, darkWood(), 0.06, 0.04, 0.52, g, { os: 0.0008 });
+      WB.stationTag('06 · 荫干打磨', g, 0.47, 1.98, 0.44, 0, 0.32).userData.station = 'dry';
+      WB.pickables = WB.pickables || {};
+      WB.pickables.dry = g;
+      g.userData.station = 'dry';
+    })();
+
+    /* ---------------- 选土：料堆与泥脉 ---------------- */
+    (function soilPile() {
+      const g = new THREE.Group();
+      g.position.set(-6.55, 0, 4.55);
+      root.add(g);
+      // 三面矮木挡板围出的料池
+      const plankMat = () => toon(0xffffff, { map: WB.tex.wood('#5a3e2a').clone(), unique: true });
+      G.box(1.55, 0.22, 0.10, plankMat(), 0, 0.11, -0.55, g, { os: 0.0012 });
+      G.box(0.10, 0.22, 1.15, plankMat(), -0.78, 0.11, 0, g, { os: 0.0012 });
+      G.box(0.10, 0.22, 1.15, plankMat(), 0.78, 0.11, 0, g, { os: 0.0012 });
+      // 三堆生土：太行矸石、高岭、皂土
+      const heaps = [
+        { x: -0.42, z: -0.10, r: 0.34, sy: 0.52, c: 0x4a4038 },
+        { x: 0.10, z: 0.18, r: 0.36, sy: 0.60, c: 0xcabfa6 },
+        { x: 0.52, z: -0.12, r: 0.30, sy: 0.48, c: 0x9a6c49 },
+      ];
+      heaps.forEach((h, i) => {
+        const m = G.sph(h.r, toon(h.c, { flat: true }), h.x, h.r * h.sy * 0.74, h.z, g,
+          { sy: h.sy, os: 0.0012, seg: 18, seg2: 12 });
+        // 表面碎粒：让土堆不是一颗光滑球
+        for (let k = 0; k < 12; k++) {
+          G.sph(R(0.016, 0.038), toon(k % 3 ? h.c : 0x6b5c4b, { flat: true }),
+            h.x + R(-0.34, 0.34), R(0.06, 0.26), h.z + R(-0.28, 0.28), g, { sy: 0.7, seg: 8, seg2: 6, line: false });
+        }
+      });
+      // 竹筐与取样小铲
+      G.cyl(0.16, 0.13, 0.22, 14, toon(0x9a8258), -0.62, 0.11, 0.42, g, { os: 0.0011 });
+      G.cyl(0.135, 0.135, 0.01, 14, toon(0x4e4034), -0.62, 0.23, 0.42, g, { line: false });
+      G.cyl(0.012, 0.012, 0.6, 5, toon(0x8d7554), 0.68, 0.31, 0.38, g, { os: 0.0008, rz: 0.6, rx: 0.2 });
+      G.box(0.13, 0.03, 0.09, toon(0x9d988a), 0.86, 0.55, 0.42, g, { os: 0.0008, rz: 0.6 });
+      // 一块剖面：三层泥脉，呼应考古探方
+      const cut = new THREE.Group();
+      cut.position.set(0.60, 0.10, 0.30); cut.rotation.y = -0.4;
+      g.add(cut);
+      [[0.05, 0x4a4038], [0.10, 0xcabfa6], [0.15, 0x9a6c49]].forEach((q, i) => {
+        G.box(0.30, 0.045, 0.10, toon(q[1]), 0, q[0] - 0.10, 0, cut, { os: 0.0009 });
+      });
+      WB.stationTag('01 · 选土', g, 0.02, 0.92, 0.82, 0, 0.52).userData.station = 'soil';
+      WB.pickables = WB.pickables || {};
+      WB.pickables.soil = g;
+      g.userData.station = 'soil';
     })();
 
     /* ---------------- 匣钵垛 ---------------- */
@@ -1957,13 +2111,15 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
       const tarp = G.box(1.4, 0.04, 1.5, toon(0x6b7a75), 0.1, 0.86, -0.14, g, { os: 0.0013, rx: -0.05 });
     })();
 
-    /* ---------------- 釉缸 ---------------- */
+    /* ---------------- 釉缸与施釉台 ---------------- */
     (function glazeVats() {
+      const station = new THREE.Group();
+      root.add(station);
       const spots = [[-3.7, 4.5, 0.42], [-4.55, 4.7, 0.34], [-3.15, 5.0, 0.3]];
       spots.forEach((s, i) => {
         const g = new THREE.Group();
         g.position.set(s[0], 0, s[1]);
-        root.add(g);
+        station.add(g);
         const r = s[2];
         lathe([[r * 0.55, 0], [r * 0.9, 0.05], [r, 0.2], [r * 0.98, 0.36], [r * 0.86, 0.44],
           [r * 0.8, 0.46], [r * 0.72, 0.44], [r * 0.7, 0.3]],
@@ -1971,7 +2127,49 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
         const gl = new THREE.Mesh(new THREE.CircleGeometry(r * 0.72, 18),
           std(i % 2 ? 0x7d9184 : 0x9aa294, 0.05, 0.6, { env: 2.0 }));
         gl.rotation.x = -Math.PI / 2; gl.position.y = r * 0.78; g.add(gl);
+        // 缸沿上的釉勺
+        const lad = new THREE.Group();
+        lad.position.set(r * 0.35, r * 0.82, r * 0.12); lad.rotation.set(0.2, 0.5, 0.7);
+        g.add(lad);
+        G.cyl(0.01, 0.01, 0.38, 5, toon(0x9c8258), 0, 0.16, 0, lad, { line: false });
+        G.sph(0.04, toon(0x8d7a5c), 0, -0.04, 0, lad, { sy: 0.55, os: 0.0008, seg: 10 });
       });
+      // 施釉台：木案、釉盘、试片、擦釉布
+      const table = new THREE.Group();
+      table.position.set(-4.02, 0, 3.88);
+      station.add(table);
+      G.box(1.08, 0.075, 0.56, woodMat(), 0, 0.84, 0, table, { os: 0.0014 });
+      G.box(1.12, 0.045, 0.60, darkWood(), 0, 0.79, 0, table, { os: 0.0012 });
+      [[-0.46, -0.21], [0.46, -0.21], [-0.46, 0.21], [0.46, 0.21]].forEach(p => {
+        G.box(0.075, 0.78, 0.075, darkWood(), p[0], 0.39, p[1], table, { os: 0.0012 });
+      });
+      const tray = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.2, 0.05, 20), toon(0x6b6f63));
+      tray.position.set(-0.18, 0.90, 0.02); table.add(tray); WB.outline(tray, 0.0011);
+      const glazePool = new THREE.Mesh(new THREE.CircleGeometry(0.19, 20),
+        std(0xa8b8a3, 0.05, 0.5, { env: 2.2 }));
+      glazePool.rotation.x = -Math.PI / 2; glazePool.position.set(-0.18, 0.928, 0.02); table.add(glazePool);
+      // 试片一排
+      for (let i = 0; i < 4; i++) {
+        const t = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.014),
+          std(i % 2 ? 0xdcd2bd : 0x8fa898, 0.12, 0.12, { env: 1.3 }));
+        t.position.set(0.20 + i * 0.10, 0.94, 0.18);
+        t.rotation.set(-0.2, 0.1 * i, 0.04 * i);
+        table.add(t); WB.outline(t, 0.0008);
+      }
+      // 晾釉架：两件已施薄釉的小罐
+      const rack = new THREE.Group();
+      rack.position.set(-2.82, 0, 4.12); rack.rotation.y = -0.5;
+      station.add(rack);
+      G.box(0.72, 0.055, 0.30, woodMat(), 0, 0.72, 0, rack, { os: 0.0012 });
+      [[-0.31, 0], [0.31, 0]].forEach(p => G.box(0.06, 0.72, 0.06, darkWood(), p[0], 0.36, 0, rack, { os: 0.0011 }));
+      for (let i = 0; i < 2; i++) {
+        lathe([[0.02, 0], [0.085, 0.005], [0.11, 0.04], [0.105, 0.14], [0.08, 0.18], [0.07, 0.18]],
+          std(i ? 0xc9d2c4 : 0xd8cdb8, 0.08, 0.08, { env: 1.7 }), rack, -0.18 + i * 0.36, 0.75, 0, 18);
+      }
+      WB.stationTag('07 · 施釉方案', station, -4.02, 1.22, 4.18, 0, 0.34).userData.station = 'glaze';
+      WB.pickables = WB.pickables || {};
+      WB.pickables.glaze = station;
+      station.userData.station = 'glaze';
     })();
 
     /* ---------------- 石磨 ---------------- */
@@ -2476,6 +2674,8 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
       WB.gift = api;
       WB.pickables = WB.pickables || {};
       WB.pickables.gift = gift;
+      WB.pickables.finish = gift;
+      WB.stationTag('09 · 出窑成瓷', gift, 1.02, 1.32, -0.34, 0.20, 1.20).userData.station = 'gift';
 
       function easeOutCubic(k) { return 1 - Math.pow(1 - k, 3); }
       function smooth01(a, b, v) {
@@ -2522,6 +2722,458 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
 </script>
 <script>
 /* ============================================================
+   product.js — 堂前 3D 成品台：台上始终摆着当前这件坯/器
+   九关里的土色、纹样、器型、修胎、干湿、釉、火候都会即时反映。
+   ============================================================ */
+WB.initProduct = function () {
+  const WB = window.WB, G = WB.G, R = WB.R, toon = WB.toon, std = WB.std;
+  const P = (WB.P = WB.P || {});
+
+  const PED = new THREE.Vector3(-2.60, 0, 2.15);
+  const TURNTABLE_Y = 1.00;
+
+  const SOIL = {
+    gang:   { name: '太行矸石系', cols: ['#2d2926', '#a48a6a', '#e7dcc4'] },
+    kaolin: { name: '本地高岭土', cols: ['#33302c', '#d9ceb8', '#b9a27c'] },
+    mix:    { name: '高岭+皂土', cols: ['#2a2a2a', '#e8dcc8', '#a8764a'] },
+  };
+  const TWIST = {
+    feather: { name: '鸟羽纹', pattern: 'feather' },
+    weave:   { name: '编织纹', pattern: 'weave' },
+    marble:  { name: '大理石绞', pattern: 'marble' },
+  };
+  const VESSEL = {
+    meiping: {
+      name: '梅瓶', scale: 1.45,
+      prof: [[0.001,0],[0.145,0],[0.155,0.018],[0.155,0.045],[0.125,0.055],[0.125,0.075],
+        [0.165,0.085],[0.180,0.120],[0.215,0.180],[0.235,0.250],[0.238,0.300],[0.225,0.350],
+        [0.195,0.390],[0.140,0.430],[0.090,0.460],[0.072,0.500],[0.077,0.530],[0.100,0.550],
+        [0.115,0.562],[0.112,0.572],[0.098,0.570],[0.084,0.556],[0.078,0.540]],
+      mouthR: 0.080, mouthY: 0.552,
+    },
+    jar: {
+      name: '罐', scale: 1.55,
+      prof: [[0.001,0],[0.140,0],[0.150,0.020],[0.150,0.050],[0.120,0.060],[0.120,0.080],
+        [0.160,0.090],[0.190,0.140],[0.210,0.220],[0.205,0.300],[0.180,0.360],[0.130,0.400],
+        [0.095,0.430],[0.090,0.460],[0.100,0.490],[0.115,0.505],[0.110,0.515],[0.095,0.505],
+        [0.085,0.490]],
+      mouthR: 0.078, mouthY: 0.500,
+    },
+    bowl: {
+      name: '碗', scale: 2.25,
+      prof: [[0.001,0],[0.070,0],[0.080,0.015],[0.075,0.040],[0.100,0.050],[0.150,0.080],
+        [0.190,0.130],[0.210,0.180],[0.215,0.200],[0.205,0.202],[0.180,0.180],[0.130,0.130],
+        [0.070,0.080],[0.030,0.060]],
+      mouthR: 0.195, mouthY: 0.188,
+    },
+  };
+  const GLAZE = {
+    'clear-thin': { name: '薄透明釉', rough: 0.12, env: 1.55, clear: 0.90, shell: 0.10 },
+    'clear-full': { name: '全器透明釉', rough: 0.06, env: 1.90, clear: 1.00, shell: 0.18 },
+    'none':       { name: '无釉素胎', rough: 0.68, env: 0.30, clear: 0.05, shell: 0.00 },
+  };
+  const FIRE = {
+    high: { name: '经典高温', tint: 0xf3e2c9, rough: 0.12 },
+    hold: { name: '中温保温', tint: 0xf7ecdb, rough: 0.15 },
+    slow: { name: '缓冷优先', tint: 0xeee6d8, rough: 0.18 },
+  };
+
+  function paletteFor(sel, step) {
+    const base = (SOIL[sel.soil] || SOIL.mix).cols.slice();
+    let cols;
+    if (sel.refine === 'duo') cols = [base[0], base[1]];
+    else if (sel.refine === 'ochre') cols = [base[2], base[1], base[0]];
+    else cols = [base[0], base[1], base[2]];
+    if (step < 2) cols = [base[0], base[1]]; // 还没绞花，只是两色泥
+    return cols;
+  }
+
+  // 程序化绞胎纹：不用第三方贴图，九关里改色/改纹只重绘这一张小画布。
+  function clayTexture(colors, pattern, seed) {
+    const S = 256, c = WB.C(S, S), x = c.getContext('2d');
+    const pal = colors.map(h => new THREE.Color(h));
+    const img = x.createImageData(S, S);
+    const sd = (seed || 1) * 0.37;
+    for (let py = 0; py < S; py++) {
+      for (let px = 0; px < S; px++) {
+        const nx = px / S, ny = py / S;
+        let f;
+        if (pattern === 'feather') {
+          f = Math.sin(nx * Math.PI * 12 + Math.sin(ny * Math.PI * 5 + sd) * 2.0) * 1.15
+            + Math.sin(ny * Math.PI * 15 + nx * 3.0 + sd) * 0.55;
+        } else if (pattern === 'weave') {
+          const gx = Math.floor(nx * 9), gy = Math.floor(ny * 13);
+          f = ((gx + gy) % 2 === 0 ? 1 : -1) * 0.75
+            + Math.sin(nx * 24 + sd) * 0.35 + Math.sin(ny * 31 - sd) * 0.25;
+        } else if (pattern === 'marble') {
+          f = Math.sin(nx * 8.5 + ny * 4.2 + sd)
+            + 0.55 * Math.sin(nx * 19 - ny * 13 + sd * 2.1)
+            + 0.28 * Math.sin(ny * 27 + nx * 9);
+        } else {
+          // 未绞之前：泥色缓慢相间
+          f = Math.sin(nx * 5 + ny * 3 + sd) + 0.45 * Math.sin(ny * 9 - nx * 4);
+        }
+        const t = (Math.sin(f * 1.35) + 1) * 0.5;
+        const idx = Math.min(pal.length - 1, Math.max(0, Math.floor(t * pal.length)));
+        const col = pal[idx];
+        const grain = (Math.random() - 0.5) * 12;
+        const o = (py * S + px) * 4;
+        img.data[o] = Math.max(0, Math.min(255, col.r * 255 + grain));
+        img.data[o + 1] = Math.max(0, Math.min(255, col.g * 255 + grain));
+        img.data[o + 2] = Math.max(0, Math.min(255, col.b * 255 + grain));
+        img.data[o + 3] = 255;
+      }
+    }
+    x.putImageData(img, 0, 0);
+    // 少量泥料颗粒与细筋
+    for (let i = 0; i < 240; i++) {
+      x.fillStyle = 'rgba(20,16,12,' + R(0.02, 0.09) + ')';
+      x.fillRect(R(0, S), R(0, S), R(0.5, 1.8), R(0.5, 1.3));
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(1.55, 1.35);
+    t.anisotropy = 8;
+    if (THREE.sRGBEncoding !== undefined) t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+
+  function plaqueTex(title, sub) {
+    const c = WB.C(512, 128), x = c.getContext('2d');
+    x.fillStyle = '#e7dcc4'; x.fillRect(0, 0, 512, 128);
+    x.strokeStyle = 'rgba(92,66,42,0.7)'; x.lineWidth = 5; x.strokeRect(8, 8, 496, 112);
+    x.strokeStyle = 'rgba(160,52,40,0.5)'; x.lineWidth = 2; x.strokeRect(18, 18, 476, 92);
+    x.fillStyle = '#2d231a'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = '600 46px "KaiTi","STKaiti","SimSun",serif';
+    x.fillText(title, 256, 52);
+    x.fillStyle = '#7a6647'; x.font = '500 24px "KaiTi","STKaiti","SimSun",serif';
+    x.fillText(sub, 256, 94);
+    const t = new THREE.CanvasTexture(c);
+    if (THREE.sRGBEncoding !== undefined) t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+
+  function radiusAt(prof, y) {
+    let r = prof[0][0];
+    for (let i = 0; i < prof.length - 1; i++) {
+      if (y >= prof[i][1] && y <= prof[i + 1][1]) {
+        const k = (y - prof[i][1]) / Math.max(0.0001, prof[i + 1][1] - prof[i][1]);
+        r = prof[i][0] + (prof[i + 1][0] - prof[i][0]) * k;
+        break;
+      }
+      if (y > prof[i + 1][1]) r = prof[i + 1][0];
+    }
+    return r;
+  }
+
+  const bodyMat = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff, map: null, roughness: 0.86, metalness: 0.02,
+    envMapIntensity: 0.20, clearcoat: 0, clearcoatRoughness: 0.65,
+    side: THREE.DoubleSide,
+  });
+  const shellMat = new THREE.MeshPhysicalMaterial({
+    color: 0xfff6e7, transparent: true, opacity: 0, roughness: 0.03, metalness: 0.0,
+    envMapIntensity: 2.2, clearcoat: 1, clearcoatRoughness: 0.03,
+    depthWrite: false, side: THREE.DoubleSide,
+  });
+  const trimMat = new THREE.MeshPhysicalMaterial({
+    color: 0xe8ddc6, roughness: 0.52, metalness: 0.02, envMapIntensity: 0.55,
+  });
+  const mouthMat = std(0x241d17, 0.32, 0.15, { env: 0.55 });
+
+  const state = {
+    step: 0,
+    sel: { soil: 'mix', refine: 'trio', twist: 'feather', vessel: 'meiping', form: 'hybrid', dry: 'slow', glaze: 'clear-thin', fire: 'hold' },
+    dryProgress: 0, fireProgress: 0, finishOpened: false,
+  };
+
+  /* ---------------- 台座 ---------------- */
+  const group = new THREE.Group();
+  group.position.copy(PED);
+  group.userData.pickName = 'product';
+  WB.root.add(group);
+  P.productStand = group;
+
+  const woodMap = WB.tex.wood('#6a4830').clone(); woodMap.needsUpdate = true; woodMap.repeat.set(1.4, 1.0);
+  const wood = toon(0xffffff, { map: woodMap, unique: true });
+  const darkMap = WB.tex.wood('#432b1e').clone(); darkMap.needsUpdate = true; darkMap.repeat.set(1.2, 1.2);
+  const dark = toon(0xffffff, { map: darkMap, unique: true });
+  const stoneMap = WB.tex.stone().clone(); stoneMap.needsUpdate = true; stoneMap.repeat.set(0.75, 0.55);
+  const stone = std(0xe0ded2, 0.5, 0.04, { map: stoneMap, env: 0.35 });
+  const brass = std(0xb08a4f, 0.28, 0.72, { env: 1.3 });
+
+  // 石质台基 + 木足 + 厚台面 + 转盘：有体积、有厚度
+  G.box(1.46, 0.16, 1.04, stone, 0, 0.08, 0, group, { os: 0.0017 });
+  [[-0.54, -0.34], [0.54, -0.34], [-0.54, 0.34], [0.54, 0.34]].forEach(p => {
+    G.box(0.13, 0.66, 0.13, dark, p[0], 0.40, p[1], group, { os: 0.0014 });
+  });
+  G.box(1.18, 0.09, 0.08, dark, 0, 0.20, -0.38, group, { os: 0.0011 });
+  G.box(1.18, 0.09, 0.08, dark, 0, 0.20, 0.38, group, { os: 0.0011 });
+  G.box(1.30, 0.11, 0.90, wood, 0, 0.78, 0, group, { os: 0.0018 });
+  G.box(1.36, 0.045, 0.96, dark, 0, 0.725, 0, group, { os: 0.0014 });
+  G.box(1.08, 0.035, 0.70, stone, 0, 0.845, 0, group, { os: 0.0012 });
+  // 转盘与铜圈
+  G.cyl(0.35, 0.35, 0.045, 30, brass, 0, 0.875, 0, group, { os: 0.0012 });
+  G.cyl(0.33, 0.33, 0.035, 30, toon(0x6d6254), 0, 0.905, 0, group, { os: 0.0011 });
+  [0.10, 0.34].forEach(y => {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.008, 5, 30), brass);
+    ring.rotation.x = Math.PI / 2; ring.position.y = y;
+    group.add(ring);
+  });
+  // 台前小铭牌
+  const plaque = new THREE.Mesh(new THREE.PlaneGeometry(0.70, 0.175),
+    new THREE.MeshBasicMaterial({ map: plaqueTex('成品台', '实时观测 · 九关当前器') }));
+  plaque.position.set(0, 0.48, 0.535); group.add(plaque);
+  // 台面暖光
+  const pl = new THREE.PointLight(0xffc98e, 0.75, 3.4, 2);
+  pl.position.set(0, 1.85, 0.35); group.add(pl);
+  P.productLight = pl;
+
+  // 接地投影
+  const shC = WB.C(128, 128), shX = shC.getContext('2d');
+  const shG = shX.createRadialGradient(64, 64, 0, 64, 64, 64);
+  shG.addColorStop(0, 'rgba(0,0,0,0.55)'); shG.addColorStop(1, 'rgba(0,0,0,0)');
+  shX.fillStyle = shG; shX.fillRect(0, 0, 128, 128);
+  const shT = new THREE.CanvasTexture(shC);
+  const contact = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.12),
+    new THREE.MeshBasicMaterial({ map: shT, transparent: true, opacity: 0.6, depthWrite: false }));
+  contact.rotation.x = -Math.PI / 2; contact.position.y = 0.012; group.add(contact);
+
+  /* ---------------- 坯/器 ---------------- */
+  const vesselGroup = new THREE.Group();
+  vesselGroup.position.set(0, TURNTABLE_Y, 0);
+  group.add(vesselGroup);
+  const details = new THREE.Group();
+  vesselGroup.add(details);
+
+  let bodyGeo = null, bodyMesh = null, shellMesh = null, mouthMesh = null, trimFoot = null;
+  let texKey = '', texCache = new Map();
+
+  function clearDetails() {
+    while (details.children.length) {
+      const c = details.children.pop();
+      if (c.geometry) c.geometry.dispose();
+      details.remove(c);
+    }
+  }
+
+  function rebuildVessel() {
+    const vs = VESSEL[state.sel.vessel] || VESSEL.meiping;
+    const prof = vs.prof;
+    if (bodyMesh) { vesselGroup.remove(bodyMesh); bodyMesh = null; }
+    if (shellMesh) { vesselGroup.remove(shellMesh); shellMesh = null; }
+    if (bodyGeo) { bodyGeo.dispose(); bodyGeo = null; }
+    clearDetails();
+    vesselGroup.scale.setScalar(vs.scale);
+
+    bodyGeo = new THREE.LatheGeometry(prof.map(p => new THREE.Vector2(Math.max(0.001, p[0]), p[1])), 48);
+    bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+    bodyMesh.castShadow = true; bodyMesh.receiveShadow = true;
+    vesselGroup.add(bodyMesh);
+    WB.outline(bodyMesh, 0.0012);
+
+    shellMesh = new THREE.Mesh(bodyGeo, shellMat);
+    shellMesh.scale.setScalar(1.012);
+    shellMesh.renderOrder = 3;
+    vesselGroup.add(shellMesh);
+
+    // 口沿暗部
+    if (mouthMesh) { details.remove(mouthMesh); mouthMesh.geometry.dispose(); mouthMesh = null; }
+    mouthMesh = new THREE.Mesh(new THREE.CircleGeometry(vs.mouthR * 0.98, 22), mouthMat);
+    mouthMesh.rotation.x = -Math.PI / 2;
+    mouthMesh.position.y = vs.mouthY;
+    details.add(mouthMesh);
+
+    // 圈足押边
+    const footR = Math.max(0.07, prof[1][0] * 0.92);
+    trimFoot = new THREE.Mesh(new THREE.TorusGeometry(footR, 0.008, 5, 26), trimMat);
+    trimFoot.rotation.x = Math.PI / 2; trimFoot.position.y = 0.02;
+    details.add(trimFoot);
+
+    // 成型修胎的细节：拉坯旋纹 / 泥片接缝 / 绞片修坯
+    const form = state.sel.form;
+    const hMax = prof[prof.length - 1][1];
+    if (form === 'wheel') {
+      for (let i = 1; i <= 5; i++) {
+        const y = hMax * (0.12 + i * 0.12);
+        const r = radiusAt(prof, y);
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(r + 0.002, 0.0028, 4, 26), trimMat);
+        ring.rotation.x = Math.PI / 2; ring.position.y = y; details.add(ring);
+      }
+    } else if (form === 'slab') {
+      [0.30, 0.52, 0.74].forEach((k, i) => {
+        const y = hMax * k;
+        const r = radiusAt(prof, y);
+        const band = new THREE.Mesh(new THREE.TorusGeometry(r + 0.003, 0.004, 4, 24, Math.PI * (0.7 + i * 0.08)), trimMat);
+        band.rotation.x = Math.PI / 2;
+        band.rotation.z = i * 1.6;
+        band.position.y = y;
+        details.add(band);
+      });
+      // 贴片压痕
+      for (let i = 0; i < 3; i++) {
+        const y = hMax * (0.26 + i * 0.18);
+        const r = radiusAt(prof, y);
+        const patch = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.045, 0.008), trimMat);
+        patch.position.set(Math.cos(i * 2.1) * r, y, Math.sin(i * 2.1) * r);
+        patch.rotation.y = -i * 2.1;
+        details.add(patch);
+      }
+    } else {
+      // hybrid：旋纹 + 一道修胎刀口
+      [0.24, 0.46, 0.68].forEach(k => {
+        const y = hMax * k, r = radiusAt(prof, y);
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(r + 0.002, 0.0032, 4, 26), trimMat);
+        ring.rotation.x = Math.PI / 2; ring.position.y = y; details.add(ring);
+      });
+      const knife = new THREE.Mesh(new THREE.TorusGeometry(radiusAt(prof, hMax * 0.58) + 0.004, 0.0025, 4, 28, Math.PI * 0.55), trimMat);
+      knife.rotation.x = Math.PI / 2; knife.rotation.z = 0.8; knife.position.y = hMax * 0.58;
+      details.add(knife);
+    }
+  }
+
+  function makeTexture() {
+    const cols = paletteFor(state.sel, state.step);
+    let pattern = (TWIST[state.sel.twist] || TWIST.feather).pattern;
+    if (state.step < 2) pattern = 'mix';
+    const key = cols.join(',') + '|' + pattern + '|' + state.sel.twist;
+    if (texCache.has(key)) return texCache.get(key);
+    const t = clayTexture(cols, pattern, state.sel.twist.length * 7 + cols.length);
+    texCache.set(key, t);
+    if (texCache.size > 12) {
+      const first = texCache.keys().next().value;
+      const old = texCache.get(first); texCache.delete(first);
+      if (old && old !== bodyMat.map) old.dispose();
+    }
+    return t;
+  }
+
+  function applyLook() {
+    const step = state.step;
+    const dry = Math.max(0, Math.min(1, state.dryProgress || 0));
+    const fire = Math.max(0, Math.min(1, state.fireProgress || 0));
+    const gl = GLAZE[state.sel.glaze] || GLAZE['clear-thin'];
+    let rough = 0.87, env = 0.20, clear = 0, ccr = 0.65;
+    let shell = 0, tint = new THREE.Color(0xffffff), em = 0x000000, ei = 0;
+
+    if (step <= 4) {
+      rough = 0.84; env = 0.18; tint.setHex(0xffffff);
+    } else if (step === 5) {
+      // 荫干：从微湿到干透，表面由暗转浅、由滑转涩
+      rough = 0.78 + 0.16 * dry;
+      env = 0.24 - 0.10 * dry;
+      const v = 0.93 + 0.07 * dry;
+      tint.setRGB(v, v, v);
+    } else if (step === 6) {
+      rough = gl.rough; env = gl.env; clear = gl.clear; ccr = 0.05;
+      shell = gl.shell; tint.setHex(0xffffff);
+    } else if (step === 7) {
+      // 焙烧：釉面收紧，火里带一点暖
+      const fc = FIRE[state.sel.fire] || FIRE.hold;
+      rough = Math.min(gl.rough + 0.07, 0.5) * (1 - fire * 0.25) + fc.rough * fire * 0.5;
+      env = gl.env * (1 - 0.15 * fire);
+      clear = gl.clear; shell = gl.shell * (1 - 0.35 * fire);
+      tint.setHex(fc.tint);
+      if (state.sel.glaze === 'none') { rough = 0.58; env = 0.35; clear = 0.08; shell = 0; }
+      em = 0xff4a14; ei = 0.24 * fire;
+    } else {
+      // 出窑成瓷：选薄釉/全器釉时是透花瓷的最终釉光；素胎则保持无釉的哑光
+      if (state.sel.glaze === 'none') {
+        rough = 0.62; env = 0.35; clear = 0.05; ccr = 0.3; shell = 0;
+        tint.setHex(0xf2e9d9);
+      } else {
+        rough = 0.075; env = 2.15; clear = 1; ccr = 0.03; shell = 0.13;
+        tint.setHex(0xfff8ec);
+      }
+    }
+
+    bodyMat.roughness = rough;
+    bodyMat.envMapIntensity = env;
+    bodyMat.clearcoat = clear;
+    bodyMat.clearcoatRoughness = ccr;
+    // 素坯/荫干阶段压低直接高光，施釉后才把釉面的亮泽放出来
+    bodyMat.specularIntensity = step >= 6 ? 1.0 : 0.16;
+    bodyMat.color.copy(tint);
+    bodyMat.emissive.setHex(em);
+    bodyMat.emissiveIntensity = ei;
+
+    shellMat.opacity = shell;
+    shellMat.envMapIntensity = step >= 6 ? 2.2 : 1.2;
+    shellMat.roughness = step >= 8 ? 0.025 : 0.05;
+    shellMesh.visible = shell > 0.005;
+
+    trimMat.roughness = step >= 8 ? 0.12 : (step >= 6 ? 0.22 : 0.55);
+    trimMat.envMapIntensity = step >= 6 ? 1.1 : 0.55;
+    trimMat.color.setHex(step >= 6 ? 0xeee2ca : 0xe8ddc6);
+    mouthMat.color.setHex(step >= 8 ? 0x1c1510 : 0x241d17);
+  }
+
+  function setState(next) {
+    if (!next) return;
+    const oldVessel = state.sel.vessel, oldForm = state.sel.form;
+    if (next.sel) state.sel = Object.assign({}, state.sel, next.sel);
+    if (typeof next.step === 'number') state.step = Math.max(0, Math.min(8, next.step));
+    if (typeof next.dryProgress === 'number') state.dryProgress = Math.max(0, Math.min(1, next.dryProgress));
+    if (typeof next.fireProgress === 'number') state.fireProgress = Math.max(0, Math.min(1, next.fireProgress));
+    if (typeof next.finishOpened === 'boolean') state.finishOpened = next.finishOpened;
+
+    if (state.sel.vessel !== oldVessel || state.sel.form !== oldForm || !bodyMesh) {
+      rebuildVessel();
+      WB.productShadowDirty = true;
+    }
+
+    // 纹样/泥色变化时才重绘贴图
+    const cols = paletteFor(state.sel, state.step);
+    const pattern = state.step < 2 ? 'mix' : (TWIST[state.sel.twist] || TWIST.feather).pattern;
+    const key = cols.join(',') + '|' + pattern + '|' + state.sel.twist;
+    if (key !== texKey) {
+      texKey = key;
+      bodyMat.map = makeTexture();
+      bodyMat.needsUpdate = true;
+    }
+    applyLook();
+  }
+
+  function summary() {
+    const soil = (SOIL[state.sel.soil] || SOIL.mix).name;
+    const tw = (TWIST[state.sel.twist] || TWIST.feather).name;
+    const vs = (VESSEL[state.sel.vessel] || VESSEL.meiping).name;
+    const gl = (GLAZE[state.sel.glaze] || GLAZE['clear-thin']).name;
+    const fr = (FIRE[state.sel.fire] || FIRE.hold).name;
+    return soil + ' · ' + tw + ' · ' + vs + ' · ' + (state.step >= 7 ? fr : gl);
+  }
+
+  function stageName() {
+    return ['选土', '炼泥调色', '绞泥编花', '选定器型', '成型修胎', '荫干打磨', '施釉方案', '焙烧曲线', '出窑成瓷'][state.step] || '选土';
+  }
+
+  const api = {
+    group: group,
+    vesselGroup: vesselGroup,
+    state: state,
+    setState: setState,
+    summary: summary,
+    stageName: stageName,
+    update(dt) {
+      // 台上器缓慢自转，便于实时观察每一面
+      vesselGroup.rotation.y += dt * 0.24;
+      if (state.step === 7 && state.fireProgress > 0) {
+        const pulse = 0.18 + 0.10 * Math.sin(performance.now() * 0.006);
+        bodyMat.emissiveIntensity = state.fireProgress * pulse;
+      }
+    },
+  };
+  WB.liveProduct = api;
+  WB.pickables = WB.pickables || {};
+  WB.pickables.product = group;
+
+  rebuildVessel();
+  setState({ step: 0 });
+};
+
+</script>
+<script>
+/* ============================================================
    fx.js — 细雨 / 檐口滴水 / 涟漪 / 窑火 / 烟 / 布帘 / 灯笼
    ============================================================ */
 (function () {
@@ -2559,6 +3211,10 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
 
   WB.initFX = function (scene) {
     const H = WB.HOUSE;
+    // 场景开关默认值：灯亮、窑火燃、雨落、大门开；音乐另由交互层控制（默认关）
+    P.lightsOn = true;
+    P.fireOn = true;
+    P.rainOn = true;
 
     /* ================= 细雨（线段雨丝） ================= */
     (function rain() {
@@ -2716,10 +3372,11 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
   /* ================= 逐帧更新 ================= */
   WB.updateFX = function (dt, t) {
     // 雨
-    if (P.rain) P.rain.mat.uniforms.uTime.value = t;
+    const rainOn = P.rainOn !== false;
+    if (P.rain) { P.rain.mesh.visible = rainOn; if (rainOn) P.rain.mat.uniforms.uTime.value = t; }
 
     // 涟漪
-    if (P.ripples) {
+    if (P.ripples && rainOn) {
       P.ripples.forEach(p => {
         if (!p.active) return;
         p.t += dt;
@@ -2744,6 +3401,7 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
     // 檐口滴水
     if (P.drips) {
       P.drips.forEach(d => {
+        if (!rainOn) { d.mesh.visible = false; return; }
         d.t += dt;
         if (d.t > d.period + 0.55) d.t = 0;
         const fall = 0.55;
@@ -2761,26 +3419,36 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
       });
     }
 
-    // 窑火呼吸
+    // 窑火呼吸（开关关闭时冷窑）
+    const fireOn = P.fireOn !== false;
     if (P.fireLight) {
-      const f = 0.72 + 0.28 * Math.sin(t * 2.3) * Math.sin(t * 0.87 + 1.2) + 0.08 * Math.sin(t * 11.0);
-      P.fireLight.intensity = 1.9 * Math.max(0.55, f);
-      if (P.fireGlow) {
-        P.fireGlow.material.opacity = 0.28 + 0.1 * f;
-        P.fireGlow.scale.setScalar(1.75 + 0.18 * f);
-      }
-      if (P.fireHole) {
-        const c = new THREE.Color().setHSL(0.045 + 0.012 * f, 0.95, 0.5 + 0.06 * f);
-        P.fireHole.material.color.copy(c);
-      }
-      if (P.fireCore) {
-        P.fireCore.scale.setScalar(1 + 0.12 * Math.sin(t * 7.3));
+      if (!fireOn) {
+        P.fireLight.intensity = 0;
+        if (P.fireGlow) P.fireGlow.material.opacity = 0;
+        if (P.fireHole) P.fireHole.material.color.setHex(0x140d09);
+        if (P.fireCore) { P.fireCore.visible = false; }
+      } else {
+        if (P.fireCore) P.fireCore.visible = true;
+        const f = 0.72 + 0.28 * Math.sin(t * 2.3) * Math.sin(t * 0.87 + 1.2) + 0.08 * Math.sin(t * 11.0);
+        P.fireLight.intensity = 1.9 * Math.max(0.55, f);
+        if (P.fireGlow) {
+          P.fireGlow.material.opacity = 0.28 + 0.1 * f;
+          P.fireGlow.scale.setScalar(1.75 + 0.18 * f);
+        }
+        if (P.fireHole) {
+          const c = new THREE.Color().setHSL(0.045 + 0.012 * f, 0.95, 0.5 + 0.06 * f);
+          P.fireHole.material.color.copy(c);
+        }
+        if (P.fireCore) {
+          P.fireCore.scale.setScalar(1 + 0.12 * Math.sin(t * 7.3));
+        }
       }
     }
 
     // 烟
     if (P.smoke) {
       P.smoke.list.forEach(s => {
+        if (!fireOn) { s.mesh.material.opacity = 0; return; }
         s.t += dt * 0.11;
         if (s.t > 1) s.t -= 1;
         const k = s.t;
@@ -2796,11 +3464,15 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
     }
 
     // 灯笼轻晃
+    const lightsOn = P.lightsOn !== false;
     if (P.lanterns) {
       P.lanterns.forEach(L => {
         L.g.rotation.z = Math.sin(t * 0.85 + L.phase) * 0.055 + Math.sin(t * 2.3 + L.phase) * 0.012;
         L.g.rotation.x = Math.cos(t * 0.7 + L.phase) * 0.03;
-        L.light.intensity = 0.95 + 0.12 * Math.sin(t * 3.1 + L.phase);
+        L.light.intensity = lightsOn ? 0.95 + 0.12 * Math.sin(t * 3.1 + L.phase) : 0;
+        if (L.body && L.body.material && L.body.material.emissiveIntensity !== undefined) {
+          L.body.material.emissiveIntensity = lightsOn ? 0.5 : 0.04;
+        }
       });
     }
 
@@ -2808,13 +3480,15 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
     if (P.bulbs) {
       P.bulbs.forEach(b => {
         const f = 0.93 + 0.05 * Math.sin(t * 2.1 + b.ph) + 0.02 * Math.sin(t * 7.7 + b.ph * 2);
-        b.light.intensity = b.base * f;
+        b.light.intensity = lightsOn ? b.base * f : 0;
       });
     }
     // 墙角灯泡
     if (P.bulbLight) {
-      P.bulbLight.intensity = 0.86 + 0.08 * Math.sin(t * 3.4) + 0.04 * Math.sin(t * 9.1);
+      P.bulbLight.intensity = lightsOn ? 0.86 + 0.08 * Math.sin(t * 3.4) + 0.04 * Math.sin(t * 9.1) : 0;
     }
+    if (P.bulb) P.bulb.material.color.setHex(lightsOn ? 0xffd6a0 : 0x3a2b1d);
+    if (P.signBox) P.signBox.material.color.setHex(lightsOn ? 0xffcf94 : 0x4a3826);
 
     // 远处村口灯
     if (P.villageLamp) {
@@ -2822,8 +3496,9 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
       const n = Math.sin(t * 1.3 + v.ph) * Math.sin(t * 0.41 + 2) + 0.3 * Math.sin(t * 5.5);
       const on = n > -0.55 ? 1 : 0.25;
       const k = (0.75 + 0.25 * n) * on;
-      v.light.intensity = 0.85 * Math.max(0.15, k);
-      v.lamp.material.color.setRGB(1, 0.72 * Math.max(0.4, k), 0.42 * Math.max(0.4, k));
+      v.light.intensity = lightsOn ? 0.85 * Math.max(0.15, k) : 0;
+      const vk = lightsOn ? k : 0.12;
+      v.lamp.material.color.setRGB(1, 0.72 * Math.max(0.4, vk), 0.42 * Math.max(0.4, vk));
     }
 
     // 布帘 / 坯布
@@ -2851,7 +3526,7 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
     // 地面反光呼吸
     if (P.groundGlows) {
       P.groundGlows.forEach((g, i) => {
-        g.mesh.material.opacity = g.base * (0.85 + 0.15 * Math.sin(t * (1.1 + i * 0.3) + g.ph));
+        g.mesh.material.opacity = lightsOn ? g.base * (0.85 + 0.15 * Math.sin(t * (1.1 + i * 0.3) + g.ph)) : 0;
       });
     }
   };
@@ -2982,7 +3657,7 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
   // 每帧：贴着模型侧边、始终面向镜头、大小跟构图走
   WB.updateLabel = function (dt, camera, target) {
     const L = WB.label;
-    if (!L) return;
+    if (!L || L.hidden) return;
     const dist = camera.position.distanceTo(target);
     const h = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * dist;
     const w = h * camera.aspect;
@@ -3098,6 +3773,7 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
   WB.initBuild();
   WB.initInterior();
   WB.initProps();
+  if (WB.initProduct) WB.initProduct(); // 3D 成品台
   WB.initFX(scene);
   WB.initLabel(scene);
 
@@ -3111,207 +3787,940 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
     a.loop = true;
     a.volume = 0;
     a.preload = 'auto';
-    const target = 0.42;
-    let faded = false;
-    function fadeIn() {
-      if (faded) return; faded = true;
-      const t0 = performance.now();
+    const BGM_TARGET = 0.42;
+    let bgmOn = false, bgmRamp = 0;
+    function bgmFade(to, ms) {
+      cancelAnimationFrame(bgmRamp);
+      const from = a.volume, t0 = performance.now();
       const step = () => {
-        const k = Math.min(1, (performance.now() - t0) / 2200);
-        a.volume = target * k;
-        if (k < 1) requestAnimationFrame(step);
+        const k = Math.min(1, (performance.now() - t0) / ms);
+        a.volume = from + (to - from) * k;
+        if (k < 1) bgmRamp = requestAnimationFrame(step);
       };
       step();
     }
-    function tryPlay() {
-      a.play().then(fadeIn).catch(() => { });
-    }
-    tryPlay();
-    ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(ev => {
-      window.addEventListener(ev, function once() {
-        tryPlay();
-        if (!a.paused) {
-          window.removeEventListener(ev, once);
-        }
-      }, { passive: true });
-    });
+    // 默认不强行起播：用户点「音乐」开关时，在点击手势里再 play。
+    WB.setMusic = function (on) {
+      if (on) {
+        a.play().then(() => {
+          bgmOn = true;
+          bgmFade(BGM_TARGET, 1600);
+          if (WB.onMusicChange) WB.onMusicChange(true);
+        }).catch(() => {
+          bgmOn = false;
+          if (WB.onMusicChange) WB.onMusicChange(false);
+        });
+      } else {
+        bgmOn = false;
+        bgmFade(0, 420);
+        setTimeout(() => { if (!bgmOn) a.pause(); }, 450);
+        if (WB.onMusicChange) WB.onMusicChange(false);
+      }
+      return bgmOn;
+    };
     WB.bgm = a;
   })();
 
+  /* ============================================================
+     九关游历 + 场景开关 + 3D 成品台交互
+     说明：这一层只做交互与 UI，不复制原九关网页表单；
+           每一关在场景里对应一个可点工位，卡片用 #ki 纸签样式。
+     ============================================================ */
+
   /* ---------------- 自由旋转 / 缩放 ---------------- */
   const target = new THREE.Vector3(0, 0.6, -0.3);
+  const targetT = target.clone();
   const cam = { theta: 0.70, phi: 1.05, r: 33.5 };
   const camT = { theta: 0.70, phi: 1.05, r: 33.5 };
-  // 调试用视角参数：?cam=theta,phi,r,tx,ty,tz
   const qp = new URLSearchParams(location.search);
   if (qp.has('cam')) {
-    const a = qp.get('cam').split(',').map(Number);
-    if (a.length >= 3) { cam.theta = camT.theta = a[0]; cam.phi = camT.phi = a[1]; cam.r = camT.r = a[2]; }
-    if (a.length >= 6) target.set(a[3], a[4], a[5]);
+    const a0 = qp.get('cam').split(',').map(Number);
+    if (a0.length >= 3) { cam.theta = camT.theta = a0[0]; cam.phi = camT.phi = a0[1]; cam.r = camT.r = a0[2]; }
+    if (a0.length >= 6) { target.set(a0[3], a0[4], a0[5]); targetT.copy(target); }
   }
   const LIM = { minPhi: 0.28, maxPhi: 1.44, minR: 11, maxR: 46 };
+  // HUD 有完整题名时收起场景里那张竖幅，避免左侧轨道与题词签互相叠字。
+  if (WB.label) WB.label.hidden = qp.get('ui') !== '0';
   let idle = 0, dragging = false, lastX = 0, lastY = 0, pinch = 0;
-  let downX = 0, downY = 0, moved = 0;
+  let downX = 0, downY = 0, moved = 0, camLockT = 0;
 
-  /* ---- 交互：多物体拾取 + 通用知识卡 ---- */
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const ki = document.getElementById('ki');
+  const P = WB.P || {};
 
-  // 卡片扩展样式（只改交互脚本，不动原 HTML 的 6MB 音频与 Three.js 库）
-  (function cardStyle() {
+  /* ---------------- HUD / 卡片样式 ---------------- */
+  (function hudStyle() {
     const s = document.createElement('style');
     s.textContent = `
-      #ki .gift-line {
-        display: block; margin: 4px 0 2px; padding-left: 11px;
-        border-left: 3px solid #a8322a; color: #7a231c;
-        font-size: 17px; font-weight: 600; letter-spacing: 2px;
-        line-height: 1.8; text-indent: 0;
+      :root { --ink:#2b2118; --paper:#efe7d2; --paper2:#e1d6bd; --red:#a8322a; --gold:#c9a96a; --green:#3d5a48; }
+      #hud, #hud button, #ki button { font-family: "KaiTi","楷体","STKaiti","SimSun",serif; }
+      #hud { position:fixed; inset:0; z-index:8; pointer-events:none; color:#f0e6d2; }
+      #hud button { cursor:pointer; touch-action: manipulation; }
+      #hud .brand {
+        position:absolute; left:18px; top:16px; padding:10px 15px 9px;
+        background:linear-gradient(135deg, rgba(20,25,31,.84), rgba(43,50,56,.63));
+        border:1px solid rgba(210,188,147,.32); border-left:3px solid var(--red);
+        box-shadow:0 8px 26px rgba(0,0,0,.32); cursor:pointer; pointer-events:auto;
+        backdrop-filter: blur(3px);
       }
-      #ki .gift-again {
-        color: #8e2f25; text-decoration: none; font-weight: 600;
-        border-bottom: 1px dotted #a8322a; cursor: pointer; pointer-events: auto;
+      #hud .brand .t { font-size:17px; letter-spacing:3px; color:#f2e6ce; white-space:nowrap; }
+      #hud .brand .p { margin-top:3px; font-size:11.5px; letter-spacing:2px; color:#baa887; }
+      #hud .brand .p b { color:#e7c580; font-size:14px; padding:0 1px; }
+      #rail {
+        position:absolute; left:18px; top:92px; width:150px; max-height:calc(100vh - 230px);
+        display:flex; flex-direction:column; gap:5px; overflow:auto; pointer-events:auto;
+        scrollbar-width:none;
       }
-      #ki .gift-again:hover { color: #b23a2c; }
+      #rail::-webkit-scrollbar { display:none; }
+      .rail-btn {
+        display:flex; align-items:center; gap:7px; width:100%; height:31px; padding:0 8px;
+        border:1px solid rgba(210,188,147,.20); border-radius:3px;
+        background:rgba(17,22,27,.68); color:#bdb19b; text-align:left;
+        transition:background .2s, border-color .2s, color .2s;
+      }
+      .rail-btn i { font-style:normal; font-size:10.5px; letter-spacing:1px; color:#8f846e; min-width:17px; }
+      .rail-btn span { font-size:12.5px; letter-spacing:1.5px; }
+      .rail-btn em { margin-left:auto; font-style:normal; font-size:12px; color:#9bd080; opacity:0; }
+      .rail-btn:hover { background:rgba(54,62,66,.78); border-color:rgba(230,205,158,.45); color:#f1e5cf; }
+      .rail-btn.current { background:linear-gradient(90deg, rgba(120,82,40,.72), rgba(66,57,42,.62)); border-color:rgba(230,199,137,.7); color:#f7e9ce; }
+      .rail-btn.current i { color:#f1ce8c; }
+      .rail-btn.done em { opacity:1; }
+      .rail-btn.done i { color:#9bd080; }
+      .rail-btn.locked { opacity:.48; cursor:not-allowed; }
+      #viewbar {
+        position:absolute; left:18px; bottom:18px; display:flex; gap:7px; pointer-events:auto;
+      }
+      #viewbar button {
+        height:38px; padding:0 13px; border-radius:3px; border:1px solid rgba(210,188,147,.32);
+        background:rgba(18,23,28,.76); color:#dfd2b9; font-size:13px; letter-spacing:2px;
+        transition:background .2s, border-color .2s;
+      }
+      #viewbar button:hover { background:rgba(58,63,62,.86); border-color:rgba(230,205,158,.62); color:#fff5df; }
+      #viewbar button.primary { border-color:rgba(200,150,74,.72); background:linear-gradient(180deg, rgba(124,79,37,.88), rgba(80,56,35,.88)); color:#f8ead0; }
+      #switches {
+        position:absolute; right:18px; bottom:18px; width:238px; padding:8px;
+        display:grid; grid-template-columns:1fr 1fr; gap:6px;
+        background:rgba(15,20,25,.64); border:1px solid rgba(210,188,147,.20);
+        box-shadow:0 8px 28px rgba(0,0,0,.28); pointer-events:auto; backdrop-filter:blur(3px);
+      }
+      .sw {
+        display:flex; align-items:center; gap:6px; height:37px; padding:0 8px;
+        border:1px solid rgba(210,188,147,.18); border-radius:3px;
+        background:rgba(25,31,37,.82); color:#cfc3ad; font-size:12.5px; letter-spacing:1px;
+      }
+      .sw .dot { width:8px; height:8px; border-radius:50%; background:#5c5f5a; box-shadow:0 0 0 2px rgba(0,0,0,.18) inset; flex:0 0 auto; }
+      .sw .nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .sw .st { margin-left:auto; font-size:11px; color:#8e8779; letter-spacing:0; }
+      .sw[data-on="true"] { border-color:rgba(150,198,120,.45); color:#edf3df; background:rgba(40,56,42,.76); }
+      .sw[data-on="true"] .dot { background:#9bd080; box-shadow:0 0 7px rgba(155,208,128,.8); }
+      .sw[data-on="true"] .st { color:#b9dda3; }
+      #toast {
+        position:absolute; left:50%; bottom:24px; transform:translate(-50%, 12px);
+        padding:9px 18px; background:rgba(19,24,29,.88); border:1px solid rgba(210,188,147,.35);
+        color:#f1e4c9; font-size:13px; letter-spacing:2px; opacity:0; pointer-events:none;
+        transition:opacity .25s ease, transform .25s ease; white-space:nowrap; z-index:12;
+      }
+      #toast.show { opacity:1; transform:translate(-50%, 0); }
+
+      /* #ki 纸签：沿用原卡结构，补九关选项与走条 */
+      #ki { box-sizing:border-box; max-height:calc(100vh - 112px); overflow-y:auto; scrollbar-width:thin; }
+      #ki * { box-sizing:border-box; }
+      #ki::-webkit-scrollbar { width:6px; }
+      #ki::-webkit-scrollbar-thumb { background:rgba(122,96,62,.35); border-radius:3px; }
+      #ki .close {
+        position:absolute; right:13px; top:10px; width:26px; height:26px; padding:0;
+        border:1px solid rgba(122,96,62,.32); border-radius:50%; background:rgba(255,255,255,.22);
+        color:#7a6647; font-size:17px; line-height:22px; z-index:2;
+      }
+      #ki .close:hover { background:rgba(168,50,42,.12); color:#a8322a; }
+      #ki h3 { padding-right:28px; }
+      #ki .voice {
+        margin:10px 0 9px; padding:4px 0 4px 11px; border-left:3px solid #a8322a;
+        color:#7a231c; font-size:18px; line-height:1.75; font-weight:600; letter-spacing:1.5px;
+        text-indent:0;
+      }
+      #ki .fact {
+        margin:0 0 10px; padding:8px 10px; background:rgba(255,255,255,.24);
+        color:#5b4a35; font-size:13px; line-height:1.8; text-indent:0;
+      }
+      #ki .subline {
+        margin:10px 0 8px; padding:7px 0; border-top:1px dotted rgba(122,96,62,.42);
+        border-bottom:1px dotted rgba(122,96,62,.42); text-align:center;
+        color:#8e2f25; font-size:14px; letter-spacing:3px;
+      }
+      #ki .opts { display:grid; gap:6px; margin:12px 0 4px; }
+      #ki .opt {
+        display:flex; align-items:center; gap:8px; width:100%; padding:9px 11px;
+        border:1px solid rgba(122,96,62,.28); border-radius:3px; background:rgba(255,255,255,.22);
+        color:#3a3027; font-size:14.5px; letter-spacing:1.5px; text-align:left;
+      }
+      #ki .opt::before { content:''; width:7px; height:7px; border:1px solid #8b7554; border-radius:50%; flex:0 0 auto; }
+      #ki .opt:hover { border-color:rgba(61,90,72,.55); background:rgba(255,255,255,.42); }
+      #ki .opt.active { border-color:rgba(61,90,72,.65); background:#eef4ef; box-shadow:0 0 0 1px rgba(61,90,72,.12) inset; }
+      #ki .opt.active::before { background:#3d5a48; border-color:#3d5a48; }
+      #ki .opt:disabled { opacity:.46; pointer-events:none; }
+      #ki .actions { display:flex; gap:7px; align-items:stretch; margin-top:11px; }
+      #ki .confirm {
+        flex:1; min-height:41px; padding:8px 12px; border:none; border-radius:4px;
+        background:linear-gradient(180deg,#587862,#3d5a48 58%,#334b3c); color:#f7efdd;
+        font-size:14.5px; letter-spacing:4px; box-shadow:0 4px 12px rgba(34,50,40,.25);
+      }
+      #ki .confirm:hover { filter:brightness(1.08); }
+      #ki .confirm:disabled { opacity:.48; cursor:not-allowed; filter:none; }
+      #ki .speed, #ki .ghost {
+        min-height:41px; padding:8px 11px; border-radius:4px;
+        border:1px solid rgba(122,96,62,.36); background:rgba(255,255,255,.22);
+        color:#6d583c; font-size:12.5px; letter-spacing:1px;
+      }
+      #ki .speed:disabled { opacity:.42; cursor:not-allowed; }
+      #ki .gauge {
+        margin-top:11px; height:10px; border:1px solid rgba(122,96,62,.28); border-radius:6px;
+        background:rgba(90,72,48,.16); overflow:hidden;
+      }
+      #ki .gauge i { display:block; width:0; height:100%; background:linear-gradient(90deg,#c4a484,#6f8d77 65%,#3d5a48); transition:width .1s linear; }
+      #ki .gauge.fire i { background:linear-gradient(90deg,#c47a4a,#e07a3a 58%,#f0c36a); }
+      #ki .gmeta { margin-top:5px; color:#8b7554; font-size:11.5px; letter-spacing:1px; text-align:right; }
+      #ki .tip-line { margin-top:7px; color:#8b7554; font-size:11.5px; letter-spacing:1px; text-align:center; }
+      #ki .gift-status { margin-top:8px; color:#7a6647; font-size:12px; text-align:center; letter-spacing:1px; }
+      #ki .mini { margin-top:9px; color:#5b4a35; font-size:12px; line-height:1.8; text-align:center; letter-spacing:1px; }
+      #ki .foot { margin-top:12px; }
+      #ki .gift-line { display:block; margin:4px 0 2px; padding-left:11px; border-left:3px solid #a8322a; color:#7a231c; font-size:17px; font-weight:600; letter-spacing:2px; line-height:1.8; text-indent:0; }
+      #ki .gift-again { color:#8e2f25; text-decoration:none; font-weight:600; border-bottom:1px dotted #a8322a; cursor:pointer; pointer-events:auto; }
+
+      @media (max-width: 760px) {
+        #hud .brand { left:10px; top:9px; padding:7px 11px 6px; }
+        #hud .brand .t { font-size:14px; letter-spacing:2px; }
+        #hud .brand .p { font-size:10.5px; }
+        #rail {
+          left:0; right:0; top:58px; width:auto; max-height:none; flex-direction:row;
+          padding:5px 9px 7px; gap:5px; overflow-x:auto; overflow-y:hidden;
+          background:linear-gradient(180deg, rgba(12,17,22,.62), rgba(12,17,22,0));
+        }
+        .rail-btn { flex:0 0 auto; width:auto; min-width:61px; height:32px; padding:0 7px; }
+        .rail-btn i { min-width:14px; font-size:9.5px; }
+        .rail-btn span { font-size:11.5px; letter-spacing:.5px; }
+        .rail-btn em { display:none; }
+        #viewbar { left:10px; right:10px; bottom:112px; justify-content:center; gap:6px; }
+        #viewbar button { flex:1; height:37px; padding:0 7px; font-size:12px; letter-spacing:1px; }
+        #switches { left:10px; right:10px; bottom:9px; width:auto; grid-template-columns:repeat(3,minmax(0,1fr)); padding:6px; gap:5px; }
+        .sw { height:38px; padding:0 7px; font-size:11.5px; gap:5px; }
+        .sw .st { font-size:10px; }
+        #toast { bottom:158px; font-size:12px; max-width:calc(100vw - 26px); white-space:normal; text-align:center; }
+        #ki {
+          left:10px !important; right:10px; width:auto; max-width:calc(100vw - 20px);
+          padding:20px 18px 16px; max-height:calc(100vh - 280px);
+        }
+        #ki h3 { font-size:22px; letter-spacing:4px; }
+        #ki .voice { font-size:16px; }
+        #ki .opt { padding:8px 9px; font-size:13.5px; }
+        #ki .confirm { letter-spacing:2px; font-size:14px; }
+      }
     `;
     document.head.appendChild(s);
+    const meta = document.createElement('meta');
+    meta.name = 'viewport';
+    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    document.head.appendChild(meta);
   })();
 
-  // 说明文案：馒头窑沿用原文；礼匣用透花瓷口径；其余讲清绞胎/拉坯/绞泥
-  const CARD_DATA = {
-    kiln: {
-      h: '馒头窑', sub: '北方半倒焰式窑炉', seal: '當陽峪',
-      ps: [
-        '窑顶穹窿隆起，形似馒头，故名。火焰自火膛喷入窑室，升到顶又折返向下，经窑底吸烟孔由烟囱逸出——火在窑里走了一个来回，器物受热便匀了。',
-        '当阳峪的绞胎瓷，正是在这样的窑火中烧成：黑白赭三色泥相绞，胎即是纹，纹在胎里，表里如一。'
-      ]
+  /* ---------------- 九关数据（名称、voice、fact 锁定） ---------------- */
+  const STEPS = [
+    {
+      id: 'soil', name: '选土', sub: '采选泥脉',
+      voice: '先把土选对，纹才有底子。',
+      fact: '当阳峪绞胎以太行山特有的矸石为原料，从选土起手。',
+      opts: [
+        { v: 'gang', label: '太行矸石系' },
+        { v: 'kaolin', label: '本地高岭土' },
+        { v: 'mix', label: '高岭+皂土' },
+      ],
     },
-    gift: {
-      h: '开窑礼匣', sub: '透花瓷 · 一匣藏纹', seal: '當陽峪', action: true,
-      ps: [
-        '礼匣里是一只绞胎梅瓶。当阳峪窑在河南修武。绞胎瓷花纹表里如一，人称瓷中君子，源于唐、兴于宋。',
-        '<span class="gift-line">纹在胎里，打开才看见。</span>',
-        '套袖提起，梅瓶才从匣中露出来；开匣后稍候，再看开匣即可收回。'
-      ]
+    {
+      id: 'refine', name: '炼泥调色', sub: '揉出配色',
+      voice: '两种泥遇见，才开始有自己的颜色。',
+      fact: '绞胎由两种或两种以上不同颜色的瓷泥相间糅合而成。',
+      opts: [
+        { v: 'duo', label: '两色相揉' },
+        { v: 'trio', label: '三色相绞' },
+        { v: 'ochre', label: '暖赭为主' },
+      ],
     },
-    shelf: {
-      h: '绞胎梅瓶', sub: '陈列架 · 表里如一', seal: '當陽峪',
-      ps: [
-        '黑白赭三色泥片相叠、相绞，拉坯成器。釉下的纹不是画上去的，而是胎泥本身的花纹。',
-        '今称透花瓷。当阳峪窑在河南修武。绞胎瓷花纹表里如一，人称瓷中君子，源于唐、兴于宋。'
-      ]
+    {
+      id: 'twist', name: '绞泥编花', sub: '绞转成纹',
+      voice: '纹不画在表面，是从胎里绞出来的。',
+      fact: '花纹由胎而生、表里如一，一胎一面，不可复制。',
+      opts: [
+        { v: 'feather', label: '鸟羽纹' },
+        { v: 'weave', label: '编织纹' },
+        { v: 'marble', label: '大理石绞' },
+      ],
     },
-    wheel: {
-      h: '拉坯', sub: '辘轳车 · 泥随轮转', seal: '當陽峪',
-      ps: [
-        '轮盘一转，双手蘸水，把泥团慢慢提起来。器壁在掌心变薄，绞胎的纹也跟着泥走。',
-        '拉坯是成形的一步，纹在泥里，越拉越见筋骨。'
-      ]
+    {
+      id: 'vessel', name: '选定器型', sub: '择形立器',
+      voice: '先立住形，纹才有地方安放。',
+      fact: '当阳峪绞胎的主要器型是碗、杯、盘、罐、瓷枕这类日用小件。',
+      opts: [
+        { v: 'meiping', label: '梅瓶' },
+        { v: 'jar', label: '罐' },
+        { v: 'bowl', label: '碗' },
+      ],
     },
-    wedging: {
-      h: '揉泥 · 绞泥', sub: '泥方与断面', seal: '當陽峪',
-      ps: [
-        '黑白赭泥叠成泥方，反复揉压、切片再叠，让色泥彼此缠绕。',
-        '切开的断面上，纹路已经长在泥里——不是画上去的。表里如一，正是绞胎瓷的筋骨。'
-      ]
-    }
+    {
+      id: 'form', name: '成型修胎', sub: '塑形修坯',
+      voice: '形可以改，纹要跟着胎走。',
+      fact: '色泥糅合、折叠、相绞之后，再拉坯或模压成型，并经修胎。',
+      opts: [
+        { v: 'slab', label: '泥片编贴' },
+        { v: 'wheel', label: '拉坯成型' },
+        { v: 'hybrid', label: '绞片+修坯' },
+      ],
+    },
+    {
+      id: 'dry', name: '荫干打磨', sub: '静候干成',
+      voice: '慢一点，坯才站得住。',
+      fact: '施釉之前，还要经过荫干和打磨。',
+      opts: [
+        { v: 'slow', label: '慢荫干', dur: 8.0 },
+        { v: 'normal', label: '常规荫干', dur: 5.5 },
+        { v: 'humidity', label: '控湿分段', dur: 6.8 },
+      ],
+    },
+    {
+      id: 'glaze', name: '施釉方案', sub: '薄釉显纹',
+      voice: '釉要薄，是为了把纹让出来。',
+      fact: '相绞成型后再施一层透明釉，口沿常留一圈白釉。',
+      opts: [
+        { v: 'clear-thin', label: '薄透明釉' },
+        { v: 'clear-full', label: '全器透明釉' },
+        { v: 'none', label: '无釉素胎' },
+      ],
+    },
+    {
+      id: 'fire', name: '焙烧曲线', sub: '窑火考验',
+      voice: '交到火里，才知道这一面能不能留下。',
+      fact: '编花和高温烧造都要求极精确，故成品率低。',
+      opts: [
+        { v: 'high', label: '经典高温' },
+        { v: 'hold', label: '中温保温' },
+        { v: 'slow', label: '缓冷优先' },
+      ],
+    },
+    {
+      id: 'finish', name: '出窑成瓷', sub: '开匣见瓷',
+      voice: '纹在胎里，打开才看见。',
+      fact: '当阳峪窑在河南修武。绞胎瓷花纹表里如一，人称瓷中君子，源于唐、兴于宋。',
+      subline: '透花瓷 · 开窑见纹',
+      opts: [],
+    },
+  ];
+
+  const STEP_NAME = STEPS.map(s => s.name);
+  const VIEWS = {
+    overview: { t: [0, 0.6, -0.3], theta: 0.70, phi: 1.05, r: 33.5 },
+    inside: { t: [0.2, 1.15, -2.8], theta: 0.05, phi: 1.25, r: 3.8 },
+    product: { t: [-2.60, 1.35, 2.15], theta: 0.55, phi: 1.10, r: 5.2 },
+    soil: { t: [-6.55, 0.45, 4.55], theta: 0.65, phi: 1.18, r: 5.4 },
+    refine: { t: [0.75, 1.05, -2.75], theta: 0.15, phi: 1.12, r: 3.4 },
+    twist: { t: [1.30, 1.05, -2.75], theta: 0.18, phi: 1.12, r: 3.2 },
+    vessel: { t: [0.40, 1.35, -4.20], theta: 0.0, phi: 1.18, r: 3.6 },
+    form: { t: [2.30, 1.00, -0.70], theta: Math.PI, phi: 1.15, r: 3.0 },
+    dry: { t: [5.35, 0.90, 0.35], theta: 0.55, phi: 1.15, r: 5.0 },
+    glaze: { t: [-4.00, 0.88, 3.96], theta: 0.15, phi: 1.18, r: 3.9 },
+    fire: { t: [5.60, 1.40, -6.00], theta: 0.45, phi: 1.10, r: 7.0 },
+    finish: { t: [1.58, 0.85, 2.72], theta: 0.35, phi: 1.10, r: 4.4 },
   };
 
-  // 取交点最近的一个可点物体；名字即 WB.pickables 的键
-  function hitPick(e) {
-    const rc = canvas.getBoundingClientRect();
-    ndc.x = ((e.clientX - rc.left) / rc.width) * 2 - 1;
-    ndc.y = -((e.clientY - rc.top) / rc.height) * 2 + 1;
-    ray.setFromCamera(ndc, camera);
-    const P = WB.pickables || {};
-    let best = null, bestD = Infinity;
-    ['gift', 'shelf', 'wheel', 'wedging', 'kiln'].forEach(key => {
-      const obj = P[key];
-      if (!obj) return;
-      const hits = ray.intersectObject(obj, true);
-      if (hits.length && hits[0].distance < bestD) {
-        bestD = hits[0].distance; best = key;
+  const journey = {
+    current: 0,
+    cleared: new Set(),
+    sel: {
+      soil: 'mix', refine: 'duo', twist: 'feather', vessel: 'meiping',
+      form: 'hybrid', dry: 'slow', glaze: 'clear-thin', fire: 'hold',
+    },
+    locked: false,
+    interacted: false,
+    finishOpened: false,
+  };
+  const prog = { kind: null, running: false, p: 0, dur: 0, speed: 1 };
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const switches = { lights: true, fire: true, gate: true, rain: true, music: false };
+  let doorVal = 1, doorTarget = 1;
+  const DOOR_L = -1.72, DOOR_R = 1.35;
+
+  /* ---------------- HUD 结构 ---------------- */
+  const hud = document.createElement('div');
+  hud.id = 'hud';
+  hud.innerHTML =
+    '<div class="brand" role="button" tabindex="0" aria-label="回到全景">' +
+      '<div class="t">当阳峪绞胎瓷工坊</div>' +
+      '<div class="p">九关游历 · <b id="jCount">1</b>/9</div>' +
+    '</div>' +
+    '<nav id="rail" aria-label="九关工序"></nav>' +
+    '<div id="viewbar">' +
+      '<button class="primary" data-view="product">看成品台</button>' +
+      '<button data-view="overview">全景</button>' +
+      '<button data-view="inside">入内</button>' +
+    '</div>' +
+    '<div id="switches" aria-label="场景开关"></div>' +
+    '<div id="toast" role="status" aria-live="polite"></div>';
+  document.body.appendChild(hud);
+  if (qp.get('ui') === '0') hud.style.display = 'none';
+
+  const railEl = hud.querySelector('#rail');
+  railEl.innerHTML = STEPS.map((s, i) =>
+    '<button class="rail-btn" data-step="' + i + '" title="' + (i + 1) + ' · ' + s.name + '">' +
+      '<i>' + String(i + 1).padStart(2, '0') + '</i><span>' + s.name + '</span><em>✓</em>' +
+    '</button>'
+  ).join('');
+  const railBtns = Array.from(railEl.querySelectorAll('.rail-btn'));
+
+  const SWITCH_DEFS = [
+    { id: 'lights', name: '灯光' },
+    { id: 'fire', name: '窑火' },
+    { id: 'gate', name: '大门' },
+    { id: 'rain', name: '雨' },
+    { id: 'music', name: '背景音乐' },
+  ];
+  const switchEl = hud.querySelector('#switches');
+  switchEl.innerHTML = SWITCH_DEFS.map(s =>
+    '<button class="sw" data-sw="' + s.id + '" data-on="' + (switches[s.id] ? 'true' : 'false') + '" aria-pressed="' + (switches[s.id] ? 'true' : 'false') + '">' +
+      '<span class="dot"></span><span class="nm">' + s.name + '</span><span class="st">' + (switches[s.id] ? '开' : '关') + '</span>' +
+    '</button>'
+  ).join('');
+  const switchBtns = {};
+  Array.from(switchEl.querySelectorAll('.sw')).forEach(btn => { switchBtns[btn.dataset.sw] = btn; });
+
+  const toastEl = hud.querySelector('#toast');
+  let toastTimer = 0;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1700);
+  }
+
+  function setSwitchUI(id, on) {
+    const btn = switchBtns[id];
+    if (!btn) return;
+    btn.dataset.on = on ? 'true' : 'false';
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    const st = btn.querySelector('.st');
+    if (st) st.textContent = on ? '开' : '关';
+  }
+
+  function setSwitch(id, on, silent) {
+    switches[id] = !!on;
+    setSwitchUI(id, !!on);
+    if (id === 'lights') {
+      P.lightsOn = !!on;
+      if (P.productLight) P.productLight.intensity = on ? 0.75 : 0;
+    }
+    else if (id === 'fire') P.fireOn = !!on;
+    else if (id === 'rain') P.rainOn = !!on;
+    else if (id === 'gate') { doorTarget = on ? 1 : 0; }
+    else if (id === 'music') {
+      WB.setMusic(!!on);
+    }
+    if (!silent) {
+      const def = SWITCH_DEFS.find(s => s.id === id);
+      toast((def ? def.name : id) + ' · ' + (on ? '开' : '关'));
+    }
+  }
+  WB.onMusicChange = function (ok) {
+    if (!ok && switches.music) {
+      switches.music = false;
+      setSwitchUI('music', false);
+      toast('浏览器未允许播放，再点一次音乐');
+    }
+  };
+  Object.keys(switchBtns).forEach(id => {
+    switchBtns[id].addEventListener('click', (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      setSwitch(id, !switches[id]);
+    });
+  });
+
+  hud.querySelector('.brand').addEventListener('click', () => {
+    focusView('overview');
+    closeCard();
+    toast('当阳峪绞胎瓷工坊 · 全景');
+  });
+  hud.querySelectorAll('#viewbar button').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      const v = btn.dataset.view;
+      if (v === 'product') {
+        focusView('product');
+        showProductCard();
+      } else if (v === 'inside') {
+        focusView('inside');
+        toast('入内 · 拉坯、揉泥、施釉都在里面');
+      } else {
+        focusView('overview');
+        closeCard();
+        toast('全景');
       }
     });
-    return best;
+  });
+
+  /* ---------------- 视角 ---------------- */
+  function focusView(name) {
+    const v = VIEWS[name];
+    if (!v) return;
+    targetT.set(v.t[0], v.t[1], v.t[2]);
+    camT.theta = v.theta; camT.phi = v.phi; camT.r = v.r;
+    idle = 0; camLockT = 14;
   }
 
-  let cardKey = null;
-  function cardHTML(key) {
-    const d = CARD_DATA[key];
-    let html = '<h3>' + d.h + '</h3><div class="sub">' + d.sub + '</div>';
-    d.ps.forEach(p => { html += '<p>' + p + '</p>'; });
-    html += '<div class="foot"><span class="seal">' + d.seal + '</span><span class="tip">';
-    if (d.action) {
-      const ready = WB.gift && WB.gift.canClose();
-      html += '<a class="gift-again" role="button">' + (ready ? '再看开匣' : '开匣中…') + '</a> · ';
-    }
-    html += '轻触别处收起</span></div>';
-    return html;
+  /* ---------------- 成品台同步 ---------------- */
+  function updateProduct() {
+    if (!WB.liveProduct) return;
+    const dryP = prog.kind === 'dry' ? prog.p : (journey.cleared.has(5) ? 1 : 0);
+    const fireP = prog.kind === 'fire' ? prog.p : (journey.cleared.has(7) ? 1 : 0);
+    WB.liveProduct.setState({
+      step: journey.current,
+      sel: journey.sel,
+      dryProgress: dryP,
+      fireProgress: fireP,
+      finishOpened: journey.finishOpened,
+    });
   }
 
-  function positionCard(e) {
-    const pad = 18;
-    const w = ki.offsetWidth, h = ki.offsetHeight;
-    let x = e.clientX + 26, y = e.clientY - h * 0.6;
-    if (x + w > window.innerWidth - pad) x = e.clientX - w - 26;
-    x = Math.max(pad, Math.min(x, window.innerWidth - w - pad));
-    y = Math.max(pad, Math.min(y, window.innerHeight - h - pad));
-    ki.style.left = x + 'px';
-    ki.style.top = y + 'px';
+  /* ---------------- 轨道 / 进度 ---------------- */
+  function updateRail() {
+    railBtns.forEach((btn, i) => {
+      btn.classList.toggle('current', i === journey.current);
+      btn.classList.toggle('done', journey.cleared.has(i));
+      btn.classList.toggle('locked', journey.locked && i !== journey.current);
+    });
+    const jc = document.getElementById('jCount');
+    if (jc) jc.textContent = String(journey.current + 1);
+  }
+  railBtns.forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      const i = Number(btn.dataset.step);
+      if (journey.locked && i !== journey.current) { toast('先完成当前步骤'); return; }
+      goStep(i, { focus: true });
+    });
+  });
+
+  /* ---------------- 卡片 ---------------- */
+  let cardStep = -1, cardKey = null;
+
+  function stepNo(i) { return String(i + 1).padStart(2, '0'); }
+  function optLabel(i, v) {
+    const o = (STEPS[i] && STEPS[i].opts || []).find(x => x.v === v);
+    return o ? o.label : v;
   }
 
-  function showCard(e, key) {
-    const d = CARD_DATA[key];
-    if (!d) return;
-    cardKey = key;
-    ki.innerHTML = cardHTML(key);
-    ki.style.pointerEvents = 'auto';
-    ki.classList.add('show');
-    positionCard(e);
+  function cardHTML(i) {
+    const st = STEPS[i];
+    let h = '<button class="close" type="button" aria-label="收起">×</button>';
+    h += '<h3>' + stepNo(i) + ' · ' + st.name + '</h3>';
+    h += '<div class="sub">' + st.sub + ' · 九关之' + (i + 1) + '</div>';
+    h += '<p class="voice">' + st.voice + '</p>';
+    h += '<p class="fact">' + st.fact + '</p>';
 
-    const again = ki.querySelector('.gift-again');
-    if (again) {
-      again.style.pointerEvents = 'auto';
-      again.addEventListener('click', (ev) => {
-        ev.preventDefault(); ev.stopPropagation();
-        if (!WB.gift) return;
-        if (WB.gift.close()) { closeCard(); return; }
-        // 套袖尚在提起、或开匣后 1.35s 停留期内：先不收回
-        again.textContent = '稍候再看';
-      });
-      if (!WB.gift || !WB.gift.canClose()) {
-        // 0.9s 提起 + 1.35s 停留；轮询到可收回时把提示换成「再看开匣」
-        let tries = 0;
-        const timer = setInterval(() => {
-          if (!again.isConnected || cardKey !== 'gift') { clearInterval(timer); return; }
-          if (WB.gift && WB.gift.canClose()) {
-            again.textContent = '再看开匣';
-            clearInterval(timer);
-          } else if (++tries > 40) {
-            clearInterval(timer);
-          }
-        }, 250);
+    if (i === 8) {
+      h += '<div class="subline">' + st.subline + '</div>';
+      h += '<div class="gift-status" id="giftStatus">礼匣初始闭合 · 点「开匣」才见纹</div>';
+      h += '<div class="actions"><button class="confirm gift-act" type="button">开匣</button></div>';
+      h += '<div class="mini">开匣时序沿用原礼匣：套袖提起 0.90s，停留 1.35s 后可收回，收匣 0.62s。</div>';
+    } else {
+      h += '<div class="opts">' + st.opts.map(o =>
+        '<button class="opt' + (journey.sel[st.id] === o.v ? ' active' : '') + '" type="button" data-v="' + o.v + '">' + o.label + '</button>'
+      ).join('') + '</div>';
+      if (i === 5) {
+        h += '<div class="gauge dry"><i></i></div><div class="gmeta" id="gMeta">等待确定后开始</div>';
+        h += '<div class="actions"><button class="confirm" type="button">确定</button></div>';
+        h += '<div class="tip-line">确定后开始荫干，进入时不会自动走条</div>';
+      } else if (i === 7) {
+        h += '<div class="gauge fire"><i></i></div><div class="gmeta" id="gMeta">请选择曲线后点确定开始</div>';
+        h += '<div class="actions"><button class="confirm" type="button">确定</button><button class="speed" type="button" disabled>手动加速</button></div>';
+        h += '<div class="tip-line">进入本关不会自动开烧；点确定才开始</div>';
+      } else {
+        h += '<div class="actions"><button class="confirm" type="button">确定</button></div>';
+        h += '<div class="tip-line">确认后进入下一关</div>';
       }
     }
+    h += '<div class="foot"><span class="seal">當陽峪</span><span class="tip">轻触别处收起</span></div>';
+    return h;
+  }
+
+  function positionCardDefault() {
+    const w = ki.offsetWidth || 372;
+    if (window.innerWidth <= 760) {
+      ki.style.left = '10px';
+      ki.style.right = '10px';
+      ki.style.top = 'auto';
+      ki.style.bottom = '164px';
+    } else {
+      ki.style.left = Math.max(16, window.innerWidth - w - 26) + 'px';
+      ki.style.right = 'auto';
+      ki.style.top = '86px';
+      ki.style.bottom = 'auto';
+    }
+  }
+
+  function positionCardAt(e) {
+    if (window.innerWidth <= 760) { positionCardDefault(); return; }
+    const pad = 18, w = ki.offsetWidth || 372;
+    let x = e.clientX + 26;
+    let y = e.clientY - ki.offsetHeight * 0.55;
+    if (x + w > window.innerWidth - pad) x = e.clientX - w - 26;
+    x = Math.max(pad, Math.min(x, window.innerWidth - w - pad));
+    y = Math.max(pad, Math.min(y, window.innerHeight - ki.offsetHeight - pad));
+    ki.style.left = x + 'px';
+    ki.style.right = 'auto';
+    ki.style.top = y + 'px';
+    ki.style.bottom = 'auto';
+  }
+
+  function applyCardState() {
+    if (!ki.classList.contains('show') || cardStep < 0) return;
+    const i = cardStep;
+    const running = prog.running;
+    const locked = running || (journey.locked && i === journey.current);
+    ki.querySelectorAll('.opt').forEach(btn => { btn.disabled = locked; });
+    const conf = ki.querySelector('.confirm');
+    const speed = ki.querySelector('.speed');
+    if (conf && !conf.classList.contains('gift-act')) {
+      if (running) { conf.disabled = true; conf.textContent = '进行中'; }
+      else if (journey.cleared.has(i) && (i === 5 || i === 7)) { conf.disabled = locked; conf.textContent = '下一步'; }
+      else { conf.disabled = locked; conf.textContent = '确定'; }
+    }
+    if (speed) speed.disabled = !(running && prog.kind === 'fire');
+    const fill = ki.querySelector('.gauge i');
+    const meta = ki.querySelector('#gMeta');
+    let gp = 0;
+    if (i === 5) gp = prog.kind === 'dry' ? prog.p : (journey.cleared.has(5) ? 1 : 0);
+    if (i === 7) gp = prog.kind === 'fire' ? prog.p : (journey.cleared.has(7) ? 1 : 0);
+    if (fill) fill.style.width = Math.round(gp * 100) + '%';
+    if (meta) {
+      if (i === 5) {
+        if (running) meta.textContent = '荫干中 · ' + Math.round(prog.p * 100) + '%';
+        else if (journey.cleared.has(5)) meta.textContent = '荫干完成';
+        else meta.textContent = '等待确定后开始';
+      } else if (i === 7) {
+        if (running) {
+          const left = Math.max(0, (1 - prog.p) * prog.dur / Math.max(0.001, prog.speed));
+          meta.textContent = prog.speed > 1.01
+            ? '加速烧制中 ×' + prog.speed.toFixed(1)
+            : '自动烧制中 · 约 ' + left.toFixed(1) + ' 秒';
+        } else if (journey.cleared.has(7)) meta.textContent = '烧成完成';
+        else meta.textContent = '请选择曲线后点确定开始';
+      }
+    }
+    if (i === 8) refreshGiftCard();
+  }
+
+  function bindStepCard(i) {
+    const close = ki.querySelector('.close');
+    if (close) close.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); closeCard(); });
+
+    ki.querySelectorAll('.opt').forEach(btn => {
+      btn.addEventListener('click', (ev) => {
+        ev.preventDefault(); ev.stopPropagation();
+        if (prog.running || journey.locked) return;
+        const st = STEPS[i];
+        journey.sel[st.id] = btn.dataset.v;
+        journey.interacted = true;
+        ki.querySelectorAll('.opt').forEach(b => b.classList.toggle('active', b === btn));
+        updateProduct();
+        toast('已选 · ' + optLabel(i, btn.dataset.v));
+      });
+    });
+
+    const conf = ki.querySelector('.confirm');
+    if (conf) {
+      if (conf.classList.contains('gift-act')) {
+        conf.addEventListener('click', (ev) => {
+          ev.preventDefault(); ev.stopPropagation();
+          if (WB.gift && WB.gift.canClose()) closeGift();
+          else openGift();
+        });
+      } else {
+        conf.addEventListener('click', (ev) => {
+          ev.preventDefault(); ev.stopPropagation();
+          confirmStep();
+        });
+      }
+    }
+    const speed = ki.querySelector('.speed');
+    if (speed) {
+      speed.addEventListener('click', (ev) => {
+        ev.preventDefault(); ev.stopPropagation();
+        if (!prog.running || prog.kind !== 'fire') return;
+        prog.speed = Math.min(6, prog.speed + 1.8);
+        toast('加速 ×' + prog.speed.toFixed(1));
+        applyCardState();
+      });
+    }
+    applyCardState();
+  }
+
+  function showStepCard(i, opts) {
+    opts = opts || {};
+    if (!STEPS[i]) return;
+    cardStep = i;
+    cardKey = STEPS[i].id;
+    ki.innerHTML = cardHTML(i);
+    ki.classList.add('show');
+    ki.style.pointerEvents = 'auto';
+    if (opts.event) positionCardAt(opts.event);
+    else positionCardDefault();
+    bindStepCard(i);
+  }
+
+  function showProductCard() {
+    if (!WB.liveProduct) return;
+    cardStep = -1; cardKey = 'product';
+    const p = WB.liveProduct;
+    // 成品台是纯三维展台，这里只给实时读数，不贴任何馆藏照片。
+    let h = '<button class="close" type="button" aria-label="收起">×</button>';
+    h += '<h3>成品台</h3><div class="sub">3D 实时观测 · 堂前</div>';
+    h += '<p class="voice">台上这件，跟着九关一起变。</p>';
+    h += '<p class="fact">' + p.summary() + '</p>';
+    h += '<div class="subline">当前工序 · ' + p.stageName() + '</div>';
+    h += '<div class="mini">土色、纹样、器型、修胎、干湿、釉光、火候都在这一件上；慢转一圈，四面都能看。</div>';
+    h += '<div class="actions"><button class="confirm" type="button" data-act="resume">回到第 ' + (journey.current + 1) + ' 关</button><button class="ghost" type="button" data-act="overview">全景</button></div>';
+    h += '<div class="foot"><span class="seal">當陽峪</span><span class="tip">轻触别处收起</span></div>';
+    ki.innerHTML = h;
+    ki.classList.add('show');
+    ki.style.pointerEvents = 'auto';
+    positionCardDefault();
+    const close = ki.querySelector('.close');
+    if (close) close.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); closeCard(); });
+    const resume = ki.querySelector('[data-act="resume"]');
+    if (resume) resume.addEventListener('click', (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      goStep(journey.current, { focus: true });
+    });
+    const ov = ki.querySelector('[data-act="overview"]');
+    if (ov) ov.addEventListener('click', (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      focusView('overview'); closeCard();
+    });
   }
 
   function closeCard() {
+    cardStep = -1;
     cardKey = null;
     ki.classList.remove('show');
     ki.style.pointerEvents = 'none';
   }
 
-  function pickAt(e, key) {
-    if (key === 'gift') {
-      const r = WB.gift && WB.gift.click();
-      if (r === 'opening') { showCard(e, 'gift'); return; }
-      if (r === 'closing') { closeCard(); return; }
-      return; // opening / closing / 停留期：重复点击忽略
+  // 礼匣按钮状态：开匣中 / 再看开匣 / 开匣
+  function refreshGiftCard() {
+    if (cardStep !== 8 || !WB.gift) return;
+    const btn = ki.querySelector('.gift-act');
+    const status = ki.querySelector('#giftStatus');
+    if (!btn) return;
+    const ph = WB.gift.phase();
+    let label = '开匣', disabled = false, st = '';
+    if (ph === 'closed') { label = '开匣'; st = '礼匣初始闭合 · 点「开匣」才见纹'; }
+    else if (ph === 'opening') { label = '开匣中…'; disabled = true; st = '套袖提起中 · 0.90s'; }
+    else if (ph === 'closing') { label = '收回中…'; disabled = true; st = '套袖回落中 · 0.62s'; }
+    else if (ph === 'open') {
+      if (WB.gift.canClose()) { label = '再看开匣'; st = '已开匣 · 9/9 · 点「再看开匣」收回'; }
+      else { label = '开匣中…'; disabled = true; st = '已开匣 · 停留 1.35s 后可收回'; }
     }
-    showCard(e, key);
+    btn.textContent = label;
+    btn.disabled = disabled;
+    if (status) status.textContent = st;
   }
 
+  function goStep(i, opts) {
+    opts = opts || {};
+    if (!STEPS[i]) return;
+    if (journey.locked && i !== journey.current) { toast('先完成当前步骤'); return; }
+    journey.current = i;
+    journey.interacted = true;
+    if (opts.focus) focusView(STEPS[i].id === 'finish' ? 'finish' : STEPS[i].id);
+    updateRail();
+    updateProduct();
+    showStepCard(i, opts);
+    if (i === 8 && opts.openGift) openGift();
+  }
+
+  /* ---------------- 确认 / 走条 ---------------- */
+  function confirmStep() {
+    if (prog.running || cardStep < 0) return;
+    const i = cardStep;
+    if (i !== journey.current) { goStep(i, { focus: true }); return; }
+
+    if (i === 8) { openGift(); return; }
+    if ((i === 5 || i === 7) && journey.cleared.has(i)) {
+      journey.locked = true;
+      updateRail();
+      toast('已' + (i === 5 ? '荫干' : '烧成') + ' · 去下一关');
+      setTimeout(() => {
+        journey.locked = false;
+        goStep(Math.min(8, i + 1), { focus: true });
+      }, 650);
+      return;
+    }
+    if (i === 5) { startProgress('dry'); return; }
+    if (i === 7) { startProgress('fire'); return; }
+
+    journey.cleared.add(i);
+    journey.locked = true;
+    updateRail();
+    updateProduct();
+    applyCardState();
+    toast(STEPS[i].name + ' · 完成');
+    setTimeout(() => {
+      journey.locked = false;
+      goStep(Math.min(8, i + 1), { focus: true });
+    }, 1100);
+  }
+
+  function startProgress(kind) {
+    if (prog.running) return;
+    const i = kind === 'dry' ? 5 : 7;
+    let dur = 0;
+    if (kind === 'dry') {
+      const o = STEPS[5].opts.find(x => x.v === journey.sel.dry);
+      dur = o && o.dur ? o.dur : 6.8;
+    } else {
+      dur = 10;
+      if (!switches.fire) setSwitch('fire', true, true);
+    }
+    prog.kind = kind;
+    prog.running = true;
+    prog.p = 0;
+    prog.dur = reducedMotion ? 0.4 : dur;
+    prog.speed = 1;
+    journey.locked = true;
+    journey.interacted = true;
+    updateRail();
+    updateProduct();
+    applyCardState();
+    toast(kind === 'dry' ? '开始荫干 · ' + optLabel(5, journey.sel.dry) : '开始焙烧 · ' + optLabel(7, journey.sel.fire));
+  }
+
+  function finishProgress() {
+    const kind = prog.kind;
+    const i = kind === 'dry' ? 5 : 7;
+    prog.running = false;
+    prog.p = 1;
+    prog.speed = 1;
+    journey.cleared.add(i);
+    updateRail();
+    updateProduct();
+    applyCardState();
+    toast(kind === 'dry' ? '荫干完成' : '烧成！');
+    setTimeout(() => {
+      journey.locked = false;
+      goStep(Math.min(8, i + 1), { focus: true });
+    }, 1100);
+  }
+
+  function updateProgress(dt) {
+    if (!prog.running) return;
+    prog.p = Math.min(1, prog.p + (dt / Math.max(0.2, prog.dur)) * prog.speed);
+    updateProduct();
+    if (prog.p >= 1) finishProgress();
+    else applyCardState();
+  }
+
+  /* ---------------- 礼匣（第 9 关） ---------------- */
+  function openGift() {
+    if (!WB.gift) return;
+    const ph = WB.gift.phase();
+    if (ph === 'closed') {
+      const r = WB.gift.click();
+      if (r === 'opening') {
+        toast('开匣中 · 纹在胎里，打开才看见');
+        applyCardState();
+      }
+    } else if (ph === 'open') {
+      if (journey.finishOpened) refreshGiftCard();
+    }
+  }
+
+  function closeGift() {
+    if (!WB.gift) return;
+    if (WB.gift.canClose()) {
+      WB.gift.close();
+      toast('礼匣收回 · 再看一次可再开');
+      applyCardState();
+    } else {
+      toast('稍候再看 · 停留 1.35s');
+      refreshGiftCard();
+    }
+  }
+
+  function updateGiftState(dt) {
+    if (journey.current !== 8 || !WB.gift) return;
+    // 低帧率下也每帧刷新一次，保证「停留 1.35s → 再看开匣」及时可见。
+    refreshGiftCard();
+    if (WB.gift.phase() === 'open' && !journey.finishOpened) {
+      journey.finishOpened = true;
+      journey.cleared.add(8);
+      updateRail();
+      updateProduct();
+      toast('开匣见纹 · 9/9');
+      refreshGiftCard();
+    }
+  }
+
+  /* ---------------- 拾取 ---------------- */
+  const PICK_LIST = ['product', 'soil', 'refine', 'twist', 'vessel', 'form', 'dry', 'glaze', 'fire', 'gift'];
+  const PICK_STEP = { soil: 0, refine: 1, twist: 2, vessel: 3, form: 4, dry: 5, glaze: 6, fire: 7, gift: 8 };
+
+  const PICK_ALIAS = { shelf: 'vessel', wheel: 'form', kiln: 'fire', wedging: 'refine', finish: 'gift', gift: 'gift' };
+
+  function stationOf(obj, fallback) {
+    let o = obj;
+    while (o) {
+      if (o.userData && o.userData.station) return o.userData.station;
+      if (o.userData && o.userData.pickName) return PICK_ALIAS[o.userData.pickName] || o.userData.pickName;
+      o = o.parent;
+    }
+    return fallback;
+  }
+
+  function hitPick(e) {
+    const rc = canvas.getBoundingClientRect();
+    ndc.x = ((e.clientX - rc.left) / rc.width) * 2 - 1;
+    ndc.y = -((e.clientY - rc.top) / rc.height) * 2 + 1;
+    ray.setFromCamera(ndc, camera);
+    const Pk = WB.pickables || {};
+    let best = null, bestD = Infinity;
+    PICK_LIST.forEach(key => {
+      const obj = Pk[key];
+      if (!obj) return;
+      const hits = ray.intersectObject(obj, true);
+      if (hits.length && hits[0].distance < bestD) {
+        bestD = hits[0].distance;
+        // 近处子工位（如揉泥台右端的绞泥）优先于父工位
+        best = stationOf(hits[0].object, key);
+      }
+    });
+    return best;
+  }
+
+  function pickAt(e, key) {
+    if (key === 'product') {
+      focusView('product');
+      showProductCard();
+      journey.interacted = true;
+      return;
+    }
+    if (key === 'gift') {
+      goStep(8, { focus: true });
+      if (WB.gift && WB.gift.phase() === 'closed') openGift();
+      return;
+    }
+    const i = PICK_STEP[key];
+    if (typeof i === 'number') goStep(i, { focus: true, event: e });
+  }
+
+  /* ---------------- 自由旋转 / 触摸 ---------------- */
   function apply() {
     const sp = Math.sin(cam.phi), cp = Math.cos(cam.phi);
     camera.position.set(
@@ -3327,6 +4736,7 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
     downX = e.clientX; downY = e.clientY; moved = 0;
     canvas.setPointerCapture(e.pointerId);
     canvas.style.cursor = 'grabbing';
+    journey.interacted = true;
     idle = 0;
   });
   let hoverAt = 0, hoverKey = null;
@@ -3343,7 +4753,7 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
     if (moved > 8) closeCard();
     camT.theta -= dx * 0.0055;
     camT.phi = Math.min(LIM.maxPhi, Math.max(LIM.minPhi, camT.phi - dy * 0.0045));
-    idle = 0;
+    idle = 0; camLockT = 0;
   });
   canvas.addEventListener('pointerup', (e) => {
     if (moved < 8) {
@@ -3369,10 +4779,9 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
     e.preventDefault();
     const k = Math.exp(e.deltaY * 0.0012);
     camT.r = Math.min(LIM.maxR, Math.max(LIM.minR, camT.r * k));
-    idle = 0;
+    idle = 0; camLockT = 0;
   }, { passive: false });
 
-  // 触摸缩放
   canvas.addEventListener('touchstart', (e) => {
     if (e.touches.length === 2) {
       pinch = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
@@ -3383,7 +4792,7 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
       const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
       camT.r = Math.min(LIM.maxR, Math.max(LIM.minR, camT.r * (pinch / d)));
       pinch = d;
-      idle = 0;
+      idle = 0; camLockT = 0;
     }
   }, { passive: true });
 
@@ -3391,6 +4800,7 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    if (ki.classList.contains('show') && window.innerWidth > 760) positionCardDefault();
   });
 
   /* ---------------- 主循环 ---------------- */
@@ -3401,18 +4811,25 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
     const dt = Math.min(0.05, clock.getDelta());
     elapsed += dt;
     idle += dt;
+    if (camLockT > 0) camLockT = Math.max(0, camLockT - dt);
 
-    // 闲置时极慢自转，一碰就停
-    if (!dragging && idle > 5) camT.theta += dt * 0.028;
+    // 闲置时极慢自转，一碰就停；聚焦工位后的十几秒内不自转
+    if (!dragging && idle > 5 && camLockT <= 0) camT.theta += dt * 0.028;
 
+    target.lerp(targetT, Math.min(1, dt * 4.8));
     cam.theta += (camT.theta - cam.theta) * Math.min(1, dt * 7);
     cam.phi += (camT.phi - cam.phi) * Math.min(1, dt * 7);
     cam.r += (camT.r - cam.r) * Math.min(1, dt * 5);
     apply();
 
     if (WB.updateGift) WB.updateGift(dt);
-    // 套袖升降时按 0.08s 节流刷新一次阴影，避免整场阴影每帧重烘
+    if (WB.updateDoors) WB.updateDoors(dt);
+    if (WB.liveProduct) WB.liveProduct.update(dt);
+    updateProgress(dt);
+    updateGiftState(dt);
+
     if (WB.giftShadowDirty) { renderer.shadowMap.needsUpdate = true; WB.giftShadowDirty = false; }
+    if (WB.productShadowDirty) { renderer.shadowMap.needsUpdate = true; WB.productShadowDirty = false; }
     WB.updateFX(dt, elapsed);
     WB.updateLabel(dt, camera, target);
     renderer.render(scene, camera);
@@ -3424,51 +4841,59 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
   // 首帧阴影烘好后关闭
   setTimeout(() => { renderer.shadowMap.needsUpdate = true; }, 120);
 
-  // 调试：?ki=1 自动点一次窑，检查知识卡
-  if (qp.has('ki')) {
-    setTimeout(() => {
-      const p = new THREE.Vector3(5.6, 1.0, -6.0).project(camera);
-      const x = (p.x * 0.5 + 0.5) * window.innerWidth;
-      const y = (-p.y * 0.5 + 0.5) * window.innerHeight;
-      const ev = new PointerEvent('pointerup', { clientX: x, clientY: y, bubbles: true });
-      moved = 0;
-      canvas.dispatchEvent(ev);
-      document.title = 'KI ' + Math.round(x) + ',' + Math.round(y);
-    }, 1200);
-  }
+  // 门扇：默认保持原场景的敞开状态；只有开关才会改变，绝不自动开门。
+  WB.setGate = function (open) {
+    doorTarget = open ? 1 : 0;
+  };
+  WB.updateDoors = function (dt) {
+    if (!P.doorLeft || !P.doorRight) return;
+    doorVal += (doorTarget - doorVal) * Math.min(1, dt * 3.2);
+    P.doorLeft.rotation.y = DOOR_L * doorVal;
+    P.doorRight.rotation.y = DOOR_R * doorVal;
+  };
 
-  // 调试：?gift=1 自动点一次礼匣，检查开匣与知识卡
-  if (qp.has('gift')) {
-    setTimeout(() => {
-      const g = WB.gift && WB.gift.group;
-      if (!g) return;
-      const p = g.getWorldPosition(new THREE.Vector3());
-      p.y += 0.45;
-      p.project(camera);
-      const x = (p.x * 0.5 + 0.5) * window.innerWidth;
-      const y = (-p.y * 0.5 + 0.5) * window.innerHeight;
-      const ev = new PointerEvent('pointerup', { clientX: x, clientY: y, bubbles: true });
-      moved = 0;
-      canvas.dispatchEvent(ev);
-      document.title = 'GIFT ' + Math.round(x) + ',' + Math.round(y);
-    }, 1200);
-  }
+  /* ---------------- 起步 ---------------- */
+  updateProduct();
+  updateRail();
+  setSwitchUI('music', false);
+  // 默认按 1→9 引导：先亮出第 1 关纸签，但不自动锁视角、不替用户做选择。
+  setTimeout(() => {
+    if (!journey.interacted) {
+      journey.current = 0;
+      updateRail();
+      updateProduct();
+      showStepCard(0);
+    }
+  }, 1000);
 
-  // 调试：?info=1 输出渲染统计
+  /* ---------------- 调试入口（不是正式入口依赖） ---------------- */
   if (qp.has('info')) {
     setTimeout(() => {
       const i = renderer.info;
       document.title = 'INFO calls=' + i.render.calls + ' tris=' + i.render.triangles +
         ' geo=' + i.memory.geometries + ' tex=' + i.memory.textures;
-    }, 1500);
+    }, 1600);
   }
-
-  // 调试：?hit=0.5,0.75 拾取屏幕坐标处对象
+  if (qp.has('step')) {
+    setTimeout(() => {
+      const n = Math.max(1, Math.min(9, Number(qp.get('step')) || 1));
+      goStep(n - 1, { focus: true });
+    }, 1300);
+  }
+  if (qp.has('gift')) {
+    setTimeout(() => {
+      if (WB.gift && WB.gift.phase() === 'closed') WB.gift.click();
+      showStepCard(8);
+      journey.current = 8;
+      updateRail();
+      updateProduct();
+    }, 1200);
+  }
   if (qp.has('hit')) {
     setTimeout(() => {
-      const a = qp.get('hit').split(',').map(Number);
+      const arr = qp.get('hit').split(',').map(Number);
       const rc = new THREE.Raycaster();
-      rc.setFromCamera(new THREE.Vector2(a[0] * 2 - 1, -(a[1] * 2 - 1)), camera);
+      rc.setFromCamera(new THREE.Vector2(arr[0] * 2 - 1, -(arr[1] * 2 - 1)), camera);
       const hits = rc.intersectObjects(scene.children, true).filter(h => h.object.isMesh);
       document.title = 'HIT ' + hits.slice(0, 4).map(h => {
         const m = h.object.material;
