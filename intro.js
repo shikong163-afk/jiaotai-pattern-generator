@@ -50,10 +50,13 @@
   });
 
   // Sleeve 950ms + pause 400ms, then stage-2 fade 850ms. Same numbers as intro.css.
+  // Reduced motion snaps the sleeve open in CSS. A 0ms handoff hid that frame
+  // before 「纹在胎里，打开才看见。」 could be read, so keep the 1350ms hold.
+  // Only the stage-2 fade is skipped.
   const giftBox = document.getElementById("giftBox");
   const giftLid = document.getElementById("giftLid");
   const giftStageEl = document.getElementById("stage1");
-  const tReveal = reduced ? 0 : 1350;
+  const tReveal = 1350;
   const tEnter = reduced ? 0 : 850;
   let revealTimer = 0;
   let enterTimer = 0;
