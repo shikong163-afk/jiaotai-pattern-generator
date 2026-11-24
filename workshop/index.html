@@ -848,166 +848,540 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
     const ground = G.plane(BW, BW, gmat, 0, 0.012, 0, root, { rx: -Math.PI / 2 });
     ground.receiveShadow = true;
 
-    /* ================= 远景：太行山脊与田块 ================= */
-    (function distantLandform() {
-      // 主山脊：低面数高度场；一条长而连续的脊线，低频起伏，山高与宽度比约 1:11
-      const MW = 150, MD = 40, SX = 100, SY = 30;
-      const geo = new THREE.PlaneGeometry(MW, MD, SX, SY);
-      geo.translate(0, MD / 2, 0);
-      const pos = geo.attributes.position;
-      const cols = new Float32Array(pos.count * 3);
-      const cBase = new THREE.Color(0x6e604c);
-      const cHigh = new THREE.Color(0x7d705c);
-      const cLime = new THREE.Color(0x9c9483);
-      const cGully = new THREE.Color(0x4a4238);
-      const cFoot = new THREE.Color(0x9a8660);
-      const tmp = new THREE.Color();
-      // 只用 3 个低频正弦：峰谷落差不超过山高的三成
-      function ridge(x) {
-        return 0.86 + 0.08 * Math.sin(x * 0.058 + 0.9)
-          + 0.04 * Math.sin(x * 0.147 + 2.3)
-          + 0.02 * Math.sin(x * 0.31 + 4.1);
-      }
-      const HMAX = 11.8;
-      const ss = (u) => { const k = Math.max(0, Math.min(1, u)); return k * k * (3 - 2 * k); };
-      // 山脚缓升，脊线前坡度平缓；两处很窄的抬升形成水平崖坎
-      const profAt = (t) => {
-        let prof = t < 0.76 ? Math.sin(Math.PI * 0.5 * (t / 0.76)) : 1 - 0.15 * ((t - 0.76) / 0.24);
-        prof += 0.075 * ss((t - 0.34) / 0.045) + 0.060 * ss((t - 0.55) / 0.045);
-        return prof;
+    /* ================= 远景：太行山前生长季绿坡与谷地 =================
+       用户指定本版按生长季的太行山南麓处理：以橄榄绿、鼠尾草绿和深林绿为主，
+       保留少量黄土断面与灰岩露头；不是把冬季航拍的土黄直接换色。 */
+    (function greenFoothills() {
+      // ---- 低频噪声：用确定性哈希，避免重复的正弦山脊 ----
+      const hash2 = (i, j) => {
+        const n = Math.sin(i * 127.1 + j * 311.7 + 17.13) * 43758.5453123;
+        return n - Math.floor(n);
       };
-      const footAt = (x, t) => 1.25 * Math.pow(t, 0.55) * (0.6 + 0.4 * Math.sin(x * 0.09 + 1.2));
-      // 竖向冲沟：从脊线往下切，浅而窄
-      const gullyAt = (x) => Math.sin(x * 1.18 + 1.4) * 0.5 + Math.sin(x * 2.31 + 0.6) * 0.26;
-      const cutAt = (x, t) => t > 0.26 ? Math.max(0, gullyAt(x) - 0.38) * 0.30 : 0;
-      const hAt = (x, t) => HMAX * ridge(x) * profAt(t) * (1 - cutAt(x, t)) + footAt(x, t);
+      const noise2 = (x, y) => {
+        const xi = Math.floor(x), yi = Math.floor(y);
+        const xf = x - xi, yf = y - yi;
+        const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+        const a = hash2(xi, yi), b = hash2(xi + 1, yi);
+        const c = hash2(xi, yi + 1), d = hash2(xi + 1, yi + 1);
+        return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
+      };
+      const fbm = (x, y, oct) => {
+        let s = 0, amp = 0.5, f = 1;
+        for (let i = 0; i < (oct || 4); i++) {
+          s += amp * noise2(x * f, y * f);
+          f *= 2.03; amp *= 0.5;
+        }
+        return s;
+      };
+      const smooth = (a, b, x) => {
+        const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+        return t * t * (3 - 2 * t);
+      };
+      const angVar = (a, sc, seed) => fbm(Math.cos(a) * sc + seed, Math.sin(a) * sc + seed * 1.7, 3);
+      const bump = (r, c, w) => Math.exp(-Math.pow((r - c) / w, 2));
+
+      // ---- 高度场：中心庭院保持平整，向外缓坡、三层不齐的山脊 ----
+      function landH(x, z) {
+        const r = Math.hypot(x, z);
+        const a = Math.atan2(x, -z);         // 0 = 北（-z）
+        const nearMask = smooth(11, 38, r);
+        const sink = 0.012 * (1 - smooth(9, 18, r));
+        const valley = smooth(13, 55, r) * (0.20 + 0.65 * fbm(x * 0.055 + 3.1, z * 0.055 + 8.7, 3));
+        const north = Math.max(0, -z / Math.max(1, r));
+        const mainAmp = Math.max(0.08, 1.0 * angVar(a, 4.6, 5.2) + 0.45 * angVar(a, 9.0, 11.1) + 0.25 * angVar(a, 2.0, 3.3) - 0.10);
+        const gully = Math.max(0, angVar(a, 11.0, 7.7) - 0.48);
+        const main = bump(r, 60, 30) * (3.4 + 6.0 * mainAmp) *
+          (0.50 + 0.62 * north) *
+          (0.68 + 0.55 * fbm(x * 0.038 + 1.7, z * 0.038 + 4.4, 3)) * (1 - 0.45 * gully);
+        const spur = bump(r, 40, 14) * (1.5 + 4.0 * angVar(a, 7.0, 16.2)) * (0.42 + 0.58 * north);
+        const midAmp = 0.30 + 0.70 * angVar(a, 2.0, 9.1);
+        const mid = bump(r, 128, 34) * (7.0 + 6.0 * midAmp) *
+          (0.80 + 0.25 * fbm(x * 0.028 + 6.3, z * 0.028 + 2.8, 3));
+        const farAmp = 0.30 + 0.70 * angVar(a, 1.5, 14.7);
+        const far = bump(r, 198, 38) * (11.0 + 8.0 * farAmp) *
+          (0.84 + 0.22 * fbm(x * 0.022 + 9.4, z * 0.022 + 7.1, 3));
+        const bank = 0.14 * bump(r, 10.6, 1.6) * (0.65 + 0.35 * fbm(x * 0.2 + 2.0, z * 0.2 + 5.0, 2));
+        return (valley + main + spur + mid + far) * nearMask + bank - sink;
+      }
+      WB.landH = landH;
+
+      // ---- 环形大地网格：没有方形边界，远处交给雾 ----
+      const R_MAX = 258, RINGS = 96, SEGS = 152;
+      const verts = [], inds = [];
+      verts.push(0, landH(0, 0), 0);
+      const ringStart = [0];
+      for (let i = 1; i <= RINGS; i++) {
+        ringStart[i] = verts.length / 3;
+        const rr = R_MAX * Math.pow(i / RINGS, 1.58);
+        for (let j = 0; j < SEGS; j++) {
+          const a = (j / SEGS) * Math.PI * 2;
+          const x = Math.sin(a) * rr, z = -Math.cos(a) * rr;
+          verts.push(x, landH(x, z), z);
+        }
+      }
+      for (let j = 0; j < SEGS; j++) {
+        const j2 = (j + 1) % SEGS;
+        inds.push(0, ringStart[1] + j2, ringStart[1] + j);
+      }
+      for (let i = 1; i < RINGS; i++) {
+        for (let j = 0; j < SEGS; j++) {
+          const j2 = (j + 1) % SEGS;
+          const a = ringStart[i] + j, b = ringStart[i] + j2;
+          const c = ringStart[i + 1] + j, d = ringStart[i + 1] + j2;
+          inds.push(a, b, c, b, d, c);
+        }
+      }
+      const landGeo = new THREE.BufferGeometry();
+      landGeo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+      landGeo.setIndex(inds);
+      landGeo.computeVertexNormals();
+
+      // ---- 顶点色：近谷地、山坡、灰岩、远山分层 ----
+      const pos = landGeo.attributes.position, nrm = landGeo.attributes.normal;
+      const cols = new Float32Array(pos.count * 3);
+      const cValleyA = new THREE.Color(0x667d42);
+      const cValleyB = new THREE.Color(0x4a6037);
+      const cDry = new THREE.Color(0x85834f);
+      const cLoess = new THREE.Color(0x8f7049);
+      const cHillA = new THREE.Color(0x405535);
+      const cHillB = new THREE.Color(0x586d40);
+      const cGully = new THREE.Color(0x2e422b);
+      const cLime = new THREE.Color(0x8d9184);
+      const cMidA = new THREE.Color(0x5c7680);
+      const cMidB = new THREE.Color(0x718c95);
+      const cFarA = new THREE.Color(0x7d98a6);
+      const cFarB = new THREE.Color(0x93adb9);
+      const cc = new THREE.Color();
       for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i), y = pos.getY(i);
-        const t = Math.max(0, y / MD);
-        const h = hAt(x, t), gully = gullyAt(x);
-        pos.setZ(i, h);
-        // 山脚干草、山腰褐灰、两条断续的浅灰白石灰岩崖带
-        const band = Math.sin(h * 2.5 + 0.45 * Math.sin(x * 0.11) + 0.6);
-        if (h < 2.4) tmp.copy(cFoot).lerp(cBase, h / 2.4);
-        else if (h < 10.4) tmp.copy(cBase).lerp(cHigh, (h - 2.4) / 8.0 * 0.78);
-        else tmp.copy(cHigh).lerp(cLime, Math.min(0.30, (h - 10.4) / 3.0));
-        const band1 = h > 4.6 && h < 6.1;
-        const band2 = h > 7.8 && h < 9.35;
-        if ((band1 || band2) && band > -0.05) {
-          tmp.lerp(cLime, 0.48);
-          if (band < 0.05) tmp.lerp(cGully, 0.16);
-        }
-        if (t > 0.30 && gully > 0.46) tmp.lerp(cGully, 0.55 + 0.16 * (gully - 0.46) / 0.30);
-        tmp.offsetHSL(0, 0, band > 0 ? 0.010 : -0.012);
-        cols[i * 3] = tmp.r; cols[i * 3 + 1] = tmp.g; cols[i * 3 + 2] = tmp.b;
-      }
-      geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
-      geo.computeVertexNormals();
-      const mat = new THREE.MeshStandardMaterial({
-        vertexColors: true, roughness: 1.0, metalness: 0.0, flatShading: true, color: 0xaaa08f,
-      });
-      const ridgeMesh = new THREE.Mesh(geo, mat);
-      ridgeMesh.rotation.x = -Math.PI / 2;
-      ridgeMesh.position.set(0, 0, -26);
-      ridgeMesh.receiveShadow = true;
-      root.add(ridgeMesh);
-
-      // 更远一层淡山：偏蓝灰、比天空地平线暗，交给雾去冲淡
-      const farGeo = new THREE.PlaneGeometry(190, 34, 70, 8);
-      farGeo.translate(0, 17, 0);
-      const fpos = farGeo.attributes.position;
-      const fcols = new Float32Array(fpos.count * 3);
-      const fLow = new THREE.Color(0x6f8295), fHigh = new THREE.Color(0x8fa0af), fc = new THREE.Color();
-      for (let i = 0; i < fpos.count; i++) {
-        const x = fpos.getX(i), y = fpos.getY(i), t = Math.max(0, y / 34);
-        const h = 16.0 * Math.pow(t, 1.20) * (0.78 + 0.12 * Math.sin(x * 0.045 + 1.2) + 0.06 * Math.sin(x * 0.12 + 3.1));
-        fpos.setZ(i, h);
-        fc.copy(fLow).lerp(fHigh, t * 0.8);
-        fcols[i * 3] = fc.r; fcols[i * 3 + 1] = fc.g; fcols[i * 3 + 2] = fc.b;
-      }
-      farGeo.setAttribute('color', new THREE.BufferAttribute(fcols, 3));
-      farGeo.computeVertexNormals();
-      const far = new THREE.Mesh(farGeo, new THREE.MeshStandardMaterial({
-        vertexColors: true, roughness: 1.0, metalness: 0.0, flatShading: true, color: 0xd6dee6,
-      }));
-      far.rotation.x = -Math.PI / 2;
-      far.position.set(0, 0, -78);
-      root.add(far);
-
-      // 底座之外的赭褐缓坡：缩小范围，让全景上方露出天空
-      const apron = G.plane(116, 44, std(0x65553c, 1.0, 0.0, { env: 0.02 }), 0, -0.02, -20, root, { rx: -Math.PI / 2 });
-      apron.receiveShadow = true;
-
-      // 田块：几十块低矮长方形地块，干黄、褐、灰褐交错
-      const fieldCols = [0x6f5e42, 0x625239, 0x776446, 0x574a34, 0x6a593e, 0x7c6747, 0x66573f];
-      const fieldG = new THREE.Group();
-      root.add(fieldG);
-      for (let r = 0; r < 7; r++) {
-        for (let c = 0; c < 11; c++) {
-          const x = -52 + c * 10.4 + R(-1.3, 1.3);
-          const z = -10.6 - r * 4.25 + R(-0.55, 0.55);
-          const w = R(6.8, 9.3), d = R(2.5, 3.6), ry = R(-0.035, 0.035);
-          G.box(w, 0.018, d, toon(WB.pick(fieldCols), { flat: true }), x, -0.005 + R(0, 0.006), z, fieldG,
-            { ry, line: false });
-          // 部分田块加几道浅垄沟
-          if ((r + c) % 4 === 0) {
-            for (let k = 0; k < 4; k++) {
-              G.box(w * 0.84, 0.006, 0.05, toon(0x5f5038, { flat: true }), x,
-                0.010, z - d * 0.33 + k * d * 0.22, fieldG, { ry, line: false });
-            }
-          }
-        }
-      }
-
-      // 几条土路
-      const roadMat = toon(0x7a6546, { flat: true });
-      const roadMat2 = toon(0x715c3f, { flat: true });
-      G.box(1.35, 0.03, 33, roadMat, -24.5, 0.020, -24, root, { line: false });
-      G.box(1.10, 0.03, 31, roadMat2, 15.5, 0.020, -23.5, root, { line: false });
-      G.box(84, 0.03, 1.05, roadMat, 0, 0.020, -18.2, root, { line: false });
-
-      // 山脚梯田：层层窄台，干黄草色
-      const terraceCols = [0x66553c, 0x5d4e36, 0x705d41, 0x62523a, 0x6a583e];
-      for (let i = 0; i < 5; i++) {
-        G.box(90 - i * 6, 0.07 + i * 0.035, 1.15, toon(terraceCols[i % terraceCols.length], { flat: true }),
-          0, 0.055 + i * 0.04, -20.5 - i * 1.15, root, { line: false });
-      }
-
-      // 田边与路旁稀疏树点
-      for (let i = 0; i < 18; i++) {
-        const x = R(-45, 45), z = R(-25, -12);
-        const hh = R(1.2, 2.5);
-        const tg = new THREE.Group();
-        tg.position.set(x, 0, z);
-        tg.rotation.y = R(0, 6.28);
-        root.add(tg);
-        const bare = i % 4 === 3;
-        const trunkH = hh * (bare ? 0.62 : 0.46);
-        G.cyl(0.045, 0.075, trunkH, 5, toon(0x4b3d2d), 0, trunkH / 2, 0, tg, { line: false });
-        if (bare) {
-          // 零星落叶树：短主干加几根分叉枝
-          for (let k = 0; k < 5; k++) {
-            const node = new THREE.Group();
-            node.position.set(0, trunkH * R(0.62, 1.0), 0);
-            node.rotation.order = 'YZX';
-            node.rotation.set(0, R(0, 6.28), R(0.45, 0.85));
-            tg.add(node);
-            const len = hh * R(0.22, 0.38);
-            G.cyl(0.006, 0.018, len, 4, toon(0x5a4a37), 0, len / 2, 0, node, { line: false });
-          }
+        const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+        const r = Math.hypot(x, z);
+        const ny = nrm.getY(i), slope = 1 - ny;
+        const n1 = fbm(x * 0.105 + 2.0, z * 0.105 + 7.0, 3);
+        const n2 = fbm(x * 0.036 + 9.0, z * 0.036 + 1.0, 4);
+        const light = Math.max(0, Math.min(1, 0.5 + (nrm.getX(i) * -0.44 + ny * 0.68 + nrm.getZ(i) * 0.54) * 0.7));
+        if (r < 46) {
+          cc.copy(cValleyA).lerp(cValleyB, n1);
+          cc.lerp(cDry, smooth(0.58, 0.84, n2) * 0.28);
+          if (r < 30 && y < 2.4 && n1 > 0.48) cc.lerp(cLoess, 0.30);
+        } else if (r < 124) {
+          cc.copy(cHillA).lerp(cHillB, n1);
+          cc.lerp(cGully, smooth(0.56, 0.78, n2) * 0.55);
+          if (slope > 0.30 && n2 > 0.38) cc.lerp(cLime, 0.26 + 0.18 * smooth(0.32, 0.72, slope));
+          if (Math.abs(Math.sin(y * 1.05 + n1 * 4.2)) < 0.09 && slope > 0.22) cc.lerp(cLime, 0.17);
+        } else if (r < 194) {
+          cc.copy(cMidA).lerp(cMidB, n1);
+          cc.lerp(cGully, smooth(0.54, 0.76, n2) * 0.24);
         } else {
-          G.cyl(0.012, R(0.30, 0.55), hh * 0.52, 6, toon(i % 5 === 0 ? 0x4a5a40 : 0x354436, { flat: true }),
-            0, hh * 0.72, 0, tg, { line: false });
+          cc.copy(cFarA).lerp(cFarB, n1);
+        }
+        cc.multiplyScalar(0.68);
+        cc.offsetHSL(0, 0.03, (light - 0.5) * 0.050);
+        cols[i * 3] = cc.r; cols[i * 3 + 1] = cc.g; cols[i * 3 + 2] = cc.b;
+      }
+      landGeo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+      const landMat = new THREE.MeshStandardMaterial({
+        vertexColors: true, color: 0xffffff, roughness: 1.0, metalness: 0.0,
+      });
+      const land = new THREE.Mesh(landGeo, landMat);
+      land.receiveShadow = true; land.castShadow = false;
+      root.add(land);
+
+      // 远山体：三层有前坡、脊线和后坡的极坐标山体，取代原先的竖直山幕。
+      // 每层径向 24 段、环向 240 段；山脚压到主坡以下，只露山脊与前后坡。
+      // 明暗来自真实法线+方向光，顶点色只承担冷暖/雾霾/灰岩分级。
+      function mountainRange(crestR, frontD, backD, hMin, hMax, seed, cLow, cHigh, cShade, cRock, hazeMix) {
+        const NA = 240, NR = 24, row = NR + 1, TAU = Math.PI * 2;
+        const v = [], c = [], idx = [];
+        const crestH = [], crestOff = [], frontAt = [], backAt = [];
+        for (let i = 0; i < NA; i++) {
+          const a = (i / NA) * TAU;
+          const n1 = angVar(a, 4.1, seed);
+          const n2 = angVar(a, 8.7, seed + 4.7);
+          const n3 = angVar(a, 2.25, seed + 8.1);
+          const shape = 0.56 * n1 + 0.29 * n2 + 0.15 * n3;
+          crestH[i] = hMin + (hMax - hMin) * smooth(0.22, 0.78, shape);
+          crestOff[i] = (n3 - 0.5) * 20 + (n1 - 0.5) * 8;
+          frontAt[i] = frontD * (0.80 + 0.42 * n2);
+          backAt[i] = backD * (0.74 + 0.52 * n1);
+        }
+        for (let i = 0; i < NA; i++) {
+          const a = (i / NA) * TAU;
+          for (let j = 0; j <= NR; j++) {
+            const t = j / NR;
+            const r0 = crestR + crestOff[i];
+            const r = t < 0.46
+              ? r0 - frontAt[i] * (1 - t / 0.46)
+              : r0 + backAt[i] * ((t - 0.46) / 0.54);
+            const x = Math.sin(a) * r, z = -Math.cos(a) * r;
+            const prof = t < 0.46
+              ? smooth(0.015, 0.46, t)
+              : 1 - smooth(0.46, 1.0, t);
+            const fold = fbm(a * 3.35 + seed * 0.21, t * 4.6 + seed * 0.13, 3) - 0.5;
+            const notch = Math.max(0, fbm(a * 6.8 + seed * 0.11, t * 1.9 + seed * 0.27, 2) - 0.53);
+            let h = crestH[i] * Math.pow(prof, 0.86);
+            h *= 0.86 + 0.28 * fold;        // 横向褶皱：不等高、不等宽
+            h -= crestH[i] * notch * 0.34;  // 冲沟
+            h *= smooth(0, 0.16, t) * smooth(0, 0.10, 1 - t);
+            v.push(x, Math.max(0, h), z);
+          }
+        }
+        for (let i = 0; i < NA; i++) {
+          const i2 = (i + 1) % NA;
+          for (let j = 0; j < NR; j++) {
+            const a = i * row + j, b = i2 * row + j, c1 = i * row + j + 1, d = i2 * row + j + 1;
+            idx.push(a, b, c1, b, d, c1);
+          }
+        }
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+        g.setIndex(idx);
+        g.computeVertexNormals();
+        const pos = g.attributes.position, nrm = g.attributes.normal;
+        const cA = new THREE.Color(cLow), cB = new THREE.Color(cHigh);
+        const cS = new THREE.Color(cShade), cR = new THREE.Color(cRock), tmp = new THREE.Color();
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+          const slant = 1 - nrm.getY(i);
+          const alt = Math.max(0, Math.min(1, y / Math.max(1, hMax)));
+          const nA = fbm(x * 0.105 + seed, z * 0.105 - seed, 3);
+          const nB = fbm(x * 0.034 - seed * 0.7, z * 0.034 + seed * 0.4, 3);
+          tmp.copy(cA).lerp(cB, 0.10 + 0.42 * alt);
+          tmp.lerp(cS, Math.max(0, Math.min(0.68, slant * 0.85 + (0.45 - nA) * 0.22)));
+          tmp.lerp(cB, hazeMix * (0.30 + 0.42 * alt));
+          if (slant > 0.40 && nB > 0.54) tmp.lerp(cR, 0.16 + 0.14 * smooth(0.40, 0.78, slant));
+          tmp.multiplyScalar(0.80 + 0.20 * Math.max(0, Math.min(1, 0.5 + nrm.getX(i) * -0.45 + nrm.getY(i) * 0.62 + nrm.getZ(i) * 0.54)));
+          c.push(tmp.r, tmp.g, tmp.b);
+        }
+        g.setAttribute('color', new THREE.Float32BufferAttribute(c, 3));
+        const mat = new THREE.MeshStandardMaterial({
+          vertexColors: true, color: 0xffffff, roughness: 1.0, metalness: 0.0,
+          flatShading: true, side: THREE.DoubleSide, fog: false, envMapIntensity: 0.30,
+        });
+        const mesh = new THREE.Mesh(g, mat);
+        mesh.castShadow = false; mesh.receiveShadow = false;
+        mesh.renderOrder = -1;
+        root.add(mesh);
+      }
+      // 近层偏灰绿，远层递冷；高度逐层略增但各层最高脊都留出天空。
+      mountainRange(132, 42, 38, 10.0, 21.0, 2.6, 0x2f4035, 0x4f6046, 0x1f2d25, 0x8d9084, 0.02);
+      mountainRange(174, 50, 44, 13.0, 29.0, 7.9, 0x445a5f, 0x738785, 0x2f4247, 0x989e9a, 0.07);
+      mountainRange(216, 56, 46, 18.0, 38.5, 13.7, 0x526974, 0x7f939b, 0x3b505a, 0xa6aaa7, 0.15);
+
+      // ---- 田块贴花：不规则软边，取代原来的矩形旱地网格 ----
+      function fieldTex(seed) {
+        const S = 192, c = WB.C(S, S), x = c.getContext('2d');
+        const cx = S / 2, cy = S / 2, N = 16;
+        const path = () => {
+          x.beginPath();
+          for (let k = 0; k <= N; k++) {
+            const a = (k / N) * Math.PI * 2;
+            const rr = S * 0.40 * (0.82 + 0.24 * hash2(k + seed * 13.1, seed * 3.7));
+            const px = cx + Math.cos(a) * rr, py = cy + Math.sin(a) * rr * 0.72;
+            if (k === 0) x.moveTo(px, py); else x.lineTo(px, py);
+          }
+          x.closePath();
+        };
+        path();
+        const g = x.createRadialGradient(cx, cy, S * 0.06, cx, cy, S * 0.48);
+        g.addColorStop(0, 'rgba(255,255,255,1)');
+        g.addColorStop(0.62, 'rgba(255,255,255,.95)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        x.fillStyle = g; x.fill();
+        x.save(); path(); x.clip();
+        x.strokeStyle = 'rgba(34,48,26,0.16)'; x.lineWidth = 1.15;
+        for (let k = -6; k <= 6; k++) {
+          x.beginPath();
+          for (let px = 0; px <= S; px += 7) {
+            const yy = cy + k * 12 + Math.sin(px * 0.034 + seed * 2.1) * 3.6;
+            if (px === 0) x.moveTo(px, yy); else x.lineTo(px, yy);
+          }
+          x.stroke();
+        }
+        for (let k = 0; k < 170; k++) {
+          x.fillStyle = 'rgba(38,54,28,' + R(0.03, 0.11) + ')';
+          x.fillRect(R(0, S), R(0, S), R(1, 3), R(1, 3));
+        }
+        x.restore();
+        const t = new THREE.CanvasTexture(c);
+        if (THREE.sRGBEncoding !== undefined) t.encoding = THREE.sRGBEncoding;
+        t.anisotropy = 4;
+        return t;
+      }
+      const fieldTexes = [fieldTex(1), fieldTex(2), fieldTex(3)];
+      const fieldCols = [0x55703b, 0x6c7740, 0x4a6234, 0x7d7a48, 0x5f7540, 0x415a30, 0x837b4a];
+      const fieldMats = fieldCols.map((col, i) => new THREE.MeshStandardMaterial({
+        color: col, map: fieldTexes[i % fieldTexes.length], transparent: true,
+        opacity: 0.98, roughness: 1.0, metalness: 0.0, depthWrite: false,
+        polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+      }));
+      const fringeMat = new THREE.MeshStandardMaterial({
+        color: 0x977d58, map: fieldTexes[1], transparent: true,
+        opacity: 0.90, roughness: 1.0, metalness: 0.0, depthWrite: false,
+        polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+      });
+      function addField(cx, cz, rx, rz, rot, mat) {
+        const g = new THREE.PlaneGeometry(rx * 2, rz * 2, 6, 5);
+        g.rotateX(-Math.PI / 2);
+        const p = g.attributes.position;
+        const cr = Math.cos(rot), sr = Math.sin(rot);
+        for (let i = 0; i < p.count; i++) {
+          const lx = p.getX(i), lz = p.getZ(i);
+          const wx = cx + lx * cr - lz * sr;
+          const wz = cz + lx * sr + lz * cr;
+          p.setXYZ(i, wx - cx, landH(wx, wz) + 0.045 + 0.01 * fbm(wx * 0.3, wz * 0.3, 2), wz - cz);
+        }
+        g.computeVertexNormals();
+        const mesh = new THREE.Mesh(g, mat);
+        mesh.position.set(cx, 0, cz);
+        mesh.receiveShadow = true; mesh.castShadow = false;
+        mesh.renderOrder = 2;
+        root.add(mesh);
+      }
+
+      // ---- 土路：从青石小径尽头接出，通往谷地，前景有土色引导 ----
+      const pathCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(8.2, 0, 8.9),
+        new THREE.Vector3(10.4, 0, 11.7),
+        new THREE.Vector3(13.4, 0, 14.9),
+        new THREE.Vector3(15.4, 0, 18.6),
+        new THREE.Vector3(21.2, 0, 21.4),
+        new THREE.Vector3(27.0, 0, 20.2),
+      ]);
+      const pathSamples = [];
+      for (let i = 0; i <= 36; i++) {
+        const t = i / 36, p = pathCurve.getPoint(t);
+        pathSamples.push([p.x, p.z]);
+      }
+      function nearPath(x, z, d) {
+        const dd = d * d;
+        for (let i = 0; i < pathSamples.length; i += 2) {
+          const dx = x - pathSamples[i][0], dz = z - pathSamples[i][1];
+          if (dx * dx + dz * dz < dd) return true;
+        }
+        return false;
+      }
+      (function dirtPath() {
+        const N = 36, v = [], idx = [];
+        for (let i = 0; i <= N; i++) {
+          const t = i / N, p = pathCurve.getPoint(t), tan = pathCurve.getTangent(t);
+          const nx = -tan.z, nz = tan.x, nl = Math.hypot(nx, nz) || 1;
+          const w = 1.08 - 0.34 * t;
+          const y = landH(p.x, p.z) + 0.038;
+          v.push(p.x + nx / nl * w, y, p.z + nz / nl * w);
+          v.push(p.x - nx / nl * w, y, p.z - nz / nl * w);
+          if (i < N) {
+            const a = i * 2;
+            idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+          }
+        }
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+        g.setIndex(idx); g.computeVertexNormals();
+        const map = WB.tex.ground().clone(); map.needsUpdate = true; map.repeat.set(1.2, 7);
+        const mesh = new THREE.Mesh(g, std(0x927858, 0.99, 0.0, { map: map, env: 0.02, side: THREE.DoubleSide }));
+        mesh.receiveShadow = true; root.add(mesh);
+      })();
+      // 路缘碎石
+      for (let i = 0; i < 26; i++) {
+        const t = R(0.05, 0.98), p = pathCurve.getPoint(t), tan = pathCurve.getTangent(t);
+        const nx = -tan.z, nz = tan.x, nl = Math.hypot(nx, nz) || 1;
+        const side = Math.random() < 0.5 ? 1 : -1;
+        G.rock(R(0.04, 0.10), toon(i % 3 ? 0x8b887c : 0x9a9588, { flat: true }),
+          p.x + nx / nl * side * R(1.3, 1.9), landH(p.x, p.z) + 0.03,
+          p.z + nz / nl * side * R(1.3, 1.9), root);
+      }
+
+      // ---- 田块布置：绕庭院一圈，近景也有软边田亩 ----
+      for (let i = 0; i < 20; i++) {
+        const a = (i / 20) * Math.PI * 2 + R(-0.08, 0.08);
+        const r = R(21.5, 47);
+        const cx = Math.sin(a) * r, cz = -Math.cos(a) * r;
+        if (nearPath(cx, cz, 2.6)) continue;
+        const rx = R(4.0, 7.8), rz = R(2.4, 4.9);
+        addField(cx, cz, rx, rz, a + R(-0.35, 0.35), fieldMats[i % fieldMats.length]);
+      }
+      // 近院几块小田，压住方台边缘的直线
+      [[13.2, 10.4, 3.0, 2.0, 0.7], [-12.8, 9.6, 2.6, 1.8, -0.6], [11.6, -11.2, 2.4, 1.7, 1.8]].forEach((s, i) => {
+        if (!nearPath(s[0], s[1], 2.2)) addField(s[0], s[1], s[2], s[3], s[4], fieldMats[(i + 2) % fieldMats.length]);
+      });
+      // 院沿一圈软边土斑：让方台边缘先接黄土、再接草坡，避免一条硬直线
+      for (let i = 0; i < 18; i++) {
+        const a = (i / 18) * Math.PI * 2 + R(-0.10, 0.10);
+        const r = R(9.8, 12.4);
+        const x = Math.sin(a) * r, z = -Math.cos(a) * r;
+        if (nearPath(x, z, 1.6)) continue;
+        addField(x, z, R(1.4, 2.8), R(1.0, 2.0), a + R(-0.5, 0.5), fringeMat);
+      }
+
+      // ---- 山腰几条弯曲田埂，只作含蓄的地形记忆 ----
+      function addBench(rBase, a0, a1, width, col, seed) {
+        const N = 24, v = [], idx = [];
+        for (let i = 0; i <= N; i++) {
+          const t = i / N, a = a0 + (a1 - a0) * t;
+          const rr = rBase + Math.sin(t * 5.2 + seed) * 1.6;
+          const x = Math.sin(a) * rr, z = -Math.cos(a) * rr;
+          const y = landH(x, z) + 0.045;
+          const rx = Math.sin(a), rz = -Math.cos(a);
+          v.push(x + rx * width * 0.5, y, z + rz * width * 0.5);
+          v.push(x - rx * width * 0.5, y, z - rz * width * 0.5);
+          if (i < N) {
+            const k = i * 2;
+            idx.push(k, k + 2, k + 1, k + 1, k + 2, k + 3);
+          }
+        }
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+        g.setIndex(idx); g.computeVertexNormals();
+        const mesh = new THREE.Mesh(g, toon(col, { flat: true, side: THREE.DoubleSide }));
+        mesh.receiveShadow = true; root.add(mesh);
+      }
+      addBench(55, -0.62, 0.92, 2.8, 0x7d8a55, 0.3);
+      addBench(62, -0.40, 1.22, 2.4, 0x8e905c, 1.7);
+      addBench(69, -0.78, 0.68, 2.1, 0x6f814d, 3.1);
+      addBench(58, 2.05, 2.75, 2.2, 0x7f8b57, 4.4);
+
+      // ---- 树与灌木：宽冠、成簇，不用等距锥形树 ----
+      const barkMat = toon(0x594634, { flat: true });
+      const canopyCols = [0x3f5636, 0x506741, 0x627a48, 0x354b32];
+      const canopySets = canopyCols.map(() => []);
+      const trunkSet = [];
+      const dummy = new THREE.Object3D();
+      function addTree(x, z, sc) {
+        const y = landH(x, z);
+        const h = R(1.05, 2.05) * sc;
+        const trunkH = h * R(0.36, 0.50);
+        dummy.position.set(x, y + trunkH / 2, z);
+        dummy.rotation.set(0, R(0, 6.28), 0);
+        dummy.scale.set(R(0.7, 1.1), trunkH, R(0.7, 1.1));
+        dummy.updateMatrix(); trunkSet.push(dummy.matrix.clone());
+        const blobs = 2 + (Math.random() < 0.55 ? 1 : 0);
+        for (let b = 0; b < blobs; b++) {
+          const rr = h * R(0.22, 0.36);
+          dummy.position.set(x + R(-0.32, 0.32) * h * 0.5, y + trunkH + h * R(0.22, 0.46), z + R(-0.32, 0.32) * h * 0.5);
+          dummy.rotation.set(R(-0.25, 0.25), R(0, 6.28), R(-0.25, 0.25));
+          dummy.scale.set(rr * R(1.1, 1.5), rr * R(0.72, 1.0), rr * R(1.1, 1.5));
+          dummy.updateMatrix();
+          canopySets[(Math.random() * canopySets.length) | 0].push(dummy.matrix.clone());
         }
       }
-      // 山脚几株深色松柏，压住山与台地的交界
-      for (let i = 0; i < 9; i++) {
-        const x = -30 + i * 7.5 + R(-1.8, 1.8), z = -24.2 + R(-1.2, 1.2);
-        const hh = R(1.3, 2.6);
-        G.cyl(0.05, 0.08, hh * 0.45, 5, toon(0x4b3d2d), x, hh * 0.22, z, root, { line: false });
-        G.cyl(0.02, R(0.55, 0.95), hh * 0.7, 6, toon(0x354436, { flat: true }), x, hh * 0.62, z, root, { line: false });
+      let placedTrees = 0;
+      for (let c = 0; c < 24 && placedTrees < 120; c++) {
+        const a = R(0, Math.PI * 2), r = R(18, 86);
+        const cx = Math.sin(a) * r, cz = -Math.cos(a) * r;
+        if (cx > 8 && cz > 6 && r < 42) continue;
+        const n = 4 + ((Math.random() * 7) | 0);
+        for (let k = 0; k < n && placedTrees < 120; k++) {
+          const x = cx + R(-5.5, 5.5), z = cz + R(-5.5, 5.5);
+          if (Math.hypot(x, z) < 12.5) continue;
+          if (x > 7 && z > 5 && Math.hypot(x, z) < 38) continue;
+          if (nearPath(x, z, 1.8)) continue;
+          if (landH(x, z) > 19) continue;
+          addTree(x, z, R(1.0, 1.75));
+          placedTrees++;
+        }
       }
+      // 远坡小树点：只加小冠，不排成行
+      for (let i = 0; i < 55; i++) {
+        const a = R(0, Math.PI * 2), r = R(58, 120);
+        const x = Math.sin(a) * r, z = -Math.cos(a) * r;
+        const y = landH(x, z);
+        if (y < 2.2) continue;
+        const rr = R(0.42, 1.0);
+        dummy.position.set(x, y + rr * 0.75, z);
+        dummy.rotation.set(0, R(0, 6.28), 0);
+        dummy.scale.set(rr * R(1.1, 1.6), rr * R(0.7, 1.0), rr * R(1.1, 1.6));
+        dummy.updateMatrix(); canopySets[(Math.random() * canopySets.length) | 0].push(dummy.matrix.clone());
+      }
+      function makeInst(geo, mat, mats, cast) {
+        if (!mats.length) return;
+        const im = new THREE.InstancedMesh(geo, mat, mats.length);
+        for (let i = 0; i < mats.length; i++) im.setMatrixAt(i, mats[i]);
+        im.instanceMatrix.needsUpdate = true;
+        im.castShadow = !!cast; im.receiveShadow = false;
+        root.add(im);
+      }
+      const trunkGeo = new THREE.CylinderGeometry(0.045, 0.075, 1, 5);
+      makeInst(trunkGeo, barkMat, trunkSet, false);
+      const canopyGeo = new THREE.IcosahedronGeometry(1, 0);
+      const shrubGeo = new THREE.IcosahedronGeometry(1, 1);
+      canopySets.forEach((mats, i) => makeInst(canopyGeo, toon(canopyCols[i], { flat: true }), mats, false));
+
+      // ---- 灌木带与草簇 ----
+      const shrubCols = [0x354a32, 0x465c3b, 0x596f45];
+      const shrubSets = shrubCols.map(() => []);
+      let shrubs = 0;
+      for (let i = 0; i < 720 && shrubs < 200; i++) {
+        const a = R(0, Math.PI * 2), r = R(12.5, 92);
+        const x = Math.sin(a) * r, z = -Math.cos(a) * r;
+        if (Math.hypot(x, z) < 11.5) continue;
+        if (x > 7 && z > 5 && Math.hypot(x, z) < 34) continue;
+        if (nearPath(x, z, 1.4)) continue;
+        const y = landH(x, z);
+        if (y > 17) continue;
+        if (fbm(x * 0.075 + 4.2, z * 0.075 + 1.9, 3) < 0.44) continue;
+        const rr = R(0.30, 0.72);
+        dummy.position.set(x, y + rr * 0.55, z);
+        dummy.rotation.set(R(-0.2, 0.2), R(0, 6.28), R(-0.2, 0.2));
+        dummy.scale.set(rr * R(1.05, 1.45), rr * R(0.50, 0.78), rr * R(1.05, 1.45));
+        dummy.updateMatrix();
+        shrubSets[(Math.random() * shrubSets.length) | 0].push(dummy.matrix.clone());
+        shrubs++;
+      }
+      // 院沿低灌木：压住方台直边，让黄土院与草坡之间有一次过渡
+      for (let i = 0; i < 20; i++) {
+        const a = R(0, Math.PI * 2), r = R(9.8, 12.8);
+        const x = Math.sin(a) * r, z = -Math.cos(a) * r;
+        if (nearPath(x, z, 1.5)) continue;
+        const rr = R(0.28, 0.62);
+        dummy.position.set(x, landH(x, z) + rr * 0.5, z);
+        dummy.rotation.set(R(-0.2, 0.2), R(0, 6.28), R(-0.2, 0.2));
+        dummy.scale.set(rr * R(1.05, 1.45), rr * R(0.50, 0.78), rr * R(1.05, 1.45));
+        dummy.updateMatrix();
+        shrubSets[(Math.random() * shrubSets.length) | 0].push(dummy.matrix.clone());
+      }
+      shrubSets.forEach((mats, i) => makeInst(shrubGeo, toon(shrubCols[i], { flat: true }), mats, false));
+
+      // 草簇：近坡与院外，颜色偏橄榄/鼠尾草
+      const grassGeo = new THREE.ConeGeometry(0.055, 0.16, 4);
+      grassGeo.translate(0, 0.08, 0);
+      const grassCols = [0x6f7d47, 0x7d874f, 0x5f7040];
+      const grassSets = grassCols.map(() => []);
+      let grass = 0;
+      for (let i = 0; i < 760 && grass < 260; i++) {
+        const a = R(0, Math.PI * 2), r = R(10.2, 58);
+        const x = Math.sin(a) * r, z = -Math.cos(a) * r;
+        if (Math.hypot(x, z) < 9.6) continue;
+        if (nearPath(x, z, 1.1)) continue;
+        const y = landH(x, z);
+        if (y > 8) continue;
+        dummy.position.set(x, y, z);
+        dummy.rotation.set(R(-0.24, 0.24), R(0, 6.28), R(-0.24, 0.24));
+        const s = R(0.7, 1.6);
+        dummy.scale.set(s, s * R(0.7, 1.35), s);
+        dummy.updateMatrix();
+        grassSets[(Math.random() * grassSets.length) | 0].push(dummy.matrix.clone());
+        grass++;
+      }
+
+      // 院沿一圈不规则草/石，柔化方台与草坡的直线接缝
+      for (let i = 0; i < 86; i++) {
+        const a = R(0, Math.PI * 2), rr = R(9.3, 12.2);
+        const x = Math.sin(a) * rr, z = -Math.cos(a) * rr;
+        if (nearPath(x, z, 1.0)) continue;
+        if (Math.random() < 0.62) {
+          const s = R(0.85, 1.6);
+          dummy.position.set(x, landH(x, z), z);
+          dummy.rotation.set(R(-0.24, 0.24), R(0, 6.28), R(-0.24, 0.24));
+          dummy.scale.set(s, s * R(0.7, 1.2), s);
+          dummy.updateMatrix();
+          grassSets[i % grassSets.length].push(dummy.matrix.clone());
+        } else {
+          G.rock(R(0.05, 0.11), toon(i % 2 ? 0x7a776a : 0x8a8678, { flat: true }), x, 0.02, z, root);
+        }
+      }
+      grassSets.forEach((mats, i) => makeInst(grassGeo, toon(grassCols[i], { flat: true }), mats, false));
     })();
+
 
     /* ================= 黄土崖 / 土坎：三级台地与窑洞 ================= */
     (function loessCliff() {
@@ -3172,8 +3546,8 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
       g.position.set(-7.15, 0, -2.15);
       root.add(g);
       const barkMat = toon(0x4a3a2c);
-      const leafMat = toon(0xb08a3e, { flat: true });
-      const leafMat2 = toon(0x8f6f34, { flat: true });
+      const leafMat = toon(0x5c7448, { flat: true });
+      const leafMat2 = toon(0x4b623c, { flat: true });
 
       function limb(parent, len, r0, r1, tilt, yaw, depth) {
         const node = new THREE.Group();
@@ -3193,9 +3567,9 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
             limb(tip, len * R(0.58, 0.76), r1, r1 * 0.62, R(0.35, 0.85) * (i % 2 ? 1 : -1) + 0.1, i * 2.1 + R(-0.4, 0.4), depth - 1);
           }
         } else {
-          // 深秋落叶后仅剩稀疏黄叶
-          if (Math.random() < 0.72) {
-            for (let i = 0; i < 2; i++) {
+          // 生长季枝叶：绿冠压住院角，不再是深秋黄叶
+          if (Math.random() < 0.88) {
+            for (let i = 0; i < 3; i++) {
               const s = new THREE.Mesh(new THREE.IcosahedronGeometry(R(0.07, 0.14), 0), i % 2 ? leafMat : leafMat2);
               s.position.set(R(-0.16, 0.16), R(-0.05, 0.20), R(-0.16, 0.16));
               s.rotation.set(R(0, 3), R(0, 3), R(0, 3));
@@ -3302,67 +3676,26 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
       }
     })();
 
-    /* ---------------- 杨树、松柏与灌木 ---------------- */
-    (function trees() {
-      // 院外小路边的杨树：冬季落叶，细高柱状树冠，主枝 20–40 根向上斜伸
-      const poplarBark = toon(0x6a5a45);
-      const poplarTwig = toon(0x7b6a52);
-      const poplarHaze = new THREE.MeshBasicMaterial({
-        color: 0x8a7a66, transparent: true, opacity: 0.11, depthWrite: false, side: THREE.DoubleSide,
-      });
-      const poplarSpots = [[8.45, 6.9], [8.55, 4.0], [-8.55, 7.2], [8.4, 8.1]];
-      poplarSpots.forEach((p, pi) => {
-        const g = new THREE.Group();
-        g.position.set(p[0], 0, p[1]);
-        g.rotation.y = R(0, 6.28);
-        root.add(g);
-        const h = R(3.5, 4.4);
-        G.cyl(0.065, 0.135, h, 7, poplarBark, 0, h / 2, 0, g, { os: 0.0010 });
-        // 主干上部的侧枝：下宽上窄，形成细高柱状轮廓
-        const N = 32;
-        for (let i = 0; i < N; i++) {
-          const frac = i / (N - 1);
-          const y = h * (0.27 + 0.68 * frac + R(-0.035, 0.035));
-          const a = R(0, 6.28);
-          const tilt = R(0.78, 1.16) - 0.34 * frac;
-          const len = h * R(0.20, 0.32) * (1 - 0.28 * frac);
-          const node = new THREE.Group();
-          node.position.set(0, y, 0);
-          node.rotation.order = 'YZX';
-          node.rotation.set(0, a, tilt);
-          g.add(node);
-          G.cyl(0.005, 0.017, len, 4, i % 3 ? poplarTwig : poplarBark, 0, len / 2, 0, node, { line: false });
-          if (i % 4 === 0) {
-            const tw = new THREE.Group();
-            tw.position.y = len * R(0.48, 0.72);
-            tw.rotation.order = 'YZX';
-            tw.rotation.set(0, R(-0.9, 0.9), R(-0.55, 0.55));
-            node.add(tw);
-            G.cyl(0.003, 0.008, len * R(0.32, 0.52), 3, poplarTwig, 0, len * 0.22, 0, tw, { line: false });
-          }
-        }
-        // 很淡的灰褐枝团，补出细枝的体积感
-        const puff = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), poplarHaze);
-        puff.position.y = h * 0.63;
-        puff.scale.set(0.72, h * 0.30, 0.72);
-        g.add(puff);
-        const puff2 = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), poplarHaze);
-        puff2.position.y = h * 0.88;
-        puff2.scale.set(0.54, h * 0.17, 0.54);
-        g.add(puff2);
-      });
-
-      // 松柏：深绿锥形，少量点在山脚与院角
-      const pineSpots = [[-8.15, 5.55, 2.3], [7.95, -7.75, 2.7], [8.2, 7.2, 2.0], [-8.25, -7.6, 2.1]];
-      pineSpots.forEach((p, pi) => {
+    /* ---------------- 院边阔叶树：生长季绿冠 ---------------- */
+    (function nearYardTrees() {
+      const bark = toon(0x5a4634, { flat: true });
+      const leafCols = [0x536b43, 0x627a4a, 0x455c3b];
+      const spots = [
+        [8.45, 6.9, 3.0], [8.55, 4.0, 2.6], [-8.55, 7.2, 3.2],
+        [8.4, 8.1, 2.4], [-8.15, 5.55, 2.6], [7.95, -7.75, 2.9], [-8.25, -7.6, 2.5],
+      ];
+      spots.forEach((p) => {
         const g = new THREE.Group();
         g.position.set(p[0], 0, p[1]);
         root.add(g);
         const h = p[2];
-        G.cyl(0.06, 0.11, h * 0.5, 6, toon(0x4f3f2d), 0, h * 0.25, 0, g, { line: false });
-        G.cyl(0.04, h * 0.30, h * 0.45, 7, toon(0x30402f, { flat: true }), 0, h * 0.42, 0, g, { line: false });
-        G.cyl(0.03, h * 0.23, h * 0.42, 7, toon(0x354735, { flat: true }), 0, h * 0.67, 0, g, { line: false });
-        G.cyl(0.02, h * 0.14, h * 0.30, 6, toon(0x3a4d39, { flat: true }), 0, h * 0.87, 0, g, { line: false });
+        G.cyl(0.055, 0.10, h * 0.54, 6, bark, 0, h * 0.27, 0, g, { line: false });
+        for (let k = 0; k < 5; k++) {
+          const a = R(0, 6.28), rr = R(0.34, 0.68);
+          G.sph(rr, toon(leafCols[k % leafCols.length], { flat: true }),
+            Math.cos(a) * R(0.18, 0.58), h * R(0.56, 0.92), Math.sin(a) * R(0.18, 0.58), g,
+            { sy: R(0.62, 0.9), seg: 7, seg2: 6, line: false });
+        }
       });
     })();
 
@@ -4433,11 +4766,11 @@ WB.initProduct = function () {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.02;
+  renderer.toneMappingExposure = 0.97;
   if (THREE.sRGBEncoding !== undefined) renderer.outputEncoding = THREE.sRGBEncoding;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0xc8d3dc, 55, 230);
+  scene.fog = new THREE.Fog(0xc8d6d8, 82, 285);
   WB.scene = scene;
   WB.root = new THREE.Group();
   scene.add(WB.root);
@@ -4469,10 +4802,10 @@ WB.initProduct = function () {
   })();
 
   /* ---------------- 灯光：冬日晴朗低角度太阳 ---------------- */
-  const hemi = new THREE.HemisphereLight(0xbcd6f2, 0x9a7a52, 0.70);
+  const hemi = new THREE.HemisphereLight(0xbcd6f2, 0x8b7b55, 0.70);
   scene.add(hemi);
 
-  const key = new THREE.DirectionalLight(0xffe0b0, 2.20);
+  const key = new THREE.DirectionalLight(0xffe0b0, 2.10);
   key.position.set(-10, 13.5, 11);
   key.castShadow = true;
   key.shadow.mapSize.set(2048, 2048);
@@ -4555,13 +4888,12 @@ WB.initProduct = function () {
   /* ---------------- 自由旋转 / 缩放 ---------------- */
   const target = new THREE.Vector3(0, 2.0, -2.0);
   const targetT = target.clone();
-  const cam = { theta: 0.70, phi: 1.22, r: 42 };
-  const camT = { theta: 0.70, phi: 1.22, r: 42 };
+  const cam = { theta: 0.70, phi: 1.36, r: 42 };
+  const camT = { theta: 0.70, phi: 1.36, r: 42 };
   const qp = new URLSearchParams(location.search);
   const uiOff = qp.get('ui') === '0';
   const coldDebug = qp.get('kilnCold') === '1';
-  // 竖屏默认退远一点，保证 18×18 底座与后山脊同时入画
-  if (window.innerWidth <= 760) { cam.r = camT.r = 60; }
+  // 手机初始退远量由 layoutMobile() 依“真实预览区域”的宽高比计算，不能用整窗竖屏常数。
   if (qp.has('cam')) {
     const a0 = qp.get('cam').split(',').map(Number);
     if (a0.length >= 3) { cam.theta = camT.theta = a0[0]; cam.phi = camT.phi = a0[1]; cam.r = camT.r = a0[2]; }
@@ -4577,6 +4909,7 @@ WB.initProduct = function () {
   if (WB.label) WB.label.hidden = true;
   let idle = 0, dragging = false, lastX = 0, lastY = 0, pinch = 0;
   let downX = 0, downY = 0, moved = 0, camLockT = 0;
+  let activePointerId = null;
   // 调试预设视角用于截图复测时不自动缓慢旋转，避免 5 秒后构图漂移。
   if (qp.has('cam')) camLockT = 1e9;
 
@@ -4709,6 +5042,9 @@ WB.initProduct = function () {
       /* #ki 纸签：沿用原卡结构，补九关选项与走条 */
       #ki { box-sizing:border-box; max-height:calc(100vh - 112px); overflow-y:auto; scrollbar-width:thin; }
       #ki * { box-sizing:border-box; }
+      /* 桌面保持原纸签流式排版；滚动容器只在手机布局里成为独立 flex 区 */
+      #ki .sheet-body { display:contents; }
+      #ki .sheet-toggle { display:none; }
       #ki::-webkit-scrollbar { width:6px; }
       #ki::-webkit-scrollbar-thumb { background:rgba(122,96,62,.35); border-radius:3px; }
       #ki .close {
@@ -4773,7 +5109,8 @@ WB.initProduct = function () {
       /* 只读调试：?ui=0 时连原 HTML 的 #ki 纸签也隐藏；默认桌面/手机行为不变 */
       body.ui-off #ki { display:none !important; }
 
-      @media (max-width: 760px) {
+      /* 手机竖屏；横屏触屏（高度<=500，宽度可能>760）也走同一套紧凑 UI */
+      @media (max-width: 760px), (max-height: 500px) and (pointer: coarse) {
         #hud .brand { left:10px; top:9px; padding:7px 11px 6px; }
         #hud .brand .t { font-size:14px; letter-spacing:2px; }
         #hud .brand .p { font-size:10.5px; }
@@ -4786,20 +5123,64 @@ WB.initProduct = function () {
         .rail-btn i { min-width:14px; font-size:9.5px; }
         .rail-btn span { font-size:11.5px; letter-spacing:.5px; }
         .rail-btn em { display:none; }
-        #viewbar { left:10px; right:10px; bottom:112px; justify-content:center; gap:6px; }
+        /* 底部控制区：安全区之上，永远位于画布与参数纸签之外 */
+        #viewbar { left:10px; right:10px; bottom:calc(67px + env(safe-area-inset-bottom,0px)); justify-content:center; gap:6px; }
         #viewbar button { flex:1; height:37px; padding:0 7px; font-size:12px; letter-spacing:1px; }
-        #switches { left:10px; right:10px; bottom:9px; width:auto; grid-template-columns:repeat(3,minmax(0,1fr)); padding:6px; gap:5px; }
-        .sw { height:38px; padding:0 7px; font-size:11.5px; gap:5px; }
+        #switches { left:10px; right:10px; bottom:calc(9px + env(safe-area-inset-bottom,0px)); width:auto; grid-template-columns:repeat(4,minmax(0,1fr)); padding:6px; gap:5px; }
+        .sw { height:38px; padding:0 4px; font-size:10px; gap:3px; }
+        .sw .nm { white-space:nowrap; }
         .sw .st { font-size:10px; }
-        #toast { bottom:158px; font-size:12px; max-width:calc(100vw - 26px); white-space:normal; text-align:center; }
+        #toast { bottom:calc(158px + env(safe-area-inset-bottom,0px)); font-size:12px; max-width:calc(100vw - 26px); white-space:normal; text-align:center; }
+        /* 参数纸签：底部紧凑抽屉，高度由 JS 按实际预览区计算 */
         #ki {
-          left:10px !important; right:10px; width:auto; max-width:calc(100vw - 20px);
-          padding:20px 18px 16px; max-height:calc(100vh - 280px);
+          left:10px; right:10px; width:auto; max-width:calc(100vw - 20px);
+          top:auto; bottom:calc(112px + env(safe-area-inset-bottom,0px));
+          padding:0; max-height:min(34vh, 280px); overflow:hidden;
+          display:flex; flex-direction:column;
         }
-        #ki h3 { font-size:22px; letter-spacing:4px; }
-        #ki .voice { font-size:16px; }
-        #ki .opt { padding:8px 9px; font-size:13.5px; }
-        #ki .confirm { letter-spacing:2px; font-size:14px; }
+        #ki.collapsed { height:46px; max-height:46px; overflow:hidden; }
+        #ki .sheet-toggle {
+          display:flex; align-items:center; gap:8px; flex:0 0 44px; width:100%; height:44px;
+          margin:0; padding:0 44px 0 14px; border:0; border-bottom:1px dotted rgba(122,96,62,.42);
+          background:linear-gradient(180deg, rgba(243,236,216,.94), rgba(233,223,198,.94));
+          color:#6d583c; font-size:12px; letter-spacing:2px; text-align:left;
+        }
+        #ki .sheet-toggle .sheet-grip { width:30px; height:3px; border-radius:2px; background:rgba(122,96,62,.42); flex:0 0 auto; }
+        #ki .sheet-toggle .sheet-chev { margin-left:auto; color:#8b7554; font-size:12px; }
+        #ki.collapsed .sheet-toggle { border-bottom:0; }
+        #ki .sheet-body {
+          display:block; flex:1 1 auto; min-height:0; overflow:auto; -webkit-overflow-scrolling:touch;
+          padding:7px 18px 3px; overscroll-behavior:contain;
+        }
+        #ki .actions {
+          flex:0 0 auto; margin:0; padding:8px 18px calc(9px + env(safe-area-inset-bottom,0px));
+          background:linear-gradient(180deg, rgba(233,223,198,.88), rgba(223,211,187,.98));
+          border-top:1px solid rgba(122,96,62,.30);
+        }
+        #ki .foot { display:none; }
+        #ki .close { top:8px; right:8px; }
+        #ki h3 { font-size:20px; letter-spacing:4px; padding-right:32px; }
+        #ki .sub { margin-bottom:7px; padding-bottom:7px; }
+        #ki .voice { font-size:15px; line-height:1.55; margin:7px 0 6px; }
+        #ki .fact { font-size:13px; line-height:1.65; margin-bottom:7px; padding:6px 9px; }
+        #ki .opts { gap:5px; margin:7px 0 3px; }
+        #ki .opt { padding:7px 8px; font-size:13px; }
+        #ki .confirm { letter-spacing:2px; font-size:14px; min-height:40px; }
+        #ki .speed, #ki .ghost { min-height:40px; }
+      }
+
+      /* 手机横屏：侧边紧凑参数页，画布占左侧；开关/视角条留在左下，互不覆盖 */
+      @media (max-height: 500px) and (pointer: coarse) {
+        #viewbar { left:8px; right:auto; bottom:calc(64px + env(safe-area-inset-bottom,0px)); gap:4px; }
+        #viewbar button { flex:0 0 auto; height:30px; padding:0 8px; font-size:11px; letter-spacing:1px; }
+        #switches { left:8px; right:auto; bottom:calc(7px + env(safe-area-inset-bottom,0px)); width:min(46vw, 320px); grid-template-columns:repeat(4,minmax(0,1fr)); padding:5px; gap:4px; }
+        .sw { height:30px; padding:0 4px; font-size:10px; gap:3px; }
+        #ki { max-width:none; }
+        #ki.collapsed { width:46px !important; max-width:46px; }
+        #ki.collapsed .sheet-toggle { padding:0; justify-content:center; }
+        #ki.collapsed .sheet-toggle .sheet-label { display:none; }
+        #ki.collapsed .sheet-toggle .sheet-grip { display:none; }
+        #ki.collapsed .sheet-toggle .sheet-chev { margin:0; transform:rotate(180deg); }
       }
     `;
     document.head.appendChild(s);
@@ -4901,8 +5282,9 @@ WB.initProduct = function () {
   ];
 
   const STEP_NAME = STEPS.map(s => s.name);
+  let currentView = 'overview';
   const VIEWS = {
-    overview: { t: [0, 2.0, -2.0], theta: 0.70, phi: 1.22, r: 42 },
+    overview: { t: [0, 2.0, -2.0], theta: 0.70, phi: 1.36, r: 42 },
     inside: { t: [0.2, 1.15, -2.8], theta: 0.05, phi: 1.25, r: 3.8 },
     product: { t: [-2.60, 1.35, 2.15], theta: 0.55, phi: 1.10, r: 5.2 },
     soil: { t: [-6.55, 0.45, 4.55], theta: 0.65, phi: 1.18, r: 5.4 },
@@ -5052,9 +5434,10 @@ WB.initProduct = function () {
   function focusView(name) {
     const v = VIEWS[name];
     if (!v) return;
+    currentView = name;
     targetT.set(v.t[0], v.t[1], v.t[2]);
     camT.theta = v.theta; camT.phi = v.phi; camT.r = v.r;
-    if (name === 'overview' && window.innerWidth <= 760) camT.r = 60;
+    if (name === 'overview' && isMobileUI()) camT.r = fitOverviewRadius();
     idle = 0; camLockT = 14;
   }
 
@@ -5134,7 +5517,222 @@ WB.initProduct = function () {
     return h;
   }
 
+  /* ---------------- 手机实景预览布局（仅改布局，不动九关语义） ---------------- */
+  let sheetCollapsed = false;
+  let mobileApplied = false;
+  let layoutRaf = 0;
+  let lastLayoutKind = '';
+  const canvasEl = document.getElementById('c');
+  const rendererRef = renderer;
+
+  function isMobileUI() {
+    return window.matchMedia('(max-width: 760px)').matches ||
+      (window.matchMedia('(max-height: 500px)').matches &&
+        (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0));
+  }
+  function isLandscapeMobile() {
+    return isMobileUI() && window.innerHeight <= 500 && window.innerWidth > window.innerHeight;
+  }
+  // 只用来判断“横竖屏/移动桌面”是否真的切换，不参与关卡状态。
+  function viewportKind() {
+    return (isMobileUI() ? 'mobile' : 'desktop') + '-' +
+      (window.innerHeight > window.innerWidth ? 'portrait' : 'landscape');
+  }
+  function fitOverviewRadius() {
+    let radius = 13.1;
+    const b = WB.sceneBounds;
+    if (b && b.min && b.max) {
+      const dx = b.max.x - b.min.x, dy = b.max.y - b.min.y, dz = b.max.z - b.min.z;
+      radius = Math.sqrt(dx * dx + dy * dy + dz * dz) / 2;
+    }
+    const vfov = camera.fov * Math.PI / 180;
+    const hfov = 2 * Math.atan(Math.tan(vfov / 2) * Math.max(0.25, camera.aspect));
+    const half = Math.max(0.08, Math.min(vfov, hfov) / 2);
+    return Math.max(18, Math.min(90, radius / Math.sin(half) * 1.04));
+  }
+  function scheduleMobileLayout() {
+    if (layoutRaf) return;
+    layoutRaf = requestAnimationFrame(() => { layoutRaf = 0; layoutMobile(); });
+  }
+  function applyRenderSize(w, h) {
+    const cw = Math.max(1, Math.round(w)), ch = Math.max(1, Math.round(h));
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (rendererRef.getPixelRatio() !== dpr) rendererRef.setPixelRatio(dpr);
+    rendererRef.setSize(cw, ch);
+    // setSize 本身会写内联尺寸；这里再钉一次，避免旋转时残留旧的 CSS 尺寸。
+    canvasEl.style.width = cw + 'px';
+    canvasEl.style.height = ch + 'px';
+    camera.aspect = cw / ch;
+    camera.updateProjectionMatrix();
+  }
+  function resetPointerState() {
+    dragging = false;
+    pinch = 0;
+    moved = 0;
+    lastX = lastY = 0;
+    hoverKey = null;
+    if (canvasEl) canvasEl.style.cursor = 'grab';
+    if (activePointerId !== null) {
+      try {
+        if (canvasEl.hasPointerCapture(activePointerId)) canvasEl.releasePointerCapture(activePointerId);
+      } catch (e) { /* 旧指针已失效 */ }
+      activePointerId = null;
+    }
+  }
+  // 横竖屏切换后按当前工位原构图重落（不再把室内近景换成全景）；
+  // 真正会导致撞墙的自动漂移在渲染循环里按纸签/视角状态禁止。当前关卡与纸签内容不重置。
+  function refitForViewport() {
+    if (qp.has('cam') || qp.get('kilnCut') === '1') return; // 尊重 ?cam 与本地切窑观察
+    // 工位近景本身是有效的；横竖屏只按真实画布比例重落原工位机位，
+    // 不再用全景替代近景。真正会撞墙的自动漂移另在渲染循环里按场景状态禁止。
+    if (VIEWS[currentView]) {
+      const v = VIEWS[currentView];
+      targetT.set(v.t[0], v.t[1], v.t[2]);
+      camT.theta = v.theta; camT.phi = v.phi; camT.r = v.r;
+      if (currentView === 'overview') {
+        camT.r = isMobileUI() ? fitOverviewRadius() : v.r;
+      } else if (camera.aspect < 0.85) {
+        // 极窄竖屏才轻微后退，保留工位主体；不把近景改成全景。
+        camT.r *= Math.min(1.18, 0.85 / Math.max(0.6, camera.aspect));
+      }
+    }
+    // 直接落到新机位，避免从旧机位穿墙的过渡帧。
+    cam.theta = camT.theta; cam.phi = camT.phi; cam.r = camT.r;
+    target.copy(targetT);
+    camLockT = 14;
+  }
+  function setSheetCollapsed(v) {
+    sheetCollapsed = !!v;
+    ki.classList.toggle('collapsed', sheetCollapsed);
+    const t = ki.querySelector('.sheet-toggle');
+    if (t) {
+      t.setAttribute('aria-expanded', String(!sheetCollapsed));
+      const l = t.querySelector('.sheet-label');
+      if (l) l.textContent = sheetCollapsed ? '展开参数' : '收起参数';
+    }
+    scheduleMobileLayout();
+  }
+  function prepareSheet() {
+    if (!ki || ki.dataset.sheetReady === '1') return;
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'sheet-toggle';
+    toggle.innerHTML = '<span class="sheet-grip"></span><span class="sheet-label">' +
+      (sheetCollapsed ? '展开参数' : '收起参数') + '</span><span class="sheet-chev">▾</span>';
+    toggle.setAttribute('aria-expanded', String(!sheetCollapsed));
+    const body = document.createElement('div');
+    body.className = 'sheet-body';
+    const actions = ki.querySelector('.actions');
+    Array.from(ki.children).forEach(el => {
+      if (el === actions || el.classList.contains('close')) return;
+      body.appendChild(el);
+    });
+    ki.insertBefore(toggle, ki.firstChild);
+    ki.appendChild(body);
+    if (actions) ki.appendChild(actions);
+    ki.dataset.sheetReady = '1';
+    toggle.addEventListener('click', (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      setSheetCollapsed(!sheetCollapsed);
+    });
+  }
+  function layoutMobile() {
+    if (!rendererRef || !canvasEl) return;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const kind = viewportKind();
+    const modeChanged = !!lastLayoutKind && lastLayoutKind !== kind;
+    if (modeChanged) resetPointerState();
+
+    // ui=0：必须保持整窗画布、无 UI；桌面非触屏也完全走原逻辑。
+    if (uiOff || !isMobileUI()) {
+      if (mobileApplied) {
+        mobileApplied = false;
+        canvasEl.style.position = ''; canvasEl.style.top = ''; canvasEl.style.left = '';
+        canvasEl.style.right = ''; canvasEl.style.bottom = ''; canvasEl.style.zIndex = '';
+        canvasEl.style.width = ''; canvasEl.style.height = '';
+        ki.style.left = ''; ki.style.right = ''; ki.style.top = ''; ki.style.bottom = '';
+        ki.style.width = ''; ki.style.maxWidth = ''; ki.style.maxHeight = ''; ki.style.height = '';
+      }
+      applyRenderSize(vw, vh);
+      if (!uiOff && ki.classList.contains('show') && vw > 760) positionCardDefault();
+      if (modeChanged) refitForViewport();
+      lastLayoutKind = kind;
+      return;
+    }
+
+    mobileApplied = true;
+    const rail = document.getElementById('rail');
+    const top = Math.max(92, Math.ceil((rail ? rail.offsetTop + rail.offsetHeight : 0)) + 2);
+    const shown = ki.classList.contains('show');
+    const land = isLandscapeMobile();
+    let w, h;
+    if (land) {
+      const sheetW = Math.min(Math.round(vw * 0.42), 340);
+      if (sheetCollapsed) {
+        ki.style.width = '46px'; ki.style.maxWidth = '46px';
+        ki.style.left = 'auto'; ki.style.right = '8px';
+        ki.style.top = 'auto'; ki.style.bottom = 'calc(8px + env(safe-area-inset-bottom,0px))';
+        ki.style.height = '46px'; ki.style.maxHeight = '46px';
+      } else {
+        ki.style.width = sheetW + 'px'; ki.style.maxWidth = sheetW + 'px';
+        ki.style.left = 'auto'; ki.style.right = '8px';
+        ki.style.top = top + 'px'; ki.style.bottom = 'calc(8px + env(safe-area-inset-bottom,0px))';
+        ki.style.height = ''; ki.style.maxHeight = 'none';
+      }
+      void ki.offsetHeight; // 读未变换布局盒，绝不用动画中的 getBoundingClientRect
+      const vb = document.getElementById('viewbar');
+      const vbTop = vb ? vb.offsetTop : (vh - 100);
+      const cardBelow = shown && ki.offsetTop >= (vbTop - 6);
+      w = shown && !cardBelow ? Math.max(160, ki.offsetLeft - 6) : vw;
+      h = Math.max(120, (shown ? vbTop : vh) - 6 - top);
+    } else {
+      ki.style.width = 'auto'; ki.style.maxWidth = 'calc(100vw - 20px)';
+      ki.style.left = '10px'; ki.style.right = '10px';
+      ki.style.top = 'auto'; ki.style.bottom = 'calc(112px + env(safe-area-inset-bottom,0px))';
+      ki.style.maxHeight = 'min(34vh, 280px)';
+      ki.style.height = sheetCollapsed ? '46px' : '';
+      void ki.offsetHeight;
+      let bottom;
+      if (shown) bottom = ki.offsetTop - 6;
+      else {
+        const vb = document.getElementById('viewbar');
+        bottom = (vb ? vb.offsetTop : (vh - 100)) - 6;
+      }
+      w = vw;
+      h = Math.max(140, bottom - top);
+    }
+    canvasEl.style.position = 'fixed';
+    canvasEl.style.left = '0';
+    canvasEl.style.top = top + 'px';
+    canvasEl.style.right = 'auto';
+    canvasEl.style.bottom = 'auto';
+    canvasEl.style.zIndex = '0';
+    applyRenderSize(w, h);
+    if (modeChanged) refitForViewport();
+    lastLayoutKind = kind;
+  }
+
+  // 纸签展开/收起、字体加载、控件换行都会改内容盒；用 ResizeObserver 复核，
+  // 保证画布始终停在纸签上方 6px，而不是等一次偶然的 resize。
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => scheduleMobileLayout());
+    ro.observe(ki);
+    const vbEl = document.getElementById('viewbar');
+    if (vbEl) ro.observe(vbEl);
+  }
+  // WebGL 上下文丢失/恢复：恢复后按当前布局重新量画布与相机宽高比。
+  canvasEl.addEventListener('webglcontextlost', (ev) => {
+    ev.preventDefault();
+    resetPointerState();
+  }, false);
+  canvasEl.addEventListener('webglcontextrestored', () => {
+    resetPointerState();
+    layoutMobile();
+    rendererRef.shadowMap.needsUpdate = true;
+  }, false);
+
   function positionCardDefault() {
+    if (isMobileUI()) { scheduleMobileLayout(); return; }
     const w = ki.offsetWidth || 372;
     if (window.innerWidth <= 760) {
       ki.style.left = '10px';
@@ -5252,10 +5850,16 @@ WB.initProduct = function () {
     cardStep = i;
     cardKey = STEPS[i].id;
     ki.innerHTML = cardHTML(i);
+    ki.dataset.sheetReady = '0';
+    sheetCollapsed = false;
+    ki.classList.remove('collapsed');
     ki.classList.add('show');
     ki.style.pointerEvents = 'auto';
+    prepareSheet();
     if (opts.event) positionCardAt(opts.event);
     else positionCardDefault();
+    scheduleMobileLayout();
+    setTimeout(layoutMobile, 380);
     bindStepCard(i);
   }
 
@@ -5273,9 +5877,15 @@ WB.initProduct = function () {
     h += '<div class="actions"><button class="confirm" type="button" data-act="resume">回到第 ' + (journey.current + 1) + ' 关</button><button class="ghost" type="button" data-act="overview">全景</button></div>';
     h += '<div class="foot"><span class="seal">當陽峪</span><span class="tip">轻触别处收起</span></div>';
     ki.innerHTML = h;
+    ki.dataset.sheetReady = '0';
+    sheetCollapsed = false;
+    ki.classList.remove('collapsed');
     ki.classList.add('show');
     ki.style.pointerEvents = 'auto';
+    prepareSheet();
     positionCardDefault();
+    scheduleMobileLayout();
+    setTimeout(layoutMobile, 380);
     const close = ki.querySelector('.close');
     if (close) close.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); closeCard(); });
     const resume = ki.querySelector('[data-act="resume"]');
@@ -5295,6 +5905,7 @@ WB.initProduct = function () {
     cardKey = null;
     ki.classList.remove('show');
     ki.style.pointerEvents = 'none';
+    scheduleMobileLayout();
   }
 
   // 礼匣按钮状态：开匣中 / 再看开匣 / 开匣
@@ -5516,6 +6127,10 @@ WB.initProduct = function () {
   }
 
   canvas.addEventListener('pointerdown', (e) => {
+    if (activePointerId !== null && activePointerId !== e.pointerId) {
+      try { if (canvas.hasPointerCapture(activePointerId)) canvas.releasePointerCapture(activePointerId); } catch (err) {}
+    }
+    activePointerId = e.pointerId;
     dragging = true; lastX = e.clientX; lastY = e.clientY;
     downX = e.clientX; downY = e.clientY; moved = 0;
     canvas.setPointerCapture(e.pointerId);
@@ -5551,7 +6166,10 @@ WB.initProduct = function () {
     dragging = false;
     canvas.style.cursor = 'grab';
     hoverKey = null;
-    if (e && e.pointerId !== undefined && canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+    if (e && e.pointerId !== undefined) {
+      if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+      if (activePointerId === e.pointerId) activePointerId = null;
+    }
   }
   canvas.addEventListener('pointercancel', endDrag);
   canvas.addEventListener('pointerleave', (e) => {
@@ -5569,6 +6187,8 @@ WB.initProduct = function () {
   canvas.addEventListener('touchstart', (e) => {
     if (e.touches.length === 2) {
       pinch = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    } else if (e.touches.length < 2) {
+      pinch = 0;
     }
   }, { passive: true });
   canvas.addEventListener('touchmove', (e) => {
@@ -5579,13 +6199,37 @@ WB.initProduct = function () {
       idle = 0; camLockT = 0;
     }
   }, { passive: true });
+  canvas.addEventListener('touchend', () => { if (!dragging) pinch = 0; }, { passive: true });
+  canvas.addEventListener('touchcancel', () => { pinch = 0; resetPointerState(); }, { passive: true });
 
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+  // 旋转时 innerWidth/innerHeight 会晚一两帧才稳定；合并 resize 事件，按稳定尺寸量一次。
+  function onViewportChange() {
+    if (isMobileUI() || uiOff || mobileApplied) { layoutMobile(); return; }
+    const kind = viewportKind();
+    const modeChanged = !!lastLayoutKind && lastLayoutKind !== kind;
+    if (modeChanged) resetPointerState();
+    applyRenderSize(window.innerWidth, window.innerHeight);
+    if (modeChanged) refitForViewport();
+    lastLayoutKind = kind;
     if (ki.classList.contains('show') && window.innerWidth > 760) positionCardDefault();
+  }
+  let viewportTimer = 0;
+  function queueViewportChange(delay) {
+    if (viewportTimer) clearTimeout(viewportTimer);
+    viewportTimer = setTimeout(() => { viewportTimer = 0; onViewportChange(); }, delay || 0);
+  }
+  window.addEventListener('resize', () => queueViewportChange(90));
+  window.addEventListener('orientationchange', () => {
+    resetPointerState();
+    scheduleMobileLayout();
+    queueViewportChange(240);
+    setTimeout(() => { scheduleMobileLayout(); queueViewportChange(0); }, 420);
   });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => queueViewportChange(120));
+  // 首屏也要按真实预览区域初始化，不能只等 window.resize。
+  layoutMobile();
+  requestAnimationFrame(layoutMobile);
+  window.addEventListener('load', () => { layoutMobile(); });
 
   /* ---------------- 主循环 ---------------- */
   const clock = new THREE.Clock();
@@ -5597,8 +6241,13 @@ WB.initProduct = function () {
     idle += dt;
     if (camLockT > 0) camLockT = Math.max(0, camLockT - dt);
 
-    // 闲置时极慢自转，一碰就停；聚焦工位后的十几秒内不自转
-    if (!dragging && idle > 5 && camLockT <= 0) camT.theta += dt * 0.028;
+    // 只在无纸签的纯全景里允许极慢自转。工位近景（尤其室内 tight view）
+    // 和任何展开的参数纸签都禁止自动改方位角，避免14s锁过期后把可用的
+    // 相机慢慢转进墙体；显式拖拽/双指操作仍可自由旋转。
+    const sheetOpen = !!(ki && ki.classList.contains('show'));
+    if (!dragging && !sheetOpen && currentView === 'overview' && idle > 5 && camLockT <= 0) {
+      camT.theta += dt * 0.028;
+    }
 
     target.lerp(targetT, Math.min(1, dt * 4.8));
     cam.theta += (camT.theta - cam.theta) * Math.min(1, dt * 7);
