@@ -424,11 +424,11 @@ body.gate-paused #ki { pointer-events: none !important; }
 /* 开始页 / 旋转门禁的判定核心。
  * evaluate 不碰 DOM、不读计时器、不写 journey；createActivator 只接收调用方
  * 传入的按钮并挂事件，不查询文档、不读计时器、不写 journey，便于 Node 单测。
- * 判定目标：
+ * 判定目标（2026-11-25 竖屏优先）：
  *   - 触屏（主指针粗，或没有可悬停的细指针）且短边 <= 560px 视为“手机类”设备；
- *   - 手机竖屏不可入场；手机横屏可入场；
+ *   - 手机竖屏、横屏都可直接入场；不再强制横屏，不再显示旋转遮罩；
  *   - 桌面（含窄而高的桌面窗口）可入场；
- *   - 已入场后手机竖屏 => rotate 遮罩，保留进度，不重新开场；横回 => play。
+ *   - 旋转只做轻提示/重排，不重新开场、不清进度。
  *
  * createActivator 是入场按钮的事件适配层：click 仍然保留，同时显式处理
  * pointerdown/up 与 touchstart/end。有些移动浏览器、辅助技术或自动化输入
@@ -463,10 +463,11 @@ body.gate-paused #ki { pointer-events: none !important; }
     var landscapeMobile = phone && !portrait;
     var desktop = !phone;
     var entered = !!input.entered;
-    var canEnter = !phone || !portrait;
+    // 竖屏优先：手机竖屏也可以进入；旋转不再作为门禁。
+    var canEnter = true;
     var showStart = !entered;
-    var showRotate = entered && phone && portrait;
-    var allowPlay = entered && !(phone && portrait);
+    var showRotate = false;
+    var allowPlay = entered;
 
     return {
       entered: entered,
@@ -478,12 +479,11 @@ body.gate-paused #ki { pointer-events: none !important; }
       showStart: showStart,
       showRotate: showRotate,
       allowPlay: allowPlay,
-      mode: !entered ? (canEnter ? 'start-ready' : 'start-blocked')
-        : (showRotate ? 'rotate' : 'play'),
-      preserveProgress: showRotate,
+      mode: !entered ? 'start-ready' : 'play',
+      preserveProgress: false,
       resetJourney: false,
       reopenStart: false,
-      reason: !phone ? 'desktop' : (portrait ? 'phone-portrait' : 'phone-landscape')
+      reason: !phone ? 'desktop' : (portrait ? 'phone-portrait-allowed' : 'phone-landscape')
     };
   }
 
@@ -620,10 +620,10 @@ body.gate-paused #ki { pointer-events: none !important; }
     <h1 id="sgTitle">当阳峪绞胎瓷工坊</h1>
     <p class="sg-lead">九关游历 · 胎里见纹 · 透花瓷</p>
     <div class="sg-rule" aria-hidden="true"><span></span><b>横屏体验更好</b><span></span></div>
-    <p id="sgCopy" class="sg-copy">本工坊是一座可转动的微缩窑场。横过手机，山景、窑炉与九道工序会更完整；电脑宽屏可直接进入。</p>
-    <p id="sgWarn" class="sg-warn" role="status" aria-live="polite" hidden>手机竖屏时暂不能进入，请先把手机横过来。</p>
+    <p id="sgCopy" class="sg-copy">本工坊是一座可转动的微缩窑场。手机竖屏可直接进入，横屏看院落更舒展；电脑宽屏可直接进入。</p>
+    <p id="sgWarn" class="sg-warn" role="status" aria-live="polite" hidden>竖屏也可直接进入；横屏看院落更舒展。</p>
     <button id="sgEnter" class="sg-enter" type="button" disabled aria-disabled="true">正在准备工坊…</button>
-    <p id="sgHint" class="sg-hint">可先横屏，再点进入 · 进场后进度不会因旋转丢失</p>
+    <p id="sgHint" class="sg-hint">竖屏可直接进入 · 横屏看院落更舒展 · 旋转不丢进度</p>
     <div class="sg-foot"><span class="sg-seal">當陽峪</span><span>晴日太行 · 九关</span></div>
   </div>
 </div>
@@ -632,7 +632,7 @@ body.gate-paused #ki { pointer-events: none !important; }
   <div class="rg-panel">
     <div class="rg-phone" aria-hidden="true"><i></i></div>
     <p class="rg-kicker">工坊已为你留在此处</p>
-    <h2 id="rgTitle">请把手机横过来</h2>
+    <h2 id="rgTitle">横屏视野更舒展</h2>
     <p class="rg-copy">你的工序、选项、礼匣与窑炉状态都已保留。横回屏幕即可继续。</p>
     <p class="rg-progress" id="rgProgress" role="status" aria-live="polite">进度已保留</p>
     <p class="rg-tip">不需要重新进入，也不会重新开场。</p>
@@ -5336,9 +5336,10 @@ WB.initProduct = function () {
   const G = WB.G, R = WB.R, toon = WB.toon, std = WB.std, C = WB.C;
 
   const HALL = {
-    x0: -15.45, x1: -9.30,
-    z0: -2.55, z1: 4.75,
-    cx: -12.375, cz: 1.10,
+    // 23:31 混合版：向西北各扩出约 1.25m / 0.55m，给四种 3D 展品与读册案留呼吸。
+    x0: -16.70, x1: -9.30,
+    z0: -3.10, z1: 5.30,
+    cx: -13.00, cz: 1.10,
     floorY: 0.265,
     wallH: 2.95,
     eaveY: 2.86,
@@ -5992,7 +5993,7 @@ WB.initProduct = function () {
       const tileMap = WB.tex.tile();
       tileMap.repeat.set(3.2, 2.4);
       const roofMat = toon(0xffffff, { map: tileMap, unique: true });
-      const underMat = toon(0x2f251c);
+      const underMat = toon(0x8a6f51);
       function slope(x0, x1, y0, y1) {
         const len = Math.sqrt(Math.pow(x1 - x0, 2) + Math.pow(y1 - y0, 2));
         const ang = Math.atan2(y1 - y0, x1 - x0);
@@ -6150,8 +6151,8 @@ WB.initProduct = function () {
     lights.mainRim = spot(0xb9d0be, 0.55, 6.5, 0.52, 0.94, [-12.05, 1.20, -0.10], [-14.35, 1.85, 1.10], false);
     lights.free = spot(0xffe2b0, 2.8, 5.5, 0.42, 0.85, [-12.72, 2.52, -1.05], [-14.62, 1.42, -0.92], false);
     lights.chrys = spot(0xffd59b, 2.3, 5.2, 0.40, 0.90, [-12.78, 2.58, 4.12], [-14.62, 1.36, 3.95], false);
-    lights.bambooKey = spot(0xf7e8c8, 2.6, 6.8, 0.46, 0.80, [-10.82, 2.54, 1.50], [-12.35, 1.72, 2.15], false);
-    lights.bambooRim = spot(0xc7d8c1, 1.35, 5.8, 0.50, 0.95, [-13.42, 2.42, 3.00], [-12.35, 1.52, 2.15], false);
+    lights.bambooKey = spot(0xf7e8c8, 2.6, 6.8, 0.46, 0.80, [-10.82, 2.10, 1.15], [-12.35, 1.02, 1.70], false);
+    lights.bambooRim = spot(0xc7d8c1, 1.35, 5.8, 0.50, 0.95, [-13.42, 2.02, 2.65], [-12.35, 0.90, 1.70], false);
     lights.sunKey = spot(0xffb877, 2.0, 4.6, 0.40, 0.92, [-11.25, 2.22, -0.85], [-12.32, 0.82, -0.40], false);
     lights.moonKey = spot(0xb5d4df, 1.9, 4.6, 0.40, 0.92, [-11.20, 2.18, 0.45], [-12.32, 0.82, 0.20], false);
     lights.fill = new THREE.PointLight(0xffdfb6, 0.18, 7.5, 2);
@@ -6254,18 +6255,19 @@ WB.initProduct = function () {
     /* ---------------- 左翼：竹编绞胎观音瓶（p.50 左图开光编法，高 30） ---------------- */
     (function bambooWing() {
       const g = new THREE.Group();
-      g.position.set(-12.35, HALL.floorY, 2.15);
+      g.position.set(-12.35, HALL.floorY, 1.70);
       g.rotation.y = -0.10;
       hall.add(g);
-      // 高木几
-      G.box(0.78, 0.92, 0.66, woodWarm, 0, 0.46, 0, g, { os: 0.003 });
-      G.box(0.88, 0.07, 0.76, woodRed, 0, 0.95, 0, g, { os: 0.0024 });
-      G.box(0.64, 0.10, 0.54, woodDark, 0, 0.89, 0, g, { line: false });
+      // 高木几：降到 0.58m 左右，让瓶身有观看高度但不顶梁
+      G.box(0.78, 0.55, 0.66, woodWarm, 0, 0.275, 0, g, { os: 0.003 });
+      G.box(0.88, 0.07, 0.76, woodRed, 0, 0.585, 0, g, { os: 0.0024 });
+      G.box(0.64, 0.10, 0.54, woodDark, 0, 0.525, 0, g, { line: false });
       // 几面小铜牌（不刻未确认文字）
-      G.box(0.26, 0.018, 0.16, gold, 0.20, 0.985, 0.28, g, { os: 0.0012 });
+      G.box(0.26, 0.018, 0.16, gold, 0.20, 0.618, 0.28, g, { os: 0.0012 });
 
       const vase = new THREE.Group();
-      vase.position.set(0, 0.99, 0);
+      vase.position.set(0, 0.615, 0);
+      vase.scale.setScalar(0.72); // 高 30cm 的竹编观音瓶，不做成厅高巨物
       g.add(vase);
       const profile = [
         [0.001, 0.00], [0.105, 0.00], [0.145, 0.025], [0.150, 0.065],
@@ -6432,9 +6434,158 @@ WB.initProduct = function () {
       cup.userData.hallPick = 'bambooCup';
       WB.hallPickables.bambooCup = cup;
 
+      // 花瓶本体较小，给一个只包瓶身的透明拾取体；不盖住右侧茶杯案
+      const proxyMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false });
+      const bambooHit = new THREE.Mesh(new THREE.BoxGeometry(0.72, 1.42, 0.72), proxyMat);
+      bambooHit.position.set(0, 0.72, 0);
+      bambooHit.frustumCulled = false;
+      bambooHit.userData.hallPick = 'bamboo';
+      g.add(bambooHit);
       g.userData.hallPick = 'bamboo';
       WB.hallPickables.bamboo = g;
       P.hallBamboo = g;
+    })();
+
+    /* ---------------- 右后：绞胎石榴瓶（p.46，矮鼓果形 + 红白绞纹 + 雕木座） ---------------- */
+    (function pomegranateWing() {
+      const g = new THREE.Group();
+      const proxyMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false });
+      g.position.set(-13.35, HALL.floorY, -0.60);
+      g.rotation.y = -0.28;
+      hall.add(g);
+
+      // 白地红绞纹：不规则、宽窄不一，不是等距粉白圆带
+      const S = 512, c = C(S, S), x = c.getContext('2d');
+      const rnd = seeded(46);
+      x.fillStyle = '#f4ecdf'; x.fillRect(0, 0, S, S);
+      const reds = ['rgba(148,55,45,.86)', 'rgba(185,79,62,.72)', 'rgba(112,36,32,.66)', 'rgba(206,111,86,.52)'];
+      // 宽窄不一的斜向绞带
+      for (let i = 0; i < 6; i++) {
+        const y0 = 32 + i * 78 + (rnd() - .5) * 26;
+        x.strokeStyle = reds[i % reds.length];
+        x.lineWidth = 16 + rnd() * 30;
+        x.lineCap = 'round';
+        x.beginPath();
+        x.moveTo(-24, y0);
+        x.bezierCurveTo(S * .28, y0 + (rnd() - .5) * 78, S * .64, y0 + (rnd() - .5) * 78, S + 24, y0 + (rnd() - .5) * 30);
+        x.stroke();
+      }
+      // 细红绞丝，贴着宽带走
+      for (let i = 0; i < 8; i++) {
+        const y0 = 24 + rnd() * (S - 48);
+        x.strokeStyle = i % 2 ? 'rgba(117,38,32,.58)' : 'rgba(244,226,208,.72)';
+        x.lineWidth = 1.2 + rnd() * 2.4;
+        x.beginPath();
+        x.moveTo(-20, y0);
+        x.bezierCurveTo(S * .33, y0 + (rnd() - .5) * 100, S * .62, y0 + (rnd() - .5) * 100, S + 20, y0 + (rnd() - .5) * 50);
+        x.stroke();
+      }
+      // 局部晕染，让红白不是一圈一圈
+      for (let i = 0; i < 22; i++) {
+        x.fillStyle = i % 3 ? 'rgba(172,66,50,.10)' : 'rgba(255,250,240,.24)';
+        x.beginPath();
+        x.ellipse(rnd() * S, rnd() * S, 8 + rnd() * 34, 4 + rnd() * 16, rnd() * Math.PI, 0, Math.PI * 2);
+        x.fill();
+      }
+      // 极浅冰裂
+      for (let i = 0; i < 70; i++) {
+        x.strokeStyle = 'rgba(116,45,37,.14)';
+        x.lineWidth = .7;
+        const xx = rnd() * S, yy = rnd() * S;
+        x.beginPath(); x.moveTo(xx, yy); x.lineTo(xx + (rnd() - .5) * 56, yy + (rnd() - .5) * 24); x.stroke();
+      }
+      const pTex = tex(c, 1, 1);
+
+      // 台座：低矮深木几 + 雕木根座，把 10.5cm 的瓶抬到腰线以上
+      G.box(0.66, 0.30, 0.66, woodDark, 0, 0.15, 0, g, { os: 0.0012 });
+      G.box(0.70, 0.03, 0.70, woodWarm, 0, 0.315, 0, g, { os: 0.0010 });
+      G.box(0.38, 0.035, 0.38, woodDark, 0, 0.35, 0, g, { line: false });
+      for (let i = 0; i < 4; i++) {
+        const a = i / 4 * Math.PI * 2 + Math.PI / 4;
+        const pts = [
+          new THREE.Vector3(Math.cos(a) * 0.145, 0.355, Math.sin(a) * 0.145),
+          new THREE.Vector3(Math.cos(a + .08) * 0.175, 0.43, Math.sin(a + .08) * 0.175),
+          new THREE.Vector3(Math.cos(a - .05) * 0.165, 0.52, Math.sin(a - .05) * 0.165),
+          new THREE.Vector3(Math.cos(a) * 0.205, 0.575, Math.sin(a) * 0.205),
+        ];
+        const leg = makeCurveTube(pts, 0.022, woodWarm, 10);
+        leg.castShadow = true; g.add(leg);
+      }
+      const standTop = new THREE.Mesh(new THREE.CylinderGeometry(0.235, 0.215, 0.035, 28), woodWarm);
+      standTop.position.y = 0.585; standTop.castShadow = true; standTop.receiveShadow = true; g.add(standTop);
+
+      const vase = new THREE.Group();
+      vase.position.y = 0.60;
+      g.add(vase);
+      const profile = [
+        [0.001, 0], [0.10, 0], [0.15, 0.015], [0.21, 0.045],
+        [0.27, 0.09], [0.33, 0.16], [0.365, 0.25], [0.36, 0.33],
+        [0.32, 0.40], [0.25, 0.45], [0.17, 0.48], [0.10, 0.50],
+        [0.085, 0.515], [0.095, 0.53], [0.125, 0.545], [0.135, 0.56],
+        [0.12, 0.574],
+      ].map(function (p2) { return new THREE.Vector2(Math.max(0.001, p2[0]), p2[1]); });
+      const body = new THREE.Mesh(new THREE.LatheGeometry(profile, 48),
+        std(0xffffff, 0.46, 0.01, { map: pTex, env: 0.38 }));
+      body.castShadow = true; body.receiveShadow = true;
+      vase.add(body);
+      const hole = new THREE.Mesh(new THREE.CircleGeometry(0.088, 28), std(0x3a2722, 0.85, 0.0, { env: 0.02 }));
+      hole.rotation.x = -Math.PI / 2; hole.position.y = 0.575; vase.add(hole);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.125, 0.012, 5, 30), std(0xe8dccb, 0.45, 0.02, { env: 0.35 }));
+      rim.rotation.x = Math.PI / 2; rim.position.y = 0.573; vase.add(rim);
+      const foot = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.010, 4, 28), std(0xe3d2bb, 0.5, 0.02, { env: 0.3 }));
+      foot.rotation.x = Math.PI / 2; foot.position.y = 0.012; vase.add(foot);
+
+      const hit = new THREE.Mesh(new THREE.BoxGeometry(0.78, 1.18, 0.78), proxyMat);
+      hit.position.y = 0.62; hit.frustumCulled = false; hit.userData.hallPick = 'pomegranate'; g.add(hit);
+      g.userData.hallPick = 'pomegranate';
+      shadowAll(g);
+      WB.hallPickables.pomegranate = g;
+    })();
+
+    /* ---------------- 西侧：微凹黄檀龙凤呈祥绞胎玉璧座屏（p.52，横式家具） ---------------- */
+    (function p52Screen() {
+      const g = new THREE.Group();
+      const proxyMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false });
+      g.position.set(-15.85, HALL.floorY, -0.40);
+      hall.add(g);
+
+      // 矮柜/条案：座屏落在家具上，不是墙角一对圆环
+      G.box(0.58, 0.38, 1.98, woodDark, 0, 0.19, 0, g, { os: 0.0014 });
+      G.box(0.64, 0.05, 2.06, woodWarm, 0, 0.405, 0, g, { os: 0.0012 });
+      G.box(0.60, 0.10, 1.88, woodRed, 0, 0.075, 0, g, { line: false });
+      [-0.49, 0.49].forEach(function (z) {
+        G.box(0.025, 0.27, 0.82, woodWarm, 0.305, 0.21, z, g, { os: 0.0010 });
+        G.box(0.018, 0.018, 0.11, gold, 0.322, 0.21, z, g, { line: false });
+      });
+      // 四只矮足
+      [[-0.24, -0.84], [0.24, -0.84], [-0.24, 0.84], [0.24, 0.84]].forEach(function (p) {
+        G.box(0.09, 0.06, 0.09, woodDark, p[0], 0.03, p[1], g, { line: false });
+      });
+
+      // 屏座：厚底座 + 两柱 + 顶枨
+      G.box(0.38, 0.09, 1.38, woodDark, 0, 0.455, 0, g, { os: 0.0014 });
+      [-0.56, 0.56].forEach(function (z) {
+        G.box(0.11, 0.84, 0.08, woodWarm, 0.02, 0.90, z, g, { os: 0.0012 });
+      });
+      G.box(0.10, 0.08, 1.20, woodWarm, 0.02, 1.30, 0, g, { os: 0.0012 });
+      // 深木背板：让双璧有承托，不是悬空圆环
+      G.box(0.025, 0.78, 1.12, std(0x2b2018, 0.82, 0.0, { env: 0.05 }), -0.13, 0.88, 0, g, { line: false });
+      const jade = std(0xffffff, 0.58, 0.02, { map: jadeSwirlTex(52, false), env: 0.35 });
+      [-0.30, 0.30].forEach(function (z) {
+        const outer = new THREE.Mesh(new THREE.TorusGeometry(0.255, 0.038, 7, 32), woodDark);
+        outer.position.set(0.03, 0.88, z); outer.rotation.y = Math.PI / 2; outer.castShadow = true; g.add(outer);
+        const inner = new THREE.Mesh(new THREE.TorusGeometry(0.185, 0.050, 7, 32), jade);
+        inner.position.set(0.075, 0.88, z); inner.rotation.y = Math.PI / 2; inner.castShadow = true; g.add(inner);
+      });
+      // 屏顶牙板，给横式座屏一点家具收头
+      G.box(0.15, 0.10, 1.30, woodRed, 0.02, 1.35, 0, g, { os: 0.0010 });
+      // 不再加错位的墙面假框；靠条案体量、深木背板和屏顶收头成立
+
+      const hit = new THREE.Mesh(new THREE.BoxGeometry(0.70, 1.40, 2.18), proxyMat);
+      hit.position.set(0, 0.72, 0); hit.frustumCulled = false; hit.userData.hallPick = 'p52'; g.add(hit);
+      g.userData.hallPick = 'p52';
+      shadowAll(g);
+      WB.hallPickables.p52 = g;
     })();
 
     /* ---------------- 右翼：海浪日月同辉对杯（p.21 / p.12）+ 案后壶（p.11/12，280ml） ---------------- */
@@ -6537,12 +6688,15 @@ WB.initProduct = function () {
       potFoot.rotation.x = Math.PI / 2; potFoot.position.y = 0.012; pot.add(potFoot);
       shadowAll(pot);
 
+      // 日月 3D 杯不再作为堂心主展。图册第 21/12/11 页承担美感，
+      // 原模型整体收起（保留代码与灯位，避免破坏展厅光环境）。
+      g.visible = false;
       g.userData.hallPick = 'sunmoon';
-      WB.hallPickables.sunmoon = g;
+      delete WB.hallPickables.sunmoon;
       P.hallSunMoon = g;
 
       WB.hallLamps = { sun: lights.sunKey, moon: lights.moonKey, joint: lights.fill };
-      P.hallPair = { sun: sunCup, moon: moonCup, t: 0, target: 0 };
+      P.hallPair = null;
     })();
 
     /* ---------------- 出入口拾取体 ---------------- */
@@ -6558,17 +6712,66 @@ WB.initProduct = function () {
     WB.pickables = WB.pickables || {};
     WB.pickables.hall = entryHit;
     // 馆内点门回院
-    const exitHit = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.6, 2.3), hitMat);
-    exitHit.position.set(HALL.doorX + 0.05, 1.35, HALL.cz);
+    // 只贴门洞这一小片，不能让入口相机站进拾取体里抢走展品点击
+    const exitHit = new THREE.Mesh(new THREE.BoxGeometry(0.30, 2.5, 2.0), hitMat);
+    exitHit.position.set(HALL.doorX + 0.10, 1.32, HALL.cz);
     exitHit.frustumCulled = false;
     hall.add(exitHit);
     exitHit.userData.hallPick = 'exit';
-    WB.hallPickables.exit = exitHit;
+    // 馆内退出统一用左上「回院子」；不把门洞拾取体挂在相机与展品之间，避免抢走展品点击。
+
+    /* ---------------- 读册案：介绍册的实体入口（只作陪衬） ---------------- */
+    (function readingTable() {
+      const rt = new THREE.Group();
+      rt.position.set(-11.15, HALL.floorY, -0.55);
+      rt.rotation.y = -0.05;
+      hall.add(rt);
+      const paper = std(0xf1e7d2, 0.86, 0.0, { env: 0.06 });
+      const paperEdge = std(0xd8c7a6, 0.9, 0.0, { env: 0.05 });
+      const ink = std(0x4a3020, 0.78, 0.0, { env: 0.06 });
+      // 低案：细腿 + 薄牙板，避免和玉璧座抢体量
+      G.box(0.96, 0.055, 1.26, woodWarm, 0, 0.70, 0, rt, { os: 0.0016 });
+      [[-0.35, -0.48], [0.35, -0.48], [-0.35, 0.48], [0.35, 0.48]].forEach(function (p) {
+        G.cyl(0.022, 0.034, 0.70, 6, woodDark, p[0], 0.35, p[1], rt, { os: 0.0012 });
+      });
+      G.box(0.86, 0.055, 0.055, woodDark, 0, 0.64, -0.52, rt, { os: 0.0012 });
+      G.box(0.86, 0.055, 0.055, woodDark, 0, 0.64, 0.52, rt, { os: 0.0012 });
+      // 摊开的册子：封面、纸页、书脊
+      const book = new THREE.Group();
+      book.position.set(0.0, 0.735, -0.02);
+      book.rotation.y = 0.08;
+      rt.add(book);
+      G.box(0.64, 0.024, 0.42, ink, 0, 0, 0, book, { os: 0.0012 });
+      G.box(0.285, 0.010, 0.375, paper, -0.155, 0.019, 0, book, { os: 0.001 });
+      G.box(0.285, 0.010, 0.375, paper, 0.155, 0.019, 0, book, { os: 0.001 });
+      G.box(0.022, 0.014, 0.39, paperEdge, 0, 0.022, 0, book, { os: 0.001 });
+      // 纸页叠边，近看能读出“书”的厚度
+      for (let i = 0; i < 3; i++) {
+        G.box(0.27, 0.005, 0.365, paperEdge, -0.155, 0.024 + i * 0.004, 0, book, { os: 0.0008 });
+        G.box(0.27, 0.005, 0.365, paperEdge, 0.155, 0.024 + i * 0.004, 0, book, { os: 0.0008 });
+      }
+      // 案边小立牌：面向入口，明确“翻阅”
+      const face = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.17),
+        new THREE.MeshBasicMaterial({ map: smallSignTex('介绍册', '翻阅') }));
+      face.rotation.y = Math.PI / 2;
+      face.position.set(0.51, 0.86, 0.02);
+      rt.add(face);
+      // 不可见拾取盒，覆盖案面/册子/立牌
+      // 只拾取案面/册子高度，避免高盒子挡住后面的 p52 座屏与石榴瓶
+      const hit = new THREE.Mesh(new THREE.BoxGeometry(1.12, 0.78, 1.42), hitMat);
+      hit.position.set(0, 0.42, 0);
+      hit.frustumCulled = false;
+      hit.userData.hallPick = 'catalog';
+      rt.add(hit);
+      rt.userData.hallPick = 'catalog';
+      shadowAll(rt);
+      WB.hallPickables.catalog = rt;
+    })();
 
     // 新馆落在原先的坡地/灌木范围里：把完全落在馆内的小型既有物件收起，
     // 避免树冠、灌木从地板或桌下穿出来；不动地面、房屋、窑炉。
     (function clearPropsInsideHall() {
-      const box = new THREE.Box3(new THREE.Vector3(-16.3, 0.15, 6.7), new THREE.Vector3(-9.6, 4.4, 14.6));
+      const box = new THREE.Box3(new THREE.Vector3(-17.8, 0.15, 5.9), new THREE.Vector3(-8.8, 4.4, 15.6));
       function insideHall(o) {
         let p = o;
         while (p) { if (p === hall) return true; p = p.parent; }
@@ -6593,7 +6796,7 @@ WB.initProduct = function () {
       });
       // 大范围森林/草丛是 InstancedMesh，不能整块隐藏；把落在馆内的实例缩到 0，
       // 清掉 QA 里从地板/桌下穿出的绿色树冠与草叶。
-      const imBox = new THREE.Box3(new THREE.Vector3(-17.2, 0.0, 6.0), new THREE.Vector3(-9.0, 5.4, 15.4));
+      const imBox = new THREE.Box3(new THREE.Vector3(-18.2, 0.0, 5.7), new THREE.Vector3(-8.6, 5.4, 15.8));
       const m4 = new THREE.Matrix4(), pos = new THREE.Vector3(), quat = new THREE.Quaternion(), scl = new THREE.Vector3();
       WB.root.traverse(function (o) {
         if (!o.isInstancedMesh || insideHall(o) || !o.count) return;
@@ -7209,6 +7412,7 @@ WB.initProduct = function () {
 
   const STEP_NAME = STEPS.map(s => s.name);
   let currentView = 'overview';
+  const PORTRAIT_OVERVIEW_TARGET = [-5.6, 1.8, -2.2];
   const VIEWS = {
     overview: { t: [0, 2.0, -2.0], theta: 0.70, phi: 1.36, r: 42 },
     inside: { t: [0.2, 1.15, -2.8], theta: 0.05, phi: 1.25, r: 3.8 },
@@ -7247,10 +7451,14 @@ WB.initProduct = function () {
   const HY = hallInfo.baseY !== undefined ? hallInfo.baseY : 0.12;
   const HALL_VIEWS = {
     // 展馆整体平移；以下为世界坐标（y 随台基抬升）。
-    entry:   { t: [-14.30 + HX, 1.55 + HY, 1.10 + HZ], theta: Math.PI / 2, phi: 1.56, r: 4.55 },
+    entry:   { t: [-14.10 + HX, 1.48 + HY, 0.55 + HZ], theta: Math.PI / 2, phi: 1.54, r: 4.90 },
+    // 竖屏不硬裁横屏三组；落到读册案，册子是入馆第一眼。
+    entryPortrait: { t: [-14.10 + HX, 1.55 + HY, 0.55 + HZ], theta: 1.57, phi: 1.52, r: 4.90 },
     main:    { t: [-14.35 + HX, 1.72 + HY, 1.10 + HZ], theta: 1.62, phi: 1.47, r: 4.30 },
-    bamboo:  { t: [-12.35 + HX, 1.58 + HY, 2.15 + HZ], theta: 1.15, phi: 1.33, r: 3.05 },
+    bamboo:  { t: [-12.35 + HX, 1.02 + HY, 1.70 + HZ], theta: 1.15, phi: 1.33, r: 2.60 },
     sunmoon: { t: [-12.35 + HX, 1.08 + HY, -0.10 + HZ], theta: 1.48, phi: 0.82, r: 2.20 },
+    pomegranate: { t: [-13.35 + HX, 0.92 + HY, -0.60 + HZ], theta: 1.45, phi: 1.36, r: 2.45 },
+    p52: { t: [-15.85 + HX, 1.00 + HY, -0.40 + HZ], theta: 2.22, phi: 1.42, r: 3.20 },
   };
   const hall = { active: false, view: 'entry', preset: 'entry', saved: null, paired: false, hintTimer: 0 };
   function hallLimits() {
@@ -7282,6 +7490,14 @@ WB.initProduct = function () {
     sunmoon: {
       name: '海浪日月同辉', spec: '口径8.5 高4 底足2.5',
       note: '日轮与月牙各在一只杯心，海浪相向。',
+    },
+    pomegranate: {
+      name: '绞胎石榴瓶', spec: '高10.5 最大直径10 底足4.2',
+      note: '矮鼓果形，粉红层带走在胎里；图册中的根雕盆景不是附件。',
+    },
+    p52: {
+      name: '微凹黄檀龙凤呈祥绞胎玉璧', spec: '长50 宽17.5 高40（整座）',
+      note: '横式座屏与两枚有孔圆璧，放在侧廊，让堂心单璧保持轴线。',
     },
   };
 
@@ -7353,8 +7569,10 @@ WB.initProduct = function () {
       if (gateEls.warn) gateEls.warn.hidden = !!st.canEnter;
       if (gateEls.hint) {
         gateEls.hint.textContent = st.canEnter
-          ? (st.phone ? '手机已横屏 · 点一下才进入' : '电脑宽屏可直接进入 · 进入后可随时旋转')
-          : '把手机横过来，进入按钮即可用';
+          ? (st.phone
+              ? (st.portrait ? '手机竖屏可直接进入 · 横屏看院落更舒展' : '手机横屏可直接进入 · 点一下开始')
+              : '电脑宽屏可直接进入 · 进入后可随时旋转')
+          : '竖屏也可直接进入';
       }
     }
     if (st.showRotate && gateEls.progress) gateEls.progress.textContent = gateProgressText();
@@ -7418,7 +7636,7 @@ WB.initProduct = function () {
     state: gate, activator: gateActivator
   };
   if (WB) WB.hallDebug = {
-    enter: enterHall, exit: exitHall, view: hallView, card: showHallCard,
+    enter: enterHall, exit: exitHall, view: hallView, card: showHallCard, snap: snapHallCamera,
     state: hall, views: HALL_VIEWS,
   };
   syncGate();
@@ -7447,6 +7665,59 @@ WB.initProduct = function () {
     '<div id="toast" role="status" aria-live="polite"></div>';
   document.body.appendChild(hud);
   if (qp.get('ui') === '0') hud.style.display = 'none';
+
+  /* ---------------- 全局：隐藏界面 / 显示界面（场景优先） ---------------- */
+  (function uiHideButton() {
+    if (uiOff) return;
+    const st = document.createElement('style');
+    st.textContent = `
+      #uiToggle {
+        position: fixed; top: 10px; right: 10px; z-index: 130;
+        min-height: 44px; min-width: 44px; padding: 0 12px; border-radius: 999px;
+        border: 1px solid rgba(201,169,106,.62); background: rgba(30,24,17,.78);
+        color: #f1e4c8; font: 500 12px/1 "KaiTi","楷体","STKaiti","SimSun",serif;
+        letter-spacing: .06em; cursor: pointer; pointer-events: auto;
+        box-shadow: 0 3px 14px rgba(0,0,0,.25); -webkit-tap-highlight-color: transparent;
+      }
+      #uiToggle:hover { background: rgba(53,41,28,.9); }
+      body.gate-pending #uiToggle { display: none; }
+      body.catalog-open #uiToggle {
+        width: 44px; min-width: 44px; padding: 0; font-size: 0;
+      }
+      body.catalog-open #uiToggle::after { content: "隐"; font-size: 16px; }
+      body.ui-hidden #uiToggle { width: auto; min-width: 44px; padding: 0 12px; font-size: 12px; }
+      body.ui-hidden #uiToggle::after { content: ""; }
+      body.catalog-open #catalogBook .cb-meta { padding-right: 46px; }
+      body.ui-hidden #hud,
+      body.ui-hidden #ki,
+      body.ui-hidden #hallBar,
+      body.ui-hidden #toast {
+        opacity: 0 !important; visibility: hidden !important; pointer-events: none !important;
+      }
+      body.ui-hidden #uiToggle { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; }
+    `;
+    document.head.appendChild(st);
+    const btn = document.createElement('button');
+    btn.id = 'uiToggle';
+    btn.type = 'button';
+    btn.setAttribute('aria-pressed', 'false');
+    btn.textContent = '隐藏界面';
+    let hidden = false;
+    function apply() {
+      document.body.classList.toggle('ui-hidden', hidden);
+      btn.setAttribute('aria-pressed', String(hidden));
+      btn.setAttribute('aria-label', hidden ? '显示界面' : '隐藏界面');
+      btn.textContent = hidden ? '显示界面' : '隐藏界面';
+    }
+    btn.addEventListener('click', function (ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      hidden = !hidden;
+      apply();
+    });
+    document.body.appendChild(btn);
+    apply();
+    WB.uiHide = { isHidden: function () { return hidden; }, toggle: function () { btn.click(); } };
+  })();
 
   /* ---------------- 展馆 UI：回院按钮 + 极短提示（不挡主景） ---------------- */
   (function hallUI() {
@@ -7496,6 +7767,14 @@ WB.initProduct = function () {
       }
       #hallHint.show { opacity: 1; }
       body.hall-mode #ki { z-index: 44; }
+      /* 开卡时「全厅」「介绍册」「回院子」必须在卡片之上可点 */
+      body.hall-mode #hallNav, body.hall-mode #hallExit { z-index: 46; }
+      @media (max-width: 760px) {
+        body.hall-mode #ki { bottom: calc(80px + env(safe-area-inset-bottom,0px)); }
+      }
+      @media (max-height: 480px) {
+        body.hall-mode #ki { bottom: calc(68px + env(safe-area-inset-bottom,0px)); }
+      }
       @media (min-width: 761px) { body.hall-mode #ki { width: 330px; }
       body.hall-mode #ki h3 { letter-spacing: 2px; font-size: 22px; } }
       @media (max-width: 760px) { body.hall-mode #ki { width: auto; } }
@@ -7510,11 +7789,9 @@ WB.initProduct = function () {
     const bar = document.createElement('div');
     bar.id = 'hallBar';
     bar.innerHTML = '<button id="hallExit" type="button" aria-label="回到工坊院子">← 回院子</button>' +
-      '<div id="hallNav" role="group" aria-label="展馆机位">' +
+      '<div id="hallNav" role="group" aria-label="展馆">' +
         '<button type="button" data-hall-view="entry">全厅</button>' +
-        '<button type="button" data-hall-view="main">主璧</button>' +
-        '<button type="button" data-hall-view="bamboo">竹编</button>' +
-        '<button type="button" data-hall-view="sunmoon">日月</button>' +
+        '<button type="button" data-hall-action="catalog">介绍册</button>' +
       '</div>' +
       '<div id="hallHint" role="status" aria-live="polite"></div>';
     document.body.appendChild(bar);
@@ -7529,17 +7806,30 @@ WB.initProduct = function () {
     clearTimeout(hall.hintTimer);
     hall.hintTimer = setTimeout(function () { hallHintEl.classList.remove('show'); }, ms || 3200);
   }
+  function openCatalog(chapter) {
+    if (WB.catalog && WB.catalog.open) {
+      closeCard();
+      WB.catalog.open(chapter || 'cover');
+    } else {
+      hallHint('介绍册正在载入…', 1600);
+    }
+  }
   if (hallNavEl) {
     hallNavEl.addEventListener('click', function (ev) {
-      const b = ev.target && ev.target.closest ? ev.target.closest('[data-hall-view]') : null;
+      const b = ev.target && ev.target.closest ? ev.target.closest('[data-hall-view],[data-hall-action]') : null;
       if (!b) return;
       ev.preventDefault(); ev.stopPropagation();
+      if (b.dataset.hallAction === 'catalog') {
+        openCatalog('cover');
+        hallHint('介绍册 · 上下滑动翻阅', 2400);
+        return;
+      }
       const v = b.dataset.hallView;
       if (!v || !HALL_VIEWS[v]) return;
       hallView(v);
       closeCard();
       snapHallCamera();
-      hallHint(v === 'entry' ? '全厅 · 主璧 / 竹编 / 日月在左右' : ('机位 · ' + b.textContent), 2200);
+      hallHint('全厅 · 点读册案或下方「介绍册」翻阅', 2400);
     });
   }
 
@@ -7690,9 +7980,12 @@ WB.initProduct = function () {
     const v = VIEWS[name];
     if (!v) return;
     currentView = name;
-    targetT.set(v.t[0], v.t[1], v.t[2]);
+    const pt = name === 'overview' && isMobileUI() && window.innerHeight > window.innerWidth;
+    targetT.set(pt ? PORTRAIT_OVERVIEW_TARGET[0] : v.t[0],
+                pt ? PORTRAIT_OVERVIEW_TARGET[1] : v.t[1],
+                pt ? PORTRAIT_OVERVIEW_TARGET[2] : v.t[2]);
     camT.theta = v.theta; camT.phi = v.phi; camT.r = v.r;
-    if (name === 'overview' && isMobileUI()) camT.r = fitOverviewRadius();
+    if (name === 'overview' && isMobileUI()) camT.r = overviewRadiusForViewport();
     idle = 0; camLockT = 14;
   }
 
@@ -7811,6 +8104,11 @@ WB.initProduct = function () {
     const half = Math.max(0.08, Math.min(vfov, hfov) / 2);
     return Math.max(18, Math.min(90, radius / Math.sin(half) * 1.04));
   }
+  function overviewRadiusForViewport() {
+    const r = fitOverviewRadius();
+    // 竖屏院长宽比极窄；给左圆门小馆与右窑留出完整横向余量，宁留上下空白。
+    return (isMobileUI() && window.innerHeight > window.innerWidth) ? r * 1.02 : r;
+  }
   function scheduleMobileLayout() {
     if (layoutRaf) return;
     layoutRaf = requestAnimationFrame(() => { layoutRaf = 0; layoutMobile(); });
@@ -7848,10 +8146,13 @@ WB.initProduct = function () {
     // 不再用全景替代近景。真正会撞墙的自动漂移另在渲染循环里按场景状态禁止。
     if (VIEWS[currentView]) {
       const v = VIEWS[currentView];
-      targetT.set(v.t[0], v.t[1], v.t[2]);
+      const pt = currentView === 'overview' && isMobileUI() && window.innerHeight > window.innerWidth;
+      targetT.set(pt ? PORTRAIT_OVERVIEW_TARGET[0] : v.t[0],
+                  pt ? PORTRAIT_OVERVIEW_TARGET[1] : v.t[1],
+                  pt ? PORTRAIT_OVERVIEW_TARGET[2] : v.t[2]);
       camT.theta = v.theta; camT.phi = v.phi; camT.r = v.r;
       if (currentView === 'overview') {
-        camT.r = isMobileUI() ? fitOverviewRadius() : v.r;
+        camT.r = isMobileUI() ? overviewRadiusForViewport() : v.r;
       } else if (camera.aspect < 0.85) {
         // 极窄竖屏才轻微后退，保留工位主体；不把近景改成全景。
         camT.r *= Math.min(1.18, 0.85 / Math.max(0.6, camera.aspect));
@@ -7897,12 +8198,34 @@ WB.initProduct = function () {
       setSheetCollapsed(!sheetCollapsed);
     });
   }
+  let portraitFitKey = '';
+  function setSceneFovForViewport() {
+    if (hall.active) return;
+    const want = (!uiOff && isMobileUI() && window.innerHeight > window.innerWidth) ? 50 : 38;
+    if (camera.fov !== want) {
+      camera.fov = want;
+      camera.updateProjectionMatrix();
+    }
+  }
+  function fitPortraitOverview() {
+    if (uiOff || hall.active || !gate.entered) return;
+    if (!isMobileUI() || window.innerHeight <= window.innerWidth) return;
+    if (currentView !== 'overview') return;
+    const key = window.innerWidth + 'x' + window.innerHeight;
+    if (portraitFitKey === key) return;
+    portraitFitKey = key;
+    const v = VIEWS.overview;
+    targetT.set(PORTRAIT_OVERVIEW_TARGET[0], PORTRAIT_OVERVIEW_TARGET[1], PORTRAIT_OVERVIEW_TARGET[2]);
+    camT.theta = v.theta; camT.phi = v.phi; camT.r = overviewRadiusForViewport();
+    target.copy(targetT); cam.theta = camT.theta; cam.phi = camT.phi; cam.r = camT.r;
+  }
   function layoutMobile() {
     if (!rendererRef || !canvasEl) return;
     const vw = window.innerWidth, vh = window.innerHeight;
     const kind = viewportKind();
     const modeChanged = !!lastLayoutKind && lastLayoutKind !== kind;
     if (modeChanged) resetPointerState();
+    if (!hall.active) setSceneFovForViewport();
 
     // 展馆内：画布占满真实视口，不被工坊九关条/参数抽屉挤小。
     if (hall.active) {
@@ -7913,6 +8236,7 @@ WB.initProduct = function () {
       canvasEl.style.zIndex = '0';
       applyRenderSize(vw, vh);
       if (ki.classList.contains('show')) positionCardDefault();
+      if (modeChanged) { setHallFovForViewport(); hallView(hall.view); snapHallCamera(); }
       lastLayoutKind = kind;
       return;
     }
@@ -7930,6 +8254,7 @@ WB.initProduct = function () {
       applyRenderSize(vw, vh);
       if (!uiOff && ki.classList.contains('show') && vw > 760) positionCardDefault();
       if (modeChanged) refitForViewport();
+      fitPortraitOverview();
       lastLayoutKind = kind;
       updateRailHint();
       return;
@@ -7984,6 +8309,7 @@ WB.initProduct = function () {
     canvasEl.style.zIndex = '0';
     applyRenderSize(w, h);
     if (modeChanged) refitForViewport();
+    fitPortraitOverview();
     lastLayoutKind = kind;
     revealRailStep(journey.current);
     updateRailHint();
@@ -8009,7 +8335,17 @@ WB.initProduct = function () {
   }, false);
 
   function positionCardDefault() {
-    if (isMobileUI()) { scheduleMobileLayout(); return; }
+    if (isMobileUI()) {
+      // 馆内卡片明确停在「全厅」之上；nav 另由 z-index 46 保证可点。
+      if (hall.active) {
+        const land = isLandscapeMobile();
+        ki.style.top = 'auto';
+        ki.style.bottom = 'calc(' + (land ? 68 : 80) + 'px + env(safe-area-inset-bottom,0px))';
+        ki.style.maxHeight = land ? 'calc(100vh - 128px)' : 'min(52vh, 360px)';
+        return;
+      }
+      scheduleMobileLayout(); return;
+    }
     const w = ki.offsetWidth || 372;
     if (window.innerWidth <= 760) {
       ki.style.left = '10px';
@@ -8195,9 +8531,13 @@ WB.initProduct = function () {
     camera.fov = v;
     camera.updateProjectionMatrix();
   }
+  function setHallFovForViewport() {
+    setHallFov(isMobileUI() && window.innerHeight > window.innerWidth ? 76 : 48);
+  }
 
   function hallView(name) {
-    const v = HALL_VIEWS[name] || HALL_VIEWS.entry;
+    const portraitEntry = name === 'entry' && isMobileUI() && window.innerHeight > window.innerWidth;
+    const v = (portraitEntry ? HALL_VIEWS.entryPortrait : HALL_VIEWS[name]) || HALL_VIEWS.entry;
     hall.view = name;
     hall.preset = name;
     currentView = 'hall-' + name;
@@ -8257,28 +8597,25 @@ WB.initProduct = function () {
     closeCard();
     document.body.classList.add('hall-mode');
     if (hallExitEl) hallExitEl.classList.add('show');
-    setHallFov(46);
+    setHallFovForViewport();
     hallView('entry');
     layoutMobile();
     snapHallCamera();
-    hallHint('已入厅 · 下方切全厅 / 主璧 / 竹编 / 日月 · 点门或左上回院', 6000);
+    hallHint('已入厅 · 点读册案或下方「介绍册」翻阅 · 左上回院', 6000);
   }
 
   function exitHall() {
     if (!hall.active) return;
+    if (WB.catalog && WB.catalog.isOpen && WB.catalog.isOpen()) WB.catalog.close();
     hall.active = false;
     document.body.classList.remove('hall-mode');
     if (hallExitEl) hallExitEl.classList.remove('show');
     if (hallHintEl) hallHintEl.classList.remove('show');
     closeCard();
-    // 不用进馆前捕获的临时机位：回院必须落到当前工步的看点。
-    // 这样出馆后立刻点 rail 02，不会从馆内目标/高度插值穿过屋顶。
-    let vname = 'overview';
-    const st = STEPS[journey.current];
-    if (st) vname = st.id === 'finish' ? 'finish' : st.id;
-    if (!VIEWS[vname]) vname = 'overview';
+    // 回院子＝真实院外全景；不回当前工步的室内近景。
+    // 只改机位，不碰 journey.current / cleared / 礼匣。
     setHallFov(38);
-    focusView(vname);
+    focusView('overview');
     snapHallCamera();
     hall.saved = null;
     layoutMobile();
@@ -8288,7 +8625,7 @@ WB.initProduct = function () {
     ev.preventDefault(); ev.stopPropagation(); exitHall();
   });
 
-  const HALL_PICK_KEYS = ['main', 'free', 'chrys', 'bamboo', 'bambooCup', 'sunmoon', 'exit'];
+  const HALL_PICK_KEYS = ['main', 'free', 'chrys', 'bamboo', 'bambooCup', 'pomegranate', 'p52', 'catalog', 'exit'];
   function hallStationOf(obj) {
     let o = obj;
     while (o) {
@@ -8318,6 +8655,10 @@ WB.initProduct = function () {
   function pickHallAt(e, key) {
     if (key === 'exit') { exitHall(); return; }
     if (!key || key === 'enter') return;
+    if (key === 'catalog') { openCatalog('cover'); return; }
+    if (key === 'pomegranate') { hallView('pomegranate'); showHallCard('pomegranate'); hallHint('矮鼓石榴瓶 · 拖动环绕', 2400); return; }
+    if (key === 'p52') { hallView('p52'); showHallCard('p52'); hallHint('侧廊座屏 · 两枚圆璧', 2400); return; }
+    if (key === 'sunmoon') { openCatalog('sunmoon'); return; }
     if (key === 'sunmoon') {
       if (hall.view === 'sunmoon') {
         hall.paired = !hall.paired;
@@ -8599,8 +8940,8 @@ WB.initProduct = function () {
       const ox = info.offsetX !== undefined ? info.offsetX : -0.55;
       const oz = info.offsetZ !== undefined ? info.offsetZ : 9.55;
       const by = info.baseY !== undefined ? info.baseY : 0.12;
-      const minX = ox - 14.85, maxX = ox - 9.75;
-      const minZ = oz - 2.00, maxZ = oz + 4.20;
+      const minX = ox - 16.00, maxX = ox - 9.10;
+      const minZ = oz - 2.65, maxZ = oz + 4.85;
       const minY = by + 0.62, maxY = by + 2.45;
       camera.position.x = Math.min(maxX, Math.max(minX, camera.position.x));
       camera.position.z = Math.min(maxZ, Math.max(minZ, camera.position.z));
@@ -9006,6 +9347,484 @@ WB.initProduct = function () {
   }
 })();
 
+</script>
+<script>
+/* 福盛坊展馆 · 图文介绍册
+ * 图版只以相对路径 <img> 引用 catalog-pages/pXX.webp；
+ * 不把图册页塞进 data URI，也不把它们作为 Three.js 纹理。
+ */
+(function () {
+  'use strict';
+  const WB = (window.WB = window.WB || {});
+  if (WB.catalog) return;
+
+  const CHAPTERS = [
+    { id: 'cover', label: '封面', index: 0 },
+    { id: 'bi', label: '玉璧', index: 2 },
+    { id: 'bamboo', label: '竹编', index: 7 },
+    { id: 'sunmoon', label: '日月', index: 11 },
+    { id: 'other', label: '其他', index: 16 },
+  ];
+
+  const WORKS = {
+    p53: {
+      page: 53, chapter: 'bi', title: '红木镶嵌绞胎玉璧',
+      spec: '图册本页无规格',
+      note: '圆木框、镂空高座与白地青绿绞纹构成整座端景。图册本页没有尺寸，本册不补直径。',
+    },
+    p52: {
+      page: 52, chapter: 'bi', title: '微凹黄檀龙凤呈祥绞胎玉璧',
+      spec: '长50 宽17.5 高40（整座）',
+      note: '双璧座屏，尺寸指整座。“微凹黄檀”照录图册商品名，本册不作木材鉴定。',
+    },
+    p55: {
+      page: 55, chapter: 'bi', title: '菊花纹绞胎玉璧',
+      spec: '直径30',
+      note: '满铺细密菊花纹，和自由纹并置看，纹样密度与走向一眼可分。',
+    },
+    p54: {
+      page: 54, chapter: 'bi', title: '自由纹绞胎玉璧',
+      spec: '直径30、25',
+      note: '自由纹向中孔推挤、分叉；与第53页纹样语言接近，区别在木作。',
+    },
+    p50: {
+      page: 50, chapter: 'bamboo', title: '竹编绞胎观音瓶',
+      spec: '高30',
+      note: '以左图开光编法为观看重点：颈足密编，器腹细网格贴着瓷面，编带之间透出瓷色。',
+    },
+    p18: {
+      page: 18, chapter: 'bamboo', title: '竹编折腰绞胎杯',
+      spec: '高6.8 口径6.8 底足4.6',
+      note: '折腰杯，竹编与瓷口沿的分界清楚，适合近看材料交接。',
+    },
+    p07: {
+      page: 7, chapter: 'bamboo', title: '竹编西施一壶两杯',
+      spec: '西施壶容量200ml；杯口径8.5 高4.2 底足2.8',
+      note: '一壶两杯的案上组合，壶身竹编包覆，杯保留瓷面与口沿。',
+    },
+    p21: {
+      page: 21, chapter: 'sunmoon', title: '海浪日月同辉',
+      spec: '口径8.5 高4 底足2.5',
+      note: '本馆“日月”主图：日轮与月牙在杯心，砂米色地、青绿层浪，对杯并置。',
+    },
+    p12: {
+      page: 12, chapter: 'sunmoon', title: '海浪日月同辉三件套',
+      spec: '壶280ml；杯口径8.5 高4 底足2.5',
+      note: '一壶两杯的三件套，壶盖顶有青绿圆形纹理，杯心仍是日与月。',
+    },
+    p11: {
+      page: 11, chapter: 'sunmoon', title: '海浪日月同辉五件套',
+      spec: '壶280ml；杯口径8.5 高4 底足2.5',
+      note: '一壶四杯的五件套，杯心日轮、月牙与层浪成组出现。',
+    },
+    p51: {
+      page: 51, chapter: 'other', title: '掐丝珐琅绞胎观音瓶',
+      spec: '高40',
+      note: '掐丝珐琅与绞胎并置；图册只标高40，口径未给则不编。',
+    },
+    p46: {
+      page: 46, chapter: 'other', title: '绞胎石榴瓶',
+      spec: '高10.5 最大直径10 底足4.2',
+      note: '石榴瓶；图册中的根雕与盆景是摄影道具，不是作品附件。',
+    },
+  };
+
+  const PAGES = [
+    {
+      type: 'cover', chapter: 'cover',
+      title: '福盛坊展馆介绍册',
+      subtitle: '选自《福盛坊（山川）产品图册》',
+    },
+    {
+      type: 'foreword', chapter: 'cover',
+      kicker: '前言',
+      title: '一本关于当代福盛坊作品的册子',
+      body: [
+        '本册是当代福盛坊作品的介绍，不是当阳峪窑考古图录。',
+        '作品名称与规格照录《福盛坊（山川）产品图册》；图册未写的尺寸不编造，图册未标单位的数字也不擅自补单位。',
+        '册页用图册原版页作印刷品呈现，便于在展馆里翻阅作品本身；它不是 3D 展品的贴图。',
+      ],
+    },
+    {
+      type: 'chapter', chapter: 'bi', kicker: '第一章',
+      title: '绞胎玉璧', lead: '四件玉璧，从家具式端景到素璧近观。',
+    },
+    work('p53'), work('p52'), work('p55'), work('p54'),
+    {
+      type: 'chapter', chapter: 'bamboo', kicker: '第二章',
+      title: '竹编', lead: '竹丝包在瓷上：颈足密编，器腹细网格，编带之间透出瓷面。',
+    },
+    work('p50'), work('p18'), work('p07'),
+    {
+      type: 'chapter', chapter: 'sunmoon', kicker: '第三章',
+      title: '海浪日月同辉', lead: '本馆所说的“日月”，只指这一系列：一只日轮，一只月牙，海浪相向。',
+    },
+    work('p21'), work('p12'), work('p11'),
+    {
+      type: 'note', chapter: 'sunmoon', kicker: '附注',
+      title: '日月与“乾坤秋望”不是同一册页',
+      body: [
+        '本馆所说的“日月”，即“海浪日月同辉”系列；第21页对杯、第12页三件套、第11页五件套是它的正式图版。',
+        '“乾坤秋望”是另一联名礼品系列，本册不展开，也不把雀羽杯或自由纹主人杯标成日月杯。',
+        '图册第88–93页的人物、合影与联名礼盒不进入本册。',
+      ],
+    },
+    {
+      type: 'chapter', chapter: 'other', kicker: '第四章',
+      title: '其他精选', lead: '两件不同工艺路径的器物，作为本册的收束。',
+    },
+    work('p51'), work('p46'),
+    {
+      type: 'end', chapter: 'other',
+      title: '图版索引',
+      body: [
+        '封面 · 图册 p.01',
+        '绞胎玉璧 · p.53 / p.52 / p.55 / p.54',
+        '竹编 · p.50 / p.18 / p.07',
+        '海浪日月同辉 · p.21 / p.12 / p.11',
+        '其他精选 · p.51 / p.46',
+        '本馆仅作介绍；图版与规格以图册原页为准。',
+      ],
+    },
+  ];
+
+  function work(id) {
+    const w = WORKS[id];
+    return Object.assign({ type: 'work', chapter: w.chapter, img: 'catalog-pages/' + id + '.webp' }, w);
+  }
+
+  // 章节索引是手工常量；如页序调整，必须在 tests 中同步检查。
+  const chapterIndex = {};
+  CHAPTERS.forEach(function (c) { chapterIndex[c.id] = c.index; });
+
+  const style = document.createElement('style');
+  style.textContent = `
+    #catalogBook {
+      --cb-top: 58px; --cb-tabs: 48px; --cb-bottom: 56px; --cb-page-h: calc(100vh - 162px);
+      position: fixed; inset: 0; z-index: 90; display: none;
+      color: #30261b; background: #17130f;
+      font-family: "Songti SC","Noto Serif CJK SC","STSong","SimSun",serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #catalogBook.open { display: block; }
+    body.catalog-open { overflow: hidden; }
+    #catalogBook .cb-shell { position: absolute; inset: 0; display: flex; flex-direction: column; }
+    #catalogBook .cb-top {
+      flex: 0 0 var(--cb-top); display: flex; align-items: center; gap: 10px;
+      padding: 0 max(10px, env(safe-area-inset-left)) 0 max(10px, env(safe-area-inset-left));
+      background: linear-gradient(180deg, #211b14, #17130f);
+      color: #f1e5ce; border-bottom: 1px solid rgba(207, 174, 112, .35);
+    }
+    #catalogBook .cb-close {
+      flex: 0 0 44px; width: 44px; height: 44px; min-height: 44px;
+      border: 1px solid rgba(218, 188, 130, .55); border-radius: 50%;
+      background: rgba(255,255,255,.06); color: #f4e8cf; font: 300 24px/1 Georgia, serif;
+      cursor: pointer;
+    }
+    #catalogBook .cb-title { flex: 1 1 auto; min-width: 0; font-size: clamp(14px, 2.4vw, 18px); letter-spacing: .12em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #catalogBook .cb-meta { flex: 0 0 auto; text-align: right; line-height: 1.2; font-size: 11px; letter-spacing: .08em; color: #d8c7a6; }
+    #catalogBook .cb-meta b { display: block; color: #f4e8cf; font-size: 14px; font-weight: 500; }
+    #catalogBook .cb-tabs {
+      flex: 0 0 var(--cb-tabs); display: flex; align-items: center; gap: 5px;
+      overflow-x: auto; overflow-y: hidden; padding: 0 8px;
+      background: #211b14; border-bottom: 1px solid rgba(207, 174, 112, .22);
+      scrollbar-width: none;
+    }
+    #catalogBook .cb-tabs::-webkit-scrollbar { display: none; }
+    #catalogBook .cb-tab {
+      flex: 0 0 auto; min-height: 44px; padding: 0 13px; border: 0; border-radius: 3px;
+      background: transparent; color: #bda98a; font: 500 12.5px/1 "Songti SC","Noto Serif CJK SC","SimSun",serif;
+      letter-spacing: .12em; cursor: pointer;
+    }
+    #catalogBook .cb-tab.active { color: #2f261b; background: #d9c7a8; }
+    #catalogBook .cb-pages {
+      position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden;
+      overscroll-behavior: contain;
+      background: #e9e0cd; -webkit-overflow-scrolling: touch; touch-action: pan-y;
+    }
+    #catalogBook .cb-page {
+      height: var(--cb-page-h); box-sizing: border-box;
+      display: none; align-items: flex-start; justify-content: center;
+      overflow-y: auto; overscroll-behavior: contain;
+      padding: clamp(10px, 2.4vh, 24px) clamp(12px, 4vw, 52px) 24px;
+      scrollbar-width: thin;
+    }
+    #catalogBook .cb-page.active { display: flex; }
+    #catalogBook .cb-inner { width: 100%; max-width: 1080px; }
+    #catalogBook .cb-work {
+      display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(220px, .75fr);
+      gap: clamp(14px, 3vw, 38px); align-items: center;
+    }
+    #catalogBook .cb-figure {
+      margin: 0; padding: 7px; background: #f5efe2;
+      border: 1px solid rgba(110, 86, 54, .28); box-shadow: 0 8px 24px rgba(55, 39, 22, .12);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #catalogBook .cb-figure img {
+      display: block; width: auto; height: auto; max-width: 100%;
+      max-height: calc(100vh - var(--cb-top) - var(--cb-tabs) - var(--cb-bottom) - 34px);
+      object-fit: contain;
+    }
+    #catalogBook .cb-kicker { font-size: 11px; letter-spacing: .18em; color: #8d6f45; text-transform: uppercase; }
+    #catalogBook .cb-copy h2 { margin: 7px 0 8px; font-size: clamp(20px, 3vw, 31px); line-height: 1.3; font-weight: 500; letter-spacing: .04em; }
+    #catalogBook .cb-spec { display: inline-block; margin: 0 0 10px; padding: 5px 8px; background: rgba(111, 86, 51, .09); border-left: 3px solid #9a7446; font-size: 13px; line-height: 1.55; color: #634d32; }
+    #catalogBook .cb-note { margin: 0 0 13px; font-size: clamp(13px, 1.6vw, 15px); line-height: 1.85; color: #4d4030; }
+    #catalogBook .cb-ref { padding-top: 9px; border-top: 1px solid rgba(110, 86, 54, .26); font-size: 11px; letter-spacing: .08em; color: #8a7150; }
+    #catalogBook .cb-pageno { margin-top: 8px; font-size: 11px; color: #9a805a; letter-spacing: .08em; }
+    #catalogBook .cb-cover { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; }
+    #catalogBook .cb-cover figure { margin: 0; padding: 9px; background: #f6efe0; box-shadow: 0 14px 38px rgba(40, 28, 16, .2); max-width: 100%; }
+    #catalogBook .cb-cover img { display: block; width: auto; height: auto; max-width: min(100%, 720px); max-height: calc(100vh - var(--cb-top) - var(--cb-tabs) - var(--cb-bottom) - 132px); object-fit: contain; }
+    #catalogBook .cb-cover h1 { margin: 0; font-size: clamp(24px, 5vw, 46px); font-weight: 500; letter-spacing: .12em; }
+    #catalogBook .cb-cover p { margin: 0; color: #765f42; font-size: clamp(12px, 1.8vw, 15px); letter-spacing: .08em; }
+    #catalogBook .cb-cover small { color: #8b7553; font-size: 11px; letter-spacing: .08em; }
+    #catalogBook .cb-text { max-width: 720px; margin: 0 auto; padding: clamp(8px, 3vh, 34px) 0; }
+    #catalogBook .cb-text h2 { margin: 8px 0 14px; font-size: clamp(23px, 4vw, 38px); font-weight: 500; line-height: 1.35; }
+    #catalogBook .cb-text p { margin: 0 0 12px; font-size: clamp(14px, 1.8vw, 17px); line-height: 1.95; color: #4d4030; }
+    #catalogBook .cb-chapter { min-height: var(--cb-page-h); display: flex; align-items: center; justify-content: center; gap: clamp(18px, 5vw, 60px); }
+    #catalogBook .cb-chapter .num { font: 300 clamp(80px, 16vw, 180px)/.78 Georgia, serif; color: #c0a47b; letter-spacing: -.06em; }
+    #catalogBook .cb-chapter h2 { margin: 0; font-size: clamp(32px, 6vw, 62px); font-weight: 500; letter-spacing: .08em; }
+    #catalogBook .cb-chapter p { margin: 12px 0 0; max-width: 30em; color: #665238; line-height: 1.8; font-size: clamp(13px, 1.5vw, 15px); }
+    #catalogBook .cb-end { max-width: 720px; margin: 0 auto; padding: 8px 0; }
+    #catalogBook .cb-end h2 { margin: 4px 0 12px; font-size: clamp(24px, 4vw, 36px); font-weight: 500; }
+    #catalogBook .cb-end p { margin: 0 0 8px; line-height: 1.8; color: #4d4030; font-size: 14px; }
+    #catalogBook .cb-bottom {
+      flex: 0 0 var(--cb-bottom); display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; padding: 0 max(10px, env(safe-area-inset-left));
+      background: #211b14; color: #cdbb9b; border-top: 1px solid rgba(207, 174, 112, .3);
+    }
+    #catalogBook .cb-nav {
+      min-width: 92px; min-height: 44px; padding: 0 10px; border: 0;
+      background: transparent; color: #e6d5b8; font: 500 12px/1 "Songti SC","Noto Serif CJK SC","SimSun",serif;
+      letter-spacing: .06em; cursor: pointer;
+    }
+    #catalogBook .cb-nav:disabled { opacity: .3; cursor: default; }
+    #catalogBook .cb-hint { flex: 1 1 auto; text-align: center; font-size: 10.5px; color: #a99577; letter-spacing: .05em; }
+    @media (orientation: portrait) {
+      #catalogBook .cb-work { display: block; }
+      #catalogBook .cb-figure { padding: 5px; }
+      #catalogBook .cb-figure img { max-height: min(38vh, 420px); }
+      #catalogBook .cb-copy { margin-top: 13px; }
+      #catalogBook .cb-page { padding-left: 14px; padding-right: 14px; }
+      #catalogBook .cb-chapter { min-height: var(--cb-page-h); display: block; text-align: center; }
+      #catalogBook .cb-chapter .num { font-size: clamp(70px, 20vw, 140px); }
+      #catalogBook .cb-chapter p { margin-left: auto; margin-right: auto; }
+    }
+    @media (max-height: 520px) {
+      #catalogBook { --cb-top: 46px; --cb-tabs: 44px; --cb-bottom: 46px; --cb-page-h: calc(100vh - 136px); }
+      #catalogBook .cb-title { font-size: 14px; }
+      #catalogBook .cb-meta { font-size: 10px; }
+      #catalogBook .cb-meta b { font-size: 12px; }
+      #catalogBook .cb-page { padding-top: 8px; padding-bottom: 12px; }
+      #catalogBook .cb-figure { padding: 4px; }
+      #catalogBook .cb-copy h2 { font-size: clamp(18px, 2.8vw, 26px); }
+      #catalogBook .cb-note { font-size: 12.5px; line-height: 1.7; margin-bottom: 8px; }
+      #catalogBook .cb-spec { font-size: 11.5px; margin-bottom: 7px; }
+      #catalogBook .cb-ref { font-size: 10px; padding-top: 6px; }
+      #catalogBook .cb-cover { gap: 8px; }
+      #catalogBook .cb-cover h1 { font-size: clamp(20px, 4vw, 30px); }
+      #catalogBook .cb-cover p { font-size: 11px; }
+      #catalogBook .cb-cover small { font-size: 10px; }
+      #catalogBook .cb-text h2 { font-size: 26px; margin-bottom: 8px; }
+      #catalogBook .cb-text p { font-size: 13px; line-height: 1.7; margin-bottom: 8px; }
+      #catalogBook .cb-bottom { font-size: 11px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #catalogBook .cb-pages { scroll-behavior: auto; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const book = document.createElement('div');
+  book.id = 'catalogBook';
+  book.setAttribute('aria-hidden', 'true');
+  book.setAttribute('role', 'dialog');
+  book.setAttribute('aria-modal', 'true');
+  book.setAttribute('aria-label', '福盛坊展馆介绍册');
+  book.innerHTML = `
+    <div class="cb-shell">
+      <header class="cb-top">
+        <button class="cb-close" type="button" aria-label="关闭介绍册">×</button>
+        <div class="cb-title">福盛坊展馆介绍册</div>
+        <div class="cb-meta"><b id="cbNum">01 / ${String(PAGES.length).padStart(2, '0')}</b><span id="cbChapter">封面</span></div>
+      </header>
+      <nav class="cb-tabs" aria-label="介绍册章节"></nav>
+      <main class="cb-pages" id="cbPages" tabindex="0"></main>
+      <footer class="cb-bottom">
+        <button class="cb-nav cb-prev" type="button" aria-label="上一页">‹ 上一页</button>
+        <span class="cb-hint">上下滑动翻阅 · 点章可跳</span>
+        <button class="cb-nav cb-next" type="button" aria-label="下一页">下一页 ›</button>
+      </footer>
+    </div>`;
+  document.body.appendChild(book);
+
+  const pagesEl = book.querySelector('#cbPages');
+  let swipeStart = null;
+  pagesEl.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    swipeStart = { x: e.clientX, y: e.clientY };
+  }, { passive: true });
+  pagesEl.addEventListener('pointerup', function (e) {
+    if (!swipeStart) return;
+    const dx = e.clientX - swipeStart.x, dy = e.clientY - swipeStart.y;
+    swipeStart = null;
+    if (Math.abs(dx) > 54 && Math.abs(dx) > Math.abs(dy) * 1.25) go(current + (dx < 0 ? 1 : -1));
+  }, { passive: true });
+  pagesEl.addEventListener('pointercancel', function () { swipeStart = null; }, { passive: true });
+  const numEl = book.querySelector('#cbNum');
+  const chapterEl = book.querySelector('#cbChapter');
+  const tabsEl = book.querySelector('.cb-tabs');
+  const prevEl = book.querySelector('.cb-prev');
+  const nextEl = book.querySelector('.cb-next');
+  const closeEl = book.querySelector('.cb-close');
+
+  function chapterLabel(id) {
+    const c = CHAPTERS.find(function (x) { return x.id === id; });
+    return c ? c.label : '';
+  }
+
+  function pageHtml(p) {
+    if (p.type === 'cover') {
+      return `<div class="cb-cover">
+        <figure><img src="catalog-pages/p01.webp" alt="《福盛坊（山川）产品图册》封面" fetchpriority="high"></figure>
+        <h1>${p.title}</h1>
+        <p>${p.subtitle}</p>
+        <small>当代福盛坊产品参考 · 本馆仅作介绍</small>
+      </div>`;
+    }
+    if (p.type === 'work') {
+      return `<article class="cb-work">
+        <figure class="cb-figure"><img src="${p.img}" alt="${p.title}，图册第${p.page}页" loading="lazy" decoding="async"></figure>
+        <div class="cb-copy">
+          <div class="cb-kicker">图册 p.${String(p.page).padStart(2, '0')} · ${chapterLabel(p.chapter)}</div>
+          <h2>${p.title}</h2>
+          <div class="cb-spec"><b>规格</b> ${p.spec}</div>
+          <p class="cb-note">${p.note}</p>
+          <div class="cb-ref">当代福盛坊产品参考 · 名称与规格照录图册</div>
+          <div class="cb-pageno">图册第 ${p.page} 页</div>
+        </div>
+      </article>`;
+    }
+    if (p.type === 'chapter') {
+      return `<div class="cb-chapter">
+        <div class="num">${p.kicker === '第一章' ? '01' : p.kicker === '第二章' ? '02' : p.kicker === '第三章' ? '03' : '04'}</div>
+        <div><div class="cb-kicker">${p.kicker}</div><h2>${p.title}</h2><p>${p.lead}</p></div>
+      </div>`;
+    }
+    if (p.type === 'end') {
+      return `<div class="cb-end"><div class="cb-kicker">附录</div><h2>${p.title}</h2>${p.body.map(function (x) { return '<p>' + x + '</p>'; }).join('')}<div class="cb-ref">本馆仅作介绍，不是考古图录。</div></div>`;
+    }
+    return `<div class="cb-text"><div class="cb-kicker">${p.kicker || ''}</div><h2>${p.title}</h2>${p.body.map(function (x) { return '<p>' + x + '</p>'; }).join('')}</div>`;
+  }
+
+  PAGES.forEach(function (p, i) {
+    const el = document.createElement('section');
+    el.className = 'cb-page';
+    el.dataset.index = String(i);
+    el.dataset.chapter = p.chapter;
+    el.innerHTML = `<div class="cb-inner">${pageHtml(p)}</div>`;
+    pagesEl.appendChild(el);
+  });
+
+  CHAPTERS.forEach(function (c) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'cb-tab';
+    b.dataset.chapter = c.id;
+    b.textContent = c.label;
+    b.addEventListener('click', function (ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      go(c.index);
+    });
+    tabsEl.appendChild(b);
+  });
+
+  let current = 0;
+  let openState = false;
+  let resizeTimer = 0;
+
+  function setCurrent(i) {
+    i = Math.max(0, Math.min(PAGES.length - 1, i));
+    current = i;
+    const p = PAGES[i];
+    numEl.textContent = String(i + 1).padStart(2, '0') + ' / ' + String(PAGES.length).padStart(2, '0');
+    chapterEl.textContent = chapterLabel(p.chapter);
+    book.querySelectorAll('.cb-tab').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.chapter === p.chapter);
+    });
+    prevEl.disabled = i <= 0;
+    nextEl.disabled = i >= PAGES.length - 1;
+    for (let k = 0; k < pagesEl.children.length; k++) {
+      pagesEl.children[k].classList.toggle('active', k === i);
+    }
+  }
+
+  function go(i) {
+    i = Math.max(0, Math.min(PAGES.length - 1, i));
+    const el = pagesEl.children[i];
+    if (!el) return;
+    setCurrent(i);
+    pagesEl.scrollTop = 0;
+    el.scrollTop = 0;
+  }
+  prevEl.addEventListener('click', function () { go(current - 1); });
+  nextEl.addEventListener('click', function () { go(current + 1); });
+
+  function open(chapter) {
+    if (!openState) {
+      openState = true;
+      book.hidden = false;
+      book.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(function () { book.classList.add('open'); });
+      document.body.classList.add('catalog-open');
+    }
+    const idx = chapter !== undefined && chapterIndex[chapter] !== undefined ? chapterIndex[chapter] : current;
+    // 等 display 与布局生效后落页；关闭再开保持上次页码。
+    requestAnimationFrame(function () { go(idx); });
+    setTimeout(function () { if (openState) closeEl.focus({ preventScroll: true }); }, 30);
+  }
+
+  function close() {
+    if (!openState) return;
+    openState = false;
+    book.classList.remove('open');
+    book.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('catalog-open');
+    setTimeout(function () { if (!openState) book.hidden = true; }, 180);
+  }
+
+  closeEl.addEventListener('click', function (ev) {
+    ev.preventDefault(); ev.stopPropagation(); close();
+  });
+
+  document.addEventListener('keydown', function (ev) {
+    if (!openState) return;
+    if (ev.key === 'Escape') { ev.preventDefault(); close(); }
+    else if (ev.key === 'ArrowDown' || ev.key === 'PageDown') { ev.preventDefault(); go(current + 1, true); }
+    else if (ev.key === 'ArrowUp' || ev.key === 'PageUp') { ev.preventDefault(); go(current - 1, true); }
+  });
+
+  window.addEventListener('resize', function () {
+    if (!openState) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      if (openState) go(current);
+    }, 120);
+  });
+
+  setCurrent(0);
+  book.hidden = true;
+
+  WB.catalog = {
+    open: open,
+    close: close,
+    toggle: function (chapter) { if (openState) close(); else open(chapter); },
+    isOpen: function () { return openState; },
+    go: go,
+    page: function () { return current; },
+    pages: PAGES,
+    chapters: CHAPTERS,
+  };
+})();
 </script>
 </body>
 </html>
