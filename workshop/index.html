@@ -57,10 +57,588 @@
     box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
   }
   #ki .tip { font-size: 11.5px; color: #8b7554; letter-spacing: 1.5px; }
+/* ============================================================
+   开始页 + 入场后旋转遮罩
+   与工坊纸签/暖木/晴日太行同一套材质语言；不引入外部资源。
+   ============================================================ */
+#startGate,
+#rotateGate {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: "KaiTi", "楷体", "STKaiti", "SimSun", serif;
+  -webkit-tap-highlight-color: transparent;
+}
+#startGate[hidden],
+#rotateGate[hidden] { display: none !important; }
+
+/* 开始页：晴日山色的暗角 + 纸签 */
+#startGate {
+  z-index: 60;
+  padding: 14px 0;
+  background:
+    radial-gradient(120% 90% at 50% 8%, rgba(61, 90, 72, .30) 0%, rgba(24, 32, 35, .72) 46%, rgba(10, 14, 17, .92) 100%),
+    linear-gradient(180deg, rgba(47, 111, 184, .22), rgba(17, 22, 26, .62));
+  backdrop-filter: blur(2px) saturate(.92);
+  -webkit-backdrop-filter: blur(2px) saturate(.92);
+}
+#startGate .sg-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 55% at 50% 42%, rgba(240, 229, 203, .08) 0%, rgba(0, 0, 0, 0) 70%),
+    linear-gradient(90deg, rgba(0, 0, 0, .18), rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0) 78%, rgba(0, 0, 0, .18));
+}
+#startGate .sg-panel {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  width: min(552px, calc(100vw - 36px));
+  max-height: calc(100vh - 28px);
+  max-height: calc(100dvh - 28px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding: 34px 42px 24px;
+  color: #2a221b;
+  background:
+    repeating-linear-gradient(0deg, rgba(120, 100, 70, .045) 0 1px, transparent 1px 4px),
+    radial-gradient(120% 120% at 20% 0%, #f4edda 0%, #eadfc7 55%, #ddd0b2 100%);
+  border: 1px solid rgba(90, 72, 48, .58);
+  box-shadow:
+    0 0 0 5px rgba(238, 231, 212, .09),
+    0 0 0 6px rgba(60, 45, 28, .22),
+    0 34px 90px rgba(0, 0, 0, .60);
+  animation: sg-rise .46s cubic-bezier(.2, .9, .25, 1) both;
+}
+#startGate .sg-panel::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border: 1px solid rgba(122, 96, 62, .34);
+  pointer-events: none;
+}
+#startGate .sg-panel::-webkit-scrollbar { width: 6px; }
+#startGate .sg-panel::-webkit-scrollbar-thumb { background: rgba(122, 96, 62, .32); border-radius: 3px; }
+
+/* 纸面远山：极淡的三角剪影，静态，不循环 */
+#startGate .sg-ridge {
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 52px;
+  overflow: hidden;
+  opacity: .13;
+  pointer-events: none;
+}
+#startGate .sg-ridge i {
+  position: absolute;
+  bottom: -1px;
+  width: 0; height: 0;
+  border-style: solid;
+  border-color: transparent transparent #5a4b36 transparent;
+}
+#startGate .sg-ridge i:nth-child(1) { left: 6%; border-width: 0 58px 34px 58px; }
+#startGate .sg-ridge i:nth-child(2) { left: 30%; border-width: 0 82px 46px 82px; opacity: .72; }
+#startGate .sg-ridge i:nth-child(3) { right: 8%; border-width: 0 66px 30px 66px; opacity: .55; }
+
+#startGate .sg-kicker {
+  margin: 0 0 10px;
+  color: #8b7554;
+  font-size: 12px;
+  letter-spacing: 5px;
+  text-indent: 0;
+}
+#startGate h1 {
+  margin: 0;
+  color: #241c15;
+  font-size: clamp(27px, 4.4vw, 38px);
+  line-height: 1.28;
+  font-weight: 600;
+  letter-spacing: 6px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .35);
+}
+#startGate .sg-lead {
+  margin: 8px 0 0;
+  color: #7a6647;
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-indent: 0;
+}
+#startGate .sg-rule {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 18px 0 15px;
+  color: #3d5a48;
+  font-size: 12.5px;
+  letter-spacing: 3px;
+  white-space: nowrap;
+}
+#startGate .sg-rule span {
+  flex: 1 1 auto;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(122, 96, 62, 0), rgba(122, 96, 62, .44), rgba(122, 96, 62, 0));
+}
+#startGate .sg-rule b { font-weight: 600; }
+#startGate .sg-copy {
+  margin: 0;
+  color: #3a3027;
+  font-size: 14.5px;
+  line-height: 1.9;
+  text-indent: 0;
+  letter-spacing: .4px;
+}
+#startGate .sg-warn {
+  margin: 13px 0 0;
+  padding: 9px 11px;
+  background: rgba(168, 50, 42, .075);
+  border-left: 3px solid #a8322a;
+  color: #8e2f25;
+  font-size: 13.5px;
+  line-height: 1.65;
+  letter-spacing: .6px;
+}
+#startGate .sg-warn[hidden] { display: none !important; }
+#startGate .sg-enter {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 52px;
+  margin: 18px 0 0;
+  padding: 12px 16px;
+  border: 1px solid #5a341d;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #9c5a2d 0%, #834822 58%, #6f3b1c 100%);
+  color: #fdf0d5;
+  font-family: inherit;
+  font-size: 18px;
+  letter-spacing: 7px;
+  text-indent: 7px;
+  cursor: pointer;
+  /* 手机横屏轻点时不要触发双击缩放，也不要让浏览器把点按当成滚动手势。 */
+  touch-action: manipulation;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 235, 200, .22),
+    0 6px 18px rgba(80, 46, 20, .30);
+  transition: filter .18s ease, transform .12s ease, box-shadow .18s ease;
+}
+#startGate .sg-enter:hover:not(:disabled) { filter: brightness(1.07); }
+#startGate .sg-enter:active:not(:disabled) { transform: translateY(1px); box-shadow: inset 0 1px 0 rgba(255, 235, 200, .18), 0 3px 10px rgba(80, 46, 20, .28); }
+#startGate .sg-enter:focus-visible { outline: 2px solid #3d5a48; outline-offset: 3px; }
+#startGate .sg-enter:disabled {
+  background:
+    repeating-linear-gradient(135deg, rgba(120, 106, 82, .08) 0 6px, rgba(120, 106, 82, 0) 6px 12px),
+    #d8ccb4;
+  border-color: rgba(120, 100, 72, .48);
+  color: #87775e;
+  letter-spacing: 3px;
+  text-indent: 3px;
+  cursor: not-allowed;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25);
+}
+#startGate .sg-hint {
+  margin: 9px 0 0;
+  color: #8b7554;
+  font-size: 11.5px;
+  line-height: 1.6;
+  letter-spacing: 1.2px;
+  text-align: center;
+  text-indent: 0;
+}
+#startGate .sg-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px dotted rgba(122, 96, 62, .42);
+  color: #8b7554;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+#startGate .sg-seal {
+  display: inline-block;
+  padding: 5px 6px 4px;
+  background: #a8322a;
+  color: #f6efe0;
+  font-size: 11px;
+  line-height: 1.12;
+  letter-spacing: 1px;
+  writing-mode: vertical-rl;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .24);
+}
+
+/* 入场后旋转遮罩：深色纸边，挡住一切工坊操作，但不销毁场景 */
+#rotateGate {
+  z-index: 62;
+  padding: 16px;
+  background:
+    radial-gradient(80% 70% at 50% 40%, rgba(34, 44, 49, .72) 0%, rgba(9, 13, 16, .94) 100%),
+    rgba(10, 14, 17, .92);
+  backdrop-filter: blur(7px) saturate(.78);
+  -webkit-backdrop-filter: blur(7px) saturate(.78);
+}
+#rotateGate .rg-panel {
+  box-sizing: border-box;
+  width: min(430px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 30px 28px 26px;
+  border: 1px solid rgba(210, 188, 147, .38);
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 240, 210, .018) 0 1px, transparent 1px 4px),
+    linear-gradient(158deg, rgba(35, 43, 47, .97), rgba(15, 20, 24, .98));
+  box-shadow:
+    0 0 0 5px rgba(238, 231, 212, .04),
+    0 30px 80px rgba(0, 0, 0, .60);
+  color: #efe4ce;
+  text-align: center;
+}
+#rotateGate .rg-phone {
+  position: relative;
+  width: 40px;
+  height: 68px;
+  margin: 2px auto 18px;
+  border: 2px solid #c9a96a;
+  border-radius: 7px;
+  transform: rotate(90deg);
+  box-shadow: 0 0 0 3px rgba(201, 169, 106, .08);
+}
+#rotateGate .rg-phone::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  width: 14px;
+  height: 2px;
+  transform: translateX(-50%);
+  background: rgba(201, 169, 106, .72);
+  border-radius: 2px;
+}
+#rotateGate .rg-phone i {
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  width: 5px;
+  height: 5px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(201, 169, 106, .72);
+  border-radius: 50%;
+}
+#rotateGate .rg-kicker {
+  margin: 0 0 7px;
+  color: #b9a580;
+  font-size: 11.5px;
+  letter-spacing: 4px;
+}
+#rotateGate h2 {
+  margin: 0;
+  color: #f4e8d1;
+  font-size: clamp(24px, 6vw, 30px);
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: 5px;
+}
+#rotateGate .rg-copy {
+  margin: 13px 0 0;
+  color: #cfc1a7;
+  font-size: 14px;
+  line-height: 1.85;
+  letter-spacing: .8px;
+}
+#rotateGate .rg-progress {
+  margin: 17px 0 0;
+  padding: 9px 10px;
+  border-top: 1px solid rgba(201, 169, 106, .30);
+  border-bottom: 1px solid rgba(201, 169, 106, .30);
+  color: #e7c580;
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+#rotateGate .rg-tip {
+  margin: 12px 0 0;
+  color: #8f846e;
+  font-size: 11.5px;
+  line-height: 1.7;
+  letter-spacing: 1px;
+}
+
+/* 开始页期间不露出 HUD / 纸签；旋转暂停时也不接受底层操作 */
+body.gate-pending #hud,
+body.gate-pending #ki,
+body.gate-paused #hud,
+body.gate-paused #ki { visibility: hidden; }
+body.gate-paused #hud,
+body.gate-paused #ki { pointer-events: none !important; }
+
+@keyframes sg-rise {
+  from { opacity: 0; transform: translateY(12px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 矮屏（手机横屏常见 844×390）压缩留白，保证进入按钮在首屏可见 */
+@media (max-height: 560px) {
+  #startGate { padding: 8px 0; }
+  #startGate .sg-panel {
+    width: min(620px, calc(100vw - 30px));
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+    padding: 18px 27px 14px;
+  }
+  #startGate .sg-ridge { display: none; }
+  #startGate .sg-kicker { margin-bottom: 5px; font-size: 10.5px; letter-spacing: 4px; }
+  #startGate h1 { font-size: clamp(23px, 4.2vw, 30px); letter-spacing: 4px; }
+  #startGate .sg-lead { margin-top: 4px; font-size: 11.5px; letter-spacing: 2px; }
+  #startGate .sg-rule { margin: 9px 0 8px; font-size: 11.5px; }
+  #startGate .sg-copy { font-size: 12.5px; line-height: 1.65; }
+  #startGate .sg-warn { margin-top: 7px; padding: 6px 9px; font-size: 12px; }
+  #startGate .sg-enter { min-height: 44px; margin-top: 10px; padding: 8px 12px; font-size: 16px; letter-spacing: 5px; text-indent: 5px; }
+  #startGate .sg-hint { margin-top: 5px; font-size: 10.5px; }
+  #startGate .sg-foot { margin-top: 7px; padding-top: 7px; font-size: 10px; }
+  #startGate .sg-seal { padding: 3px 4px; font-size: 10px; }
+  #rotateGate .rg-panel { padding: 20px 22px 18px; }
+  #rotateGate .rg-phone { width: 32px; height: 54px; margin-bottom: 12px; }
+  #rotateGate h2 { font-size: 23px; }
+  #rotateGate .rg-copy { margin-top: 8px; font-size: 12.5px; line-height: 1.65; }
+  #rotateGate .rg-progress { margin-top: 10px; padding: 6px; font-size: 12px; }
+  #rotateGate .rg-tip { margin-top: 7px; font-size: 10.5px; }
+}
+
+@media (max-width: 420px) {
+  #startGate .sg-panel { padding-left: 24px; padding-right: 24px; }
+  #startGate h1 { letter-spacing: 4px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #startGate .sg-panel { animation: none; }
+  #startGate .sg-enter { transition: none; }
+  #startGate,
+  #rotateGate { backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+
 </style>
+<!-- 纯判定核心：开始页/旋转门禁；页面内联，保持单文件自包含 -->
+<script>
+/* 开始页 / 旋转门禁的判定核心。
+ * evaluate 不碰 DOM、不读计时器、不写 journey；createActivator 只接收调用方
+ * 传入的按钮并挂事件，不查询文档、不读计时器、不写 journey，便于 Node 单测。
+ * 判定目标：
+ *   - 触屏（主指针粗，或没有可悬停的细指针）且短边 <= 560px 视为“手机类”设备；
+ *   - 手机竖屏不可入场；手机横屏可入场；
+ *   - 桌面（含窄而高的桌面窗口）可入场；
+ *   - 已入场后手机竖屏 => rotate 遮罩，保留进度，不重新开场；横回 => play。
+ *
+ * createActivator 是入场按钮的事件适配层：click 仍然保留，同时显式处理
+ * pointerdown/up 与 touchstart/end。有些移动浏览器、辅助技术或自动化输入
+ * 只派发指针/触摸序列而不合成 click；按钮不能只依赖 click。所有路径都
+ * 复用同一个 canActivate 判定（disabled + canEnter + 未入场），并带 12px
+ * 轻点阈值，避免把可滚动面板的拖拽误当成进入。
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.WBGateCore = factory();
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  // 手机横屏常见高度 320–500；给地址栏伸缩留余量，短边 560 内仍按手机类设备处理。
+  var PHONE_MIN_SIDE = 560;
+  // 手指/指针在按下到抬起之间的轻微抖动仍算轻点；超过则视为滚动/拖拽。
+  var TAP_SLOP = 12;
+
+  function evaluate(input) {
+    input = input || {};
+    var vw = Math.max(1, Number(input.vw) || 1);
+    var vh = Math.max(1, Number(input.vh) || 1);
+    var coarse = !!input.coarse;
+    var finePointer = !!input.finePointer;
+    var hover = !!input.hover;
+    var maxTouchPoints = Number(input.maxTouchPoints) || 0;
+    // 主指针为细指针且可悬停时更像桌面（触屏笔记本/一体机），
+    // 避免把窄而高的桌面触屏窗口误判成手机竖屏；手机通常 coarse 或 hover:none。
+    var touch = coarse || (maxTouchPoints > 0 && !(finePointer && hover));
+    var phone = touch && Math.min(vw, vh) <= PHONE_MIN_SIDE;
+    var portrait = vh > vw;
+    var landscapeMobile = phone && !portrait;
+    var desktop = !phone;
+    var entered = !!input.entered;
+    var canEnter = !phone || !portrait;
+    var showStart = !entered;
+    var showRotate = entered && phone && portrait;
+    var allowPlay = entered && !(phone && portrait);
+
+    return {
+      entered: entered,
+      phone: phone,
+      portrait: portrait,
+      landscapeMobile: landscapeMobile,
+      desktop: desktop,
+      canEnter: canEnter,
+      showStart: showStart,
+      showRotate: showRotate,
+      allowPlay: allowPlay,
+      mode: !entered ? (canEnter ? 'start-ready' : 'start-blocked')
+        : (showRotate ? 'rotate' : 'play'),
+      preserveProgress: showRotate,
+      resetJourney: false,
+      reopenStart: false,
+      reason: !phone ? 'desktop' : (portrait ? 'phone-portrait' : 'phone-landscape')
+    };
+  }
+
+  function isTap(start, end, slop) {
+    if (!start || !end) return false;
+    var sx = Number(start.x), sy = Number(start.y);
+    var ex = Number(end.x), ey = Number(end.y);
+    if (!isFinite(sx) || !isFinite(sy) || !isFinite(ex) || !isFinite(ey)) return false;
+    var limit = Number(slop);
+    if (!isFinite(limit) || limit < 0) limit = TAP_SLOP;
+    var dx = ex - sx, dy = ey - sy;
+    return dx * dx + dy * dy <= limit * limit;
+  }
+
+  /* 给入场按钮绑定 click + pointer + touch。
+   * opts: { button, getState:()=>({canEnter, entered}), enter:()=>void,
+   *         onClickEvent:(ev)=>void, slop:number }
+   * getState/enter 都由页面注入，模块本身不读 window、不写 journey。
+   */
+  function createActivator(opts) {
+    opts = opts || {};
+    var button = opts.button || null;
+    var getState = typeof opts.getState === 'function'
+      ? opts.getState
+      : function () { return { canEnter: true, entered: false }; };
+    var enter = typeof opts.enter === 'function' ? opts.enter : function () {};
+    var onClickEvent = typeof opts.onClickEvent === 'function' ? opts.onClickEvent : null;
+    var slop = Number(opts.slop);
+    if (!isFinite(slop) || slop < 0) slop = TAP_SLOP;
+    var active = null;
+
+    // 唯一的入场闸门：按钮不可禁用着进，竖屏 etc. 由 canEnter 统一决定。
+    function canActivate() {
+      if (!button || button.disabled) return false;
+      var st = getState() || {};
+      return !!st.canEnter && !st.entered;
+    }
+    function sameId(a, id) {
+      return !!a && (id === undefined || a.id === undefined || a.id === id);
+    }
+    function begin(kind, x, y, id) {
+      active = null;
+      if (!canActivate()) return;
+      active = { kind: kind, x: Number(x), y: Number(y), id: id, moved: false };
+    }
+    function move(kind, x, y, id) {
+      if (!active || active.kind !== kind || !sameId(active, id)) return;
+      if (!isTap(active, { x: x, y: y }, slop)) active.moved = true;
+    }
+    function end(kind, x, y, id) {
+      if (!active || active.kind !== kind || !sameId(active, id)) return false;
+      var a = active;
+      active = null;
+      if (a.moved || !isTap(a, { x: x, y: y }, slop)) return false;
+      if (!canActivate()) return false;
+      enter();
+      return true;
+    }
+    function reset() { active = null; }
+
+    function onPointerDown(e) {
+      if (!e || e.isPrimary === false) return;
+      if (typeof e.button === 'number' && e.button !== 0) return;
+      begin('pointer', e.clientX, e.clientY, e.pointerId);
+    }
+    function onPointerMove(e) {
+      if (!e) return;
+      move('pointer', e.clientX, e.clientY, e.pointerId);
+    }
+    function onPointerUp(e) {
+      if (!e || e.isPrimary === false) return;
+      end('pointer', e.clientX, e.clientY, e.pointerId);
+    }
+    function onTouchStart(e) {
+      if (!e || !e.touches || e.touches.length !== 1) { reset(); return; }
+      var t = e.touches[0];
+      begin('touch', t.clientX, t.clientY, t.identifier);
+    }
+    function onTouchMove(e) {
+      if (!e || !e.touches || e.touches.length !== 1) { reset(); return; }
+      var t = e.touches[0];
+      move('touch', t.clientX, t.clientY, t.identifier);
+    }
+    function onTouchEnd(e) {
+      if (!e || !e.changedTouches || !e.changedTouches.length) { reset(); return; }
+      var t = e.changedTouches[0];
+      end('touch', t.clientX, t.clientY, t.identifier);
+    }
+    function onClick(e) {
+      if (onClickEvent) onClickEvent(e);
+      if (!canActivate()) return false;
+      enter();
+      return true;
+    }
+
+    if (button && typeof button.addEventListener === 'function') {
+      button.addEventListener('click', onClick);
+      button.addEventListener('pointerdown', onPointerDown);
+      button.addEventListener('pointermove', onPointerMove);
+      button.addEventListener('pointerup', onPointerUp);
+      button.addEventListener('pointercancel', reset);
+      button.addEventListener('touchstart', onTouchStart, { passive: true });
+      button.addEventListener('touchmove', onTouchMove, { passive: true });
+      button.addEventListener('touchend', onTouchEnd, { passive: true });
+      button.addEventListener('touchcancel', reset, { passive: true });
+    }
+
+    return {
+      reset: reset,
+      active: function () { return active; },
+      isTap: function (start, end) { return isTap(start, end, slop); }
+    };
+  }
+
+  return {
+    evaluate: evaluate,
+    createActivator: createActivator,
+    isTap: isTap,
+    PHONE_MIN_SIDE: PHONE_MIN_SIDE,
+    TAP_SLOP: TAP_SLOP
+  };
+});
+</script>
 </head>
-<body>
+<body class="gate-pending">
 <canvas id="c"></canvas>
+
+<!-- 开始页 / 旋转遮罩：只做门禁与说明，不启动烧制、不开礼匣、不写九关进度 -->
+<div id="startGate" class="gate" role="dialog" aria-modal="true" aria-labelledby="sgTitle" aria-describedby="sgCopy">
+  <div class="sg-scrim" aria-hidden="true"></div>
+  <div class="sg-panel">
+    <div class="sg-ridge" aria-hidden="true"><i></i><i></i><i></i></div>
+    <p class="sg-kicker">當陽峪 · 晴日太行</p>
+    <h1 id="sgTitle">当阳峪绞胎瓷工坊</h1>
+    <p class="sg-lead">九关游历 · 胎里见纹 · 透花瓷</p>
+    <div class="sg-rule" aria-hidden="true"><span></span><b>横屏体验更好</b><span></span></div>
+    <p id="sgCopy" class="sg-copy">本工坊是一座可转动的微缩窑场。横过手机，山景、窑炉与九道工序会更完整；电脑宽屏可直接进入。</p>
+    <p id="sgWarn" class="sg-warn" role="status" aria-live="polite" hidden>手机竖屏时暂不能进入，请先把手机横过来。</p>
+    <button id="sgEnter" class="sg-enter" type="button" disabled aria-disabled="true">正在准备工坊…</button>
+    <p id="sgHint" class="sg-hint">可先横屏，再点进入 · 进场后进度不会因旋转丢失</p>
+    <div class="sg-foot"><span class="sg-seal">當陽峪</span><span>晴日太行 · 九关</span></div>
+  </div>
+</div>
+
+<div id="rotateGate" class="gate rotate" role="dialog" aria-modal="true" aria-labelledby="rgTitle" hidden>
+  <div class="rg-panel">
+    <div class="rg-phone" aria-hidden="true"><i></i></div>
+    <p class="rg-kicker">工坊已为你留在此处</p>
+    <h2 id="rgTitle">请把手机横过来</h2>
+    <p class="rg-copy">你的工序、选项、礼匣与窑炉状态都已保留。横回屏幕即可继续。</p>
+    <p class="rg-progress" id="rgProgress" role="status" aria-live="polite">进度已保留</p>
+    <p class="rg-tip">不需要重新进入，也不会重新开场。</p>
+  </div>
+</div>
+
 
 <div id="ki">
   <h3>馒头窑</h3>
@@ -586,8 +1164,10 @@ console.warn( 'Scripts "build/three.js" and "build/three.min.js" are deprecated 
       transparent: !!o.transparent,
       opacity: o.opacity !== undefined ? o.opacity : 1,
       side: o.side || THREE.FrontSide,
-      flatShading: !!o.flat,
     });
+    // MeshToonMaterial 在当前 three 构建中不接受 flatShading；旧写法只产生
+    // 数百条无效属性警告，实际仍按平滑法线渲染。保留个标记但不走构造函数 setValues。
+    if (o.flat) m.flatShading = true;
     if (!o.map && !o.unique) toonCache.set(key, m);
     return m;
   }
@@ -4747,6 +5327,1329 @@ WB.initProduct = function () {
 </script>
 <script>
 /* ============================================================
+   hall.js — 福盛坊展馆（院落西侧独立馆）
+   一堂两翼：堂心绞胎玉璧 / 左翼竹编 / 右翼海浪日月同辉
+   全部为原创程序几何与程序纹样，不读取、不打包图册照片。
+   ============================================================ */
+(function () {
+  const WB = window.WB;
+  const G = WB.G, R = WB.R, toon = WB.toon, std = WB.std, C = WB.C;
+
+  const HALL = {
+    x0: -15.45, x1: -9.30,
+    z0: -2.55, z1: 4.75,
+    cx: -12.375, cz: 1.10,
+    floorY: 0.265,
+    wallH: 2.95,
+    eaveY: 2.86,
+    ridgeY: 3.68,
+    T: 0.30,
+    doorR: 1.28,
+    doorY: 1.42,
+    doorX: -9.34,
+  };
+  WB.hallInfo = HALL;
+
+  function tex(c, rx, ry) {
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(rx || 1, ry || 1);
+    t.anisotropy = 8;
+    if (THREE.sRGBEncoding !== undefined) t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+  function seeded(seed) {
+    let s = (seed || 1) >>> 0;
+    return function () {
+      s = (s * 1664525 + 1013904223) >>> 0;
+      return s / 4294967296;
+    };
+  }
+
+  /* ---------------- 程序纹理 ---------------- */
+  function plasterTex() {
+    const S = 256, c = C(S, S), x = c.getContext('2d');
+    x.fillStyle = '#d9d2c2'; x.fillRect(0, 0, S, S);
+    for (let i = 0; i < 1400; i++) {
+      x.fillStyle = 'rgba(' + (Math.random() > 0.5 ? '255,251,240,' : '110,100,84,') + (0.02 + Math.random() * 0.045) + ')';
+      x.fillRect(Math.random() * S, Math.random() * S, 1 + Math.random() * 3, 1 + Math.random() * 3);
+    }
+    for (let i = 0; i < 26; i++) {
+      x.strokeStyle = 'rgba(96,86,70,0.055)';
+      x.lineWidth = 1;
+      x.beginPath();
+      const y = Math.random() * S;
+      x.moveTo(0, y);
+      for (let px = 0; px <= S; px += 16) x.lineTo(px, y + Math.sin(px * 0.05 + i) * 2);
+      x.stroke();
+    }
+    return tex(c, 1, 1);
+  }
+
+  // 深色暖木地板：窄板 + 木纹 + 接缝
+  function hallFloorTex() {
+    const S = 512, c = C(S, S), x = c.getContext('2d');
+    x.fillStyle = '#4b3828'; x.fillRect(0, 0, S, S);
+    const rows = 8, bh = S / rows;
+    for (let r = 0; r < rows; r++) {
+      const g = x.createLinearGradient(0, r * bh, 0, (r + 1) * bh);
+      const v = 6 - r * 1.2;
+      g.addColorStop(0, 'rgb(' + (78 + v) + ',' + (58 + v) + ',' + (42 + v) + ')');
+      g.addColorStop(1, 'rgb(' + (62 + v) + ',' + (45 + v) + ',' + (32 + v) + ')');
+      x.fillStyle = g; x.fillRect(0, r * bh + 1, S, bh - 2);
+      x.strokeStyle = 'rgba(26,18,12,0.55)'; x.lineWidth = 2;
+      x.beginPath(); x.moveTo(0, r * bh + 1); x.lineTo(S, r * bh + 1); x.stroke();
+      for (let k = 0; k < 7; k++) {
+        x.strokeStyle = 'rgba(38,26,18,0.22)'; x.lineWidth = 1;
+        x.beginPath();
+        const yy = r * bh + 5 + Math.random() * (bh - 10);
+        x.moveTo(0, yy);
+        for (let px = 0; px <= S; px += 14) x.lineTo(px, yy + Math.sin(px * 0.032 + k) * 2.2);
+        x.stroke();
+      }
+      x.strokeStyle = 'rgba(140,116,84,0.16)'; x.lineWidth = 1;
+      x.beginPath(); x.moveTo(0, r * bh + 2); x.lineTo(S, r * bh + 2); x.stroke();
+    }
+    return tex(c, 2.2, 2.2);
+  }
+
+  // 绞胎自由纹：用域扭曲的泥层断面，不是规则波浪，也不是平板笔划。
+  // 由左下向中孔推挤，留白泥筋与细密胎泥颗粒。
+  function jadeSwirlTex(seed, pale, SZ) {
+    const S = SZ || 384;
+    const c = C(S, S), x = c.getContext('2d');
+    const rnd = seeded(seed || 7);
+    const sd = (seed || 1) * 0.73;
+    function hash2(i, j) {
+      const n = Math.sin(i * 127.1 + j * 311.7 + 17.13 + sd) * 43758.5453123;
+      return n - Math.floor(n);
+    }
+    function noise2(px, py) {
+      const xi = Math.floor(px), yi = Math.floor(py);
+      const xf = px - xi, yf = py - yi;
+      const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+      const a = hash2(xi, yi), b = hash2(xi + 1, yi);
+      const c1 = hash2(xi, yi + 1), d = hash2(xi + 1, yi + 1);
+      return (a * (1 - u) + b * u) * (1 - v) + (c1 * (1 - u) + d * u) * v;
+    }
+    function fbm(px, py, oct) {
+      let sum = 0, amp = 0.5, f = 1;
+      for (let i = 0; i < (oct || 4); i++) {
+        sum += amp * noise2(px * f, py * f);
+        f *= 2.03; amp *= 0.5;
+      }
+      return sum;
+    }
+    function sm(a, b, t) {
+      const u = Math.max(0, Math.min(1, (t - a) / Math.max(0.00001, b - a)));
+      return u * u * (3 - 2 * u);
+    }
+    const img = x.createImageData(S, S);
+    const data = img.data;
+    const base = [212, 204, 185];
+    const light = [150, 171, 146];
+    const mid = [55, 96, 76];
+    const deep = [28, 62, 50];
+    const dark = [18, 42, 34];
+    for (let py = 0; py < S; py++) {
+      for (let px = 0; px < S; px++) {
+        const nx = (px / S - 0.5) * 2;
+        const ny = (py / S - 0.5) * 2;
+        // 域扭曲：色泥在折叠、推挤处才有这种断而不齐的边。
+        const wx = nx + (fbm(nx * 2.3 + 7.1, ny * 2.3 - 2.7, 3) - 0.5) * 0.62;
+        const wy = ny + (fbm(nx * 2.1 - 4.4, ny * 2.1 + 9.2, 3) - 0.5) * 0.62;
+        let v = fbm(wx * 3.1 + 3.4, wy * 3.1 + 8.6, 4);
+        v += 0.11 * fbm(wx * 7.2 - 2.1, wy * 7.2 + 4.0, 3);
+        // 向中孔方向轻微收束，纹路不是横平竖直。
+        v += 0.045 * (wy * 0.35 - wx * 0.20);
+        // 留白泥筋
+        const vein = 1 - sm(0.0, 0.045, Math.abs(v - 0.525));
+        // 左下更聚绿；右上是留白多的那一侧。
+        const greenBias = sm(-1.25, 0.55, nx * 0.72 + ny * 0.46);
+        let green = sm(0.36, 0.64, v) * (pale ? 0.55 : 1.0);
+        green = Math.min(1, green * (0.28 + 0.85 * greenBias));
+        let r = base[0], g = base[1], b = base[2];
+        const l1 = sm(0.28, 0.52, v) * 0.55 * (pale ? 0.55 : 1);
+        r += (light[0] - r) * l1; g += (light[1] - g) * l1; b += (light[2] - b) * l1;
+        const l2 = green * 0.92;
+        r += (mid[0] - r) * l2; g += (mid[1] - g) * l2; b += (mid[2] - b) * l2;
+        const l3 = sm(0.62, 0.79, v) * green * 0.85;
+        r += (deep[0] - r) * l3; g += (deep[1] - g) * l3; b += (deep[2] - b) * l3;
+        const l4 = sm(0.78, 0.92, v) * green * 0.65;
+        r += (dark[0] - r) * l4; g += (dark[1] - g) * l4; b += (dark[2] - b) * l4;
+        // 白泥筋压回去
+        const w = vein * 0.42;
+        r += (247 - r) * w; g += (242 - g) * w; b += (226 - b) * w;
+        // 细胎泥颗粒
+        const grain = (rnd() - 0.5) * 5.2;
+        r += grain; g += grain; b += grain * 0.8;
+        const o = (py * S + px) * 4;
+        data[o] = Math.max(0, Math.min(255, r));
+        data[o + 1] = Math.max(0, Math.min(255, g));
+        data[o + 2] = Math.max(0, Math.min(255, b));
+        data[o + 3] = 255;
+      }
+    }
+    x.putImageData(img, 0, 0);
+    // 几条极细的游离泥线，打破均匀噪声
+    for (let i = 0; i < 84; i++) {
+      x.strokeStyle = i % 4 ? 'rgba(30,60,49,' + (0.06 + rnd() * 0.12) + ')' : 'rgba(247,242,227,' + (0.12 + rnd() * 0.18) + ')';
+      x.lineWidth = 0.55 + rnd() * 1.15;
+      x.beginPath();
+      const sx = rnd() * S, sy = S * (0.30 + rnd() * 0.66);
+      x.moveTo(sx, sy);
+      x.bezierCurveTo(sx + 26, sy - 38 * rnd(), sx + 90, sy + 30 * rnd(), sx + 170 * (0.25 + rnd() * 0.8), sy - 80 * rnd());
+      x.stroke();
+    }
+    return tex(c, 1, 1);
+  }
+
+  // 菊花纹：满铺放射细瓣，褐金地，大中孔；与自由纹一眼分开。
+  function chrysTex(seed) {
+    const S = 512, c = C(S, S), x = c.getContext('2d');
+    const rnd = seeded(seed || 19);
+    const g = x.createRadialGradient(S / 2, S / 2, 10, S / 2, S / 2, S * 0.7);
+    g.addColorStop(0, '#7b5a32');
+    g.addColorStop(0.55, '#9b753f');
+    g.addColorStop(1, '#6d4d2a');
+    x.fillStyle = g; x.fillRect(0, 0, S, S);
+    const cx = S / 2, cy = S / 2;
+    // 同心密排的小菊花
+    const rings = 9;
+    for (let ring = 1; ring <= rings; ring++) {
+      const rr = 34 + ring * 23;
+      const n = 6 + ring * 3;
+      for (let k = 0; k < n; k++) {
+        const a = (k / n) * Math.PI * 2 + ring * 0.41;
+        const px = cx + Math.cos(a) * rr;
+        const py = cy + Math.sin(a) * rr;
+        const petals = 11;
+        for (let p = 0; p < petals; p++) {
+          const pa = (p / petals) * Math.PI * 2 + rnd() * 0.12;
+          const len = 8 + rnd() * 9;
+          x.strokeStyle = p % 3 ? 'rgba(226,197,137,0.72)' : 'rgba(239,214,158,0.84)';
+          x.lineWidth = 1 + rnd() * 1.1;
+          x.beginPath();
+          x.moveTo(px + Math.cos(pa) * 1.5, py + Math.sin(pa) * 1.5);
+          x.lineTo(px + Math.cos(pa) * len, py + Math.sin(pa) * len);
+          x.stroke();
+        }
+        x.fillStyle = 'rgba(58,39,20,0.85)';
+        x.beginPath(); x.arc(px, py, 1.8 + rnd() * 1.3, 0, 6.283); x.fill();
+      }
+    }
+    // 放射长瓣与暗线，形成满地细密感
+    for (let i = 0; i < 120; i++) {
+      const a = rnd() * Math.PI * 2;
+      const r0 = 70 + rnd() * 120, r1 = r0 + 20 + rnd() * 90;
+      x.strokeStyle = 'rgba(225,192,127,' + (0.10 + rnd() * 0.20) + ')';
+      x.lineWidth = 0.8 + rnd() * 1.2;
+      x.beginPath();
+      x.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+      x.lineTo(cx + Math.cos(a + 0.01) * r1, cy + Math.sin(a + 0.01) * r1);
+      x.stroke();
+    }
+    for (let i = 0; i < 3000; i++) {
+      x.fillStyle = 'rgba(40,27,14,' + (0.02 + Math.random() * 0.05) + ')';
+      x.fillRect(Math.random() * S, Math.random() * S, 1, 1);
+    }
+    return tex(c, 1, 1);
+  }
+
+  function woodTexLocal(base, dark) {
+    const S = 256, c = C(S, S), x = c.getContext('2d');
+    x.fillStyle = base; x.fillRect(0, 0, S, S);
+    for (let i = 0; i < 110; i++) {
+      x.strokeStyle = dark;
+      x.globalAlpha = 0.018 + Math.random() * 0.055;
+      x.lineWidth = 0.55 + Math.random() * 1.15;
+      x.beginPath();
+      const y = Math.random() * S;
+      x.moveTo(0, y);
+      for (let px = 0; px <= S; px += 12) x.lineTo(px, y + Math.sin(px * 0.032 + i * 0.7) * (0.6 + Math.random() * 1.8));
+      x.stroke();
+    }
+    // 极淡的顺纹色带，避免大波浪抢戏
+    for (let i = 0; i < 7; i++) {
+      x.fillStyle = dark; x.globalAlpha = 0.025 + Math.random() * 0.03;
+      x.fillRect(0, R(0, S), S, R(2, 7));
+    }
+    x.globalAlpha = 1;
+    return tex(c, 1, 1);
+  }
+
+  // 竹编透明网格：琥珀色经纬 + 菱形孔，孔里透出瓷面
+  function weaveTex(kind) {
+    const fine = kind === 'fine';
+    const S = fine ? 512 : 256, c = C(S, S), x = c.getContext('2d');
+    x.clearRect(0, 0, S, S);
+    const amber = ['#9a6b33', '#b48543', '#7d5529', '#c69a55'];
+    const step = fine ? 8 : 21;
+    x.lineCap = 'round';
+    for (let i = -S; i < S * 2; i += step) {
+      x.strokeStyle = amber[(i / step | 0) % amber.length];
+      x.globalAlpha = 0.92;
+      x.lineWidth = fine ? 2.0 : 5.6;
+      x.beginPath(); x.moveTo(i, 0); x.lineTo(i + S * 0.55, S); x.stroke();
+      x.globalAlpha = 0.80;
+      x.strokeStyle = amber[((i / step | 0) + 2) % amber.length];
+      x.lineWidth = fine ? 1.25 : 3.8;
+      x.beginPath(); x.moveTo(i + S * 0.55, 0); x.lineTo(i, S); x.stroke();
+    }
+    // 横向压条：经纬交点更亮，形成细密叠层
+    for (let y = 2; y < S; y += step * 0.9) {
+      x.strokeStyle = 'rgba(214,167,92,0.42)';
+      x.lineWidth = fine ? 0.9 : 1.5;
+      x.beginPath(); x.moveTo(0, y); x.lineTo(S, y); x.stroke();
+      x.strokeStyle = 'rgba(48,30,14,0.26)';
+      x.lineWidth = fine ? 0.75 : 1.2;
+      x.beginPath(); x.moveTo(0, y + (fine ? 1.1 : 2.4)); x.lineTo(S, y + (fine ? 1.1 : 2.4)); x.stroke();
+    }
+    // 孔：小孔透瓷，不是大菱形
+    x.globalCompositeOperation = 'destination-out';
+    for (let yy = 0; yy < S; yy += step) {
+      for (let xx = 0; xx < S; xx += step) {
+        x.beginPath();
+        x.arc(xx + step / 2, yy + step / 2, fine ? step * 0.20 : step * 0.15, 0, 6.283);
+        x.fill();
+      }
+    }
+    x.globalCompositeOperation = 'source-over';
+    return tex(c, 1, 1);
+  }
+
+  // 密编（颈/足）：不透明，有横向竹篾叠压
+  function denseWeaveTex() {
+    const S = 256, c = C(S, S), x = c.getContext('2d');
+    x.fillStyle = '#9d6d35'; x.fillRect(0, 0, S, S);
+    for (let y = 0; y < S; y += 9) {
+      const g = x.createLinearGradient(0, y, 0, y + 9);
+      g.addColorStop(0, '#c49758');
+      g.addColorStop(0.45, '#a8783d');
+      g.addColorStop(1, '#75501f');
+      x.fillStyle = g; x.fillRect(0, y, S, 9);
+      x.fillStyle = 'rgba(58,36,12,0.55)'; x.fillRect(0, y + 7.4, S, 1.6);
+      x.fillStyle = 'rgba(238,203,139,0.22)'; x.fillRect(0, y + 0.8, S, 1.2);
+    }
+    for (let xx = 0; xx < S; xx += 13) {
+      x.fillStyle = 'rgba(78,50,20,0.26)';
+      x.fillRect(xx, 0, 1.5, S);
+      x.fillStyle = 'rgba(241,207,146,0.16)';
+      x.fillRect(xx + 2, 0, 1.2, S);
+    }
+    // 斜向压篾，近看能看出经纬交叉而不是一圈圈箍
+    x.lineCap = 'round';
+    for (let i = -S; i < S * 2; i += 15) {
+      x.strokeStyle = i % 30 ? 'rgba(212,169,98,0.34)' : 'rgba(70,44,18,0.38)';
+      x.lineWidth = 2.6;
+      x.beginPath(); x.moveTo(i, 0); x.lineTo(i + S * 0.7, S); x.stroke();
+      x.strokeStyle = 'rgba(246,214,155,0.15)';
+      x.lineWidth = 1.1;
+      x.beginPath(); x.moveTo(i + 1.6, 0); x.lineTo(i + 1.6 + S * 0.7, S); x.stroke();
+    }
+    return tex(c, 1, 1);
+  }
+
+  function cupBodyTex(sun) {
+    const S = 256, c = C(S, S), x = c.getContext('2d');
+    const g = x.createLinearGradient(0, 0, 0, S);
+    if (sun) {
+      g.addColorStop(0, '#e8d3ac'); g.addColorStop(0.42, '#ddc296');
+      g.addColorStop(0.72, '#cdb083'); g.addColorStop(1, '#b8956a');
+    } else {
+      g.addColorStop(0, '#e4d1b0'); g.addColorStop(0.45, '#d4bf9b');
+      g.addColorStop(0.75, '#c0a87f'); g.addColorStop(1, '#a98d68');
+    }
+    x.fillStyle = g; x.fillRect(0, 0, S, S);
+    for (let i = 0; i < 12; i++) {
+      x.strokeStyle = 'rgba(120,90,58,' + (0.05 + Math.random() * 0.12) + ')';
+      x.lineWidth = 1 + Math.random() * 3;
+      x.beginPath();
+      const y = Math.random() * S;
+      x.moveTo(0, y);
+      for (let px = 0; px <= S; px += 12) x.lineTo(px, y + Math.sin(px * 0.05 + i) * 4);
+      x.stroke();
+    }
+    for (let i = 0; i < 1300; i++) {
+      x.fillStyle = 'rgba(255,248,232,' + (0.015 + Math.random() * 0.035) + ')';
+      x.fillRect(Math.random() * S, Math.random() * S, 1, 1);
+    }
+    return tex(c, 1, 1);
+  }
+
+  // 杯心：日轮 / 月牙 + 分层海浪。图形要大，俯看才成立。
+  function cupHeartTex(kind) {
+    const S = 256, c = C(S, S), x = c.getContext('2d');
+    const cx = 128, cy = 118;
+    const sky = x.createRadialGradient(cx, cy * 0.55, 6, cx, cy, S * 0.72);
+    if (kind === 'sun') {
+      sky.addColorStop(0, '#f4dfb8'); sky.addColorStop(0.55, '#dfc69b'); sky.addColorStop(1, '#c6a97d');
+    } else {
+      sky.addColorStop(0, '#8ca39b'); sky.addColorStop(0.45, '#627f79'); sky.addColorStop(1, '#3f5c58');
+    }
+    x.fillStyle = sky; x.fillRect(0, 0, S, S);
+    if (kind === 'sun') {
+      // 日轮：暖色圆盘 + 放射短线
+      const sg = x.createRadialGradient(cx, cy - 10, 5, cx, cy - 10, 100);
+      sg.addColorStop(0, '#ffe0a4'); sg.addColorStop(0.55, '#e98d4f'); sg.addColorStop(1, '#b9502c');
+      x.fillStyle = sg;
+      x.beginPath(); x.arc(cx, cy - 10, 94, 0, 6.283); x.fill();
+      x.strokeStyle = 'rgba(255,225,175,0.75)'; x.lineWidth = 3;
+      for (let i = 0; i < 20; i++) {
+        const a = i * 0.314;
+        x.beginPath();
+        x.moveTo(cx + Math.cos(a) * 100, cy - 10 + Math.sin(a) * 100);
+        x.lineTo(cx + Math.cos(a) * (112 + (i % 3) * 6), cy - 10 + Math.sin(a) * (112 + (i % 3) * 6));
+        x.stroke();
+      }
+      x.fillStyle = 'rgba(255,238,201,0.9)';
+      x.beginPath(); x.arc(cx - 14, cy - 28, 9, 0, 6.283); x.fill();
+    } else {
+      // 月牙：暖亮月盘 + 暗青天幕切出弯月；外缘留亮边，不再和内壁同色。
+      x.fillStyle = '#ffe2a4';
+      x.beginPath(); x.arc(cx - 10, cy - 14, 74, 0, 6.283); x.fill();
+      x.strokeStyle = 'rgba(39,62,58,0.9)'; x.lineWidth = 3;
+      x.beginPath(); x.arc(cx - 10, cy - 14, 74, 0, 6.283); x.stroke();
+      x.fillStyle = '#5a7772';
+      x.beginPath(); x.arc(cx + 34, cy - 30, 66, 0, 6.283); x.fill();
+      // 外缘亮弧
+      x.strokeStyle = 'rgba(255,245,207,0.95)'; x.lineWidth = 4;
+      x.beginPath(); x.arc(cx - 12, cy - 12, 70, Math.PI * 0.52, Math.PI * 1.38); x.stroke();
+      x.fillStyle = 'rgba(255,245,207,0.95)';
+      for (let i = 0; i < 28; i++) {
+        const a = Math.random() * 6.283, rr = 58 + Math.random() * 62;
+        x.beginPath(); x.arc(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, 1 + Math.random() * 1.8, 0, 6.283); x.fill();
+      }
+    }
+    // 层叠海浪：下三分之一，青绿层次，压住杯心下缘
+    const waves = [
+      ['rgba(32,72,67,0.96)', 0.66, 11],
+      ['rgba(58,104,89,0.94)', 0.75, 10],
+      ['rgba(99,143,120,0.92)', 0.84, 9],
+      ['rgba(159,190,159,0.84)', 0.92, 8],
+    ];
+    waves.forEach((w, i) => {
+      x.fillStyle = w[0];
+      x.beginPath();
+      x.moveTo(0, S * w[1]);
+      for (let px = 0; px <= S; px += 8) {
+        const a = px / S * Math.PI * 2 + i * 1.9;
+        x.lineTo(px, S * w[1] + Math.sin(a * 2.0) * w[2] + Math.sin(a * 5.0) * 3);
+      }
+      x.lineTo(S, S); x.lineTo(0, S); x.closePath(); x.fill();
+      x.strokeStyle = 'rgba(226,233,202,0.6)'; x.lineWidth = 1.8;
+      x.beginPath();
+      for (let px = 0; px <= S; px += 8) {
+        const a = px / S * Math.PI * 2 + i * 1.9;
+        const yy = S * w[1] + Math.sin(a * 2.0) * w[2] + Math.sin(a * 5.0) * 3;
+        if (px === 0) x.moveTo(px, yy); else x.lineTo(px, yy);
+      }
+      x.stroke();
+    });
+    return tex(c, 1, 1);
+  }
+
+  function cupInnerTex(kind) {
+    const S = 256, c = C(S, S), x = c.getContext('2d');
+    const g = x.createLinearGradient(0, 0, 0, S);
+    if (kind === 'sun') {
+      g.addColorStop(0, '#e2c9a1'); g.addColorStop(0.55, '#cdb28a'); g.addColorStop(1, '#7a9b88');
+    } else {
+      g.addColorStop(0, '#a9bdb8'); g.addColorStop(0.55, '#8fa9a3'); g.addColorStop(1, '#5b7f76');
+    }
+    x.fillStyle = g; x.fillRect(0, 0, S, S);
+    for (let i = 0; i < 5; i++) {
+      const yy = S * (0.55 + i * 0.09);
+      x.fillStyle = i % 2 ? 'rgba(43,83,74,0.55)' : 'rgba(121,158,139,0.48)';
+      x.beginPath(); x.moveTo(0, yy);
+      for (let px = 0; px <= S; px += 8) x.lineTo(px, yy + Math.sin(px * 0.06 + i * 1.7) * 8);
+      x.lineTo(S, S); x.lineTo(0, S); x.closePath(); x.fill();
+      x.strokeStyle = 'rgba(226,232,204,0.42)'; x.lineWidth = 1.2;
+      x.beginPath();
+      for (let px = 0; px <= S; px += 8) {
+        const y2 = yy + Math.sin(px * 0.06 + i * 1.7) * 8;
+        if (px === 0) x.moveTo(px, y2); else x.lineTo(px, y2);
+      }
+      x.stroke();
+    }
+    return tex(c, 1, 1);
+  }
+
+  function plaqueTex(text) {
+    const W = 640, H = 180, c = C(W, H), x = c.getContext('2d');
+    const g = x.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#3d2a1a'); g.addColorStop(0.5, '#543a22'); g.addColorStop(1, '#2e1f13');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.strokeStyle = 'rgba(202,166,102,0.85)'; x.lineWidth = 5; x.strokeRect(10, 10, W - 20, H - 20);
+    x.strokeStyle = 'rgba(202,166,102,0.35)'; x.lineWidth = 2; x.strokeRect(22, 22, W - 44, H - 44);
+    x.fillStyle = '#e7d3a7';
+    x.font = '600 82px "STKaiti","KaiTi","Kaiti SC","SimSun",serif';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    if (x.measureText(text).width > W - 70) x.font = '600 64px "STKaiti","KaiTi","SimSun",serif';
+    x.fillText(text, W / 2, H / 2 + 3);
+    return tex(c, 1, 1);
+  }
+
+  function smallSignTex(title, sub) {
+    const W = 512, H = 256, c = C(W, H), x = c.getContext('2d');
+    x.fillStyle = '#e8dfc9'; x.fillRect(0, 0, W, H);
+    for (let i = 0; i < 400; i++) {
+      x.fillStyle = 'rgba(120,100,70,' + (0.01 + Math.random() * 0.03) + ')';
+      x.fillRect(Math.random() * W, Math.random() * H, 1 + Math.random() * 6, 1);
+    }
+    x.strokeStyle = 'rgba(74,54,34,0.7)'; x.lineWidth = 5; x.strokeRect(12, 12, W - 24, H - 24);
+    x.fillStyle = '#2b2118';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = '600 54px "STKaiti","KaiTi","SimSun",serif';
+    x.fillText(title, W / 2, H * 0.40);
+    x.font = '500 30px "KaiTi","SimSun",serif';
+    x.fillStyle = 'rgba(64,47,31,0.9)';
+    x.fillText(sub, W / 2, H * 0.70);
+    return tex(c, 1, 1);
+  }
+
+  function shadowAll(obj) {
+    obj.traverse(function (o) {
+      if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
+    });
+    return obj;
+  }
+
+  /* ---------------- 玉璧构件 ---------------- */
+  function makeBi(outer, inner, thickness, faceTex, sideColor) {
+    const g = new THREE.Group();
+    const faceMat = new THREE.MeshStandardMaterial({
+      color: 0xcfc4ae, roughness: 0.70, metalness: 0.02,
+      map: faceTex, bumpMap: faceTex, bumpScale: 0.012,
+      envMapIntensity: 0.10, side: THREE.DoubleSide,
+    });
+    const sideMat = std(sideColor || 0xd9d0ba, 0.55, 0.02, { env: 0.35 });
+    const front = new THREE.Mesh(new THREE.RingGeometry(inner, outer, 64, 1), faceMat);
+    front.position.z = thickness / 2;
+    g.add(front);
+    const back = new THREE.Mesh(new THREE.RingGeometry(inner, outer, 64, 1), faceMat);
+    back.position.z = -thickness / 2;
+    back.rotation.y = Math.PI;
+    g.add(back);
+    const outerWall = new THREE.Mesh(
+      new THREE.CylinderGeometry(outer, outer, thickness, 64, 2, true), sideMat);
+    outerWall.rotation.x = Math.PI / 2;
+    g.add(outerWall);
+    const innerWall = new THREE.Mesh(
+      new THREE.CylinderGeometry(inner, inner, thickness, 48, 2, true),
+      std(sideColor || 0xc8bea8, 0.7, 0.0, { side: THREE.BackSide }));
+    innerWall.rotation.x = Math.PI / 2;
+    g.add(innerWall);
+    // 口沿收口：内外各一圈细环，近看有胎厚
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(outer - 0.012, 0.014, 5, 64), sideMat);
+    rim.position.z = thickness / 2;
+    g.add(rim);
+    const rim2 = rim.clone(); rim2.position.z = -thickness / 2; g.add(rim2);
+    const rimIn = new THREE.Mesh(new THREE.TorusGeometry(inner + 0.010, 0.008, 4, 48), sideMat);
+    rimIn.position.z = thickness / 2; g.add(rimIn);
+    const rimIn2 = rimIn.clone(); rimIn2.position.z = -thickness / 2; g.add(rimIn2);
+    shadowAll(g);
+    return g;
+  }
+
+  function makeCurveTube(points, radius, mat, seg) {
+    const curve = new THREE.CatmullRomCurve3(points);
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, seg || 28, radius, 6, false), mat);
+    m.castShadow = true; m.receiveShadow = true;
+    return m;
+  }
+
+  /* ---------------- 主构建 ---------------- */
+  WB.initHall = function (scene) {
+    const root = WB.root;
+    const P = WB.P || {};
+    const hall = new THREE.Group();
+    hall.name = 'fushengfang-hall';
+    // 既有西侧土坎占了 x=-9..-8、z=-2.4..4.1。整馆平移到土坎南侧的开阔地，
+    // 入口朝东，既不被土坎挡住，也让院子总览能看到门脸。
+    const HX = -0.55, HZ = 9.55;
+    let groundMax = 0;
+    [[-16.2, 7.0], [-9.6, 7.0], [-16.2, 14.4], [-9.6, 14.4], [-12.6, 10.6], [-13.4, 12.8]].forEach(function (q) {
+      if (WB.landH) groundMax = Math.max(groundMax, WB.landH(q[0], q[1]));
+    });
+    const baseY = Math.max(0.12, groundMax + 0.06);
+    HALL.baseY = baseY; HALL.offsetX = HX; HALL.offsetZ = HZ;
+    hall.position.set(HX, baseY, HZ);
+    root.add(hall);
+
+    const woodDark = toon(0xffffff, { map: woodTexLocal('#4b3322', '#24170e'), unique: true });
+    const woodRed = toon(0xffffff, { map: woodTexLocal('#5f3524', '#2d160d'), unique: true });
+    const woodWarm = toon(0xffffff, { map: woodTexLocal('#6a4a2e', '#33200f'), unique: true });
+    const plaster = std(0xd7cfbf, 0.96, 0.0, { map: plasterTex(), env: 0.08 });
+    const plasterIn = std(0xc9bfab, 0.98, 0.0, { env: 0.06 });
+    const darkStone = std(0x5e6058, 0.88, 0.02, { map: (function () { const t = WB.tex.stone(); t.repeat.set(2, 2); return t; })(), env: 0.08 });
+    const floorMat = std(0xffffff, 0.62, 0.0, { map: hallFloorTex(), env: 0.2 });
+    const gold = toon(0xc9a96a);
+
+    /* ---------------- 台基 / 地面 / 台阶 ---------------- */
+    const plinth = G.box(6.55, 0.24, 7.70, darkStone, HALL.cx, 0.13, HALL.cz, hall, { os: 0.004, line: false });
+    plinth.receiveShadow = true;
+    // 地形有缓坡：台基下补一段深色石基，填住台明与地面的高差。
+    if (baseY > 0.14) {
+      G.box(6.28, baseY + 0.16, 7.42, toon(0x4d5049), HALL.cx, -baseY / 2 + 0.02, HALL.cz, hall, { line: false });
+    }
+    // 台明压边
+    G.box(6.75, 0.08, 7.90, toon(0x71736a), HALL.cx, 0.25, HALL.cz, hall, { os: 0.004, line: false });
+    const floor = G.box(HALL.x1 - HALL.x0 - 0.12, 0.54, HALL.z1 - HALL.z0 - 0.12, floorMat,
+      HALL.cx, HALL.floorY - 0.27, HALL.cz, hall, { line: false });
+    floor.receiveShadow = true;
+
+    // 室内地面再压一层薄木面，盖住坡地上可能穿出的零散草叶/树冠。
+    G.box(HALL.x1 - HALL.x0 - 0.20, 0.018, HALL.z1 - HALL.z0 - 0.20, floorMat,
+      HALL.cx, HALL.floorY + 0.009, HALL.cz, hall, { line: false });
+
+    // 柔和的落地影：重点光之外，让器物在深色地面上“坐得住”。
+    const blobTex = (function () {
+      const S = 128, c = C(S, S), x = c.getContext('2d');
+      const g = x.createRadialGradient(S / 2, S / 2, 4, S / 2, S / 2, S / 2);
+      g.addColorStop(0, 'rgba(8,6,4,0.55)');
+      g.addColorStop(0.55, 'rgba(8,6,4,0.26)');
+      g.addColorStop(1, 'rgba(8,6,4,0)');
+      x.fillStyle = g; x.fillRect(0, 0, S, S);
+      return new THREE.CanvasTexture(c);
+    })();
+    function blobShadow(w, d, lx, lz, op) {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d),
+        new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, opacity: op, depthWrite: false }));
+      m.rotation.x = -Math.PI / 2;
+      m.position.set(lx, HALL.floorY + 0.024, lz);
+      m.castShadow = false; m.receiveShadow = false;
+      hall.add(m);
+    }
+    blobShadow(2.0, 1.35, -14.35, 1.10, 0.85);
+    blobShadow(1.35, 1.05, -12.35, 2.95, 0.62);
+    blobShadow(1.35, 1.95, -12.35, -1.35, 0.55);
+    // 前廊地面（青石）
+    G.box(1.35, 0.05, HALL.z1 - HALL.z0, darkStone, HALL.x1 + 0.62, HALL.floorY, HALL.cz, hall, { line: false });
+    // 门槛石
+    G.box(0.16, 0.14, 6.9, toon(0x77796f), HALL.doorX + 0.14, 0.31, HALL.cz, hall, { os: 0.002 });
+
+    // 前阶三步
+    [0.10, 0.18, 0.26].forEach(function (h, i) {
+      G.box(1.9 - i * 0.12, 0.09, 0.44, toon(0x686a61), HALL.x1 + 1.32 + i * 0.38, h, HALL.cz, hall, { os: 0.003 });
+    });
+
+    /* ---------------- 墙体 ---------------- */
+    // 前墙：矩形上挖正圆洞，形成璧形门
+    (function frontWall() {
+      const W = HALL.z1 - HALL.z0, H = HALL.wallH;
+      const sh = new THREE.Shape();
+      sh.moveTo(-W / 2, 0); sh.lineTo(W / 2, 0); sh.lineTo(W / 2, H); sh.lineTo(-W / 2, H); sh.closePath();
+      const hole = new THREE.Path();
+      hole.absarc(0, HALL.doorY, HALL.doorR, 0, Math.PI * 2, true);
+      sh.holes.push(hole);
+      const geo = new THREE.ExtrudeGeometry(sh, { depth: HALL.T, bevelEnabled: false, curveSegments: 48 });
+      const m = new THREE.Mesh(geo, plaster);
+      m.rotation.y = Math.PI / 2;
+      m.position.set(HALL.doorX, 0, HALL.cz);
+      m.castShadow = true; m.receiveShadow = true;
+      hall.add(m);
+      // 墙下肩：深青砖，门洞两侧分开做，不堵住可进出的门
+      const sideW = (W - 2.72) / 2;
+      [-1, 1].forEach(function (sgn) {
+        const base = G.box(0.34, 0.52, sideW, toon(0x58605c),
+          HALL.doorX + 0.02, 0.26, HALL.cz + sgn * (1.36 + sideW / 2), hall, { line: false });
+        base.receiveShadow = true;
+      });
+      // 圆洞木圈：内外各一道
+      [HALL.doorX - 0.035, HALL.doorX + HALL.T + 0.035].forEach(function (x) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(HALL.doorR + 0.025, 0.085, 8, 64), woodRed);
+        ring.rotation.y = Math.PI / 2;
+        ring.position.set(x, HALL.doorY, HALL.cz);
+        ring.castShadow = true; ring.receiveShadow = true;
+        hall.add(ring);
+      });
+    })();
+
+    // 后墙
+    G.box(HALL.T, HALL.wallH, HALL.z1 - HALL.z0, plaster, HALL.x0 + HALL.T / 2, HALL.wallH / 2, HALL.cz, hall, { line: false });
+    G.box(HALL.T + 0.02, 0.55, HALL.z1 - HALL.z0, toon(0x555d59), HALL.x0 + HALL.T / 2, 0.275, HALL.cz, hall, { line: false });
+    // 两侧墙
+    G.box(HALL.x1 - HALL.x0, HALL.wallH, HALL.T, plaster, HALL.cx, HALL.wallH / 2, HALL.z0 + HALL.T / 2, hall, { line: false });
+    G.box(HALL.x1 - HALL.x0, HALL.wallH, HALL.T, plaster, HALL.cx, HALL.wallH / 2, HALL.z1 - HALL.T / 2, hall, { line: false });
+    G.box(HALL.x1 - HALL.x0, 0.55, HALL.T + 0.02, toon(0x555d59), HALL.cx, 0.275, HALL.z0 + HALL.T / 2, hall, { line: false });
+    G.box(HALL.x1 - HALL.x0, 0.55, HALL.T + 0.02, toon(0x555d59), HALL.cx, 0.275, HALL.z1 - HALL.T / 2, hall, { line: false });
+
+    // 内墙护墙与暖白背板
+    G.box(0.04, 0.9, HALL.z1 - HALL.z0 - 0.8, toon(0x7d6a4f), HALL.x1 - 0.28, 0.72, HALL.cz, hall, { line: false });
+    G.box(0.05, 2.25, 4.8, toon(0xe0d7c6), HALL.x0 + 0.30, 1.56, HALL.cz, hall, { line: false });
+    // 背板上下暗线
+    G.box(0.07, 0.05, 4.9, toon(0x8d7a5d), HALL.x0 + 0.34, 2.70, HALL.cz, hall, { line: false });
+    G.box(0.07, 0.05, 4.9, toon(0x8d7a5d), HALL.x0 + 0.34, 0.43, HALL.cz, hall, { line: false });
+
+    /* ---------------- 屋顶 / 深廊 ---------------- */
+    (function roof() {
+      const zLen = HALL.z1 - HALL.z0 + 0.85;
+      const eaveFront = HALL.x1 + 1.26;
+      const eaveBack = HALL.x0 - 0.55;
+      const halfFront = eaveFront - HALL.cx;
+      const halfBack = HALL.cx - eaveBack;
+      const tileMap = WB.tex.tile();
+      tileMap.repeat.set(3.2, 2.4);
+      const roofMat = toon(0xffffff, { map: tileMap, unique: true });
+      const underMat = toon(0x2f251c);
+      function slope(x0, x1, y0, y1) {
+        const len = Math.sqrt(Math.pow(x1 - x0, 2) + Math.pow(y1 - y0, 2));
+        const ang = Math.atan2(y1 - y0, x1 - x0);
+        const geo = new THREE.BoxGeometry(len, 0.14, zLen);
+        const m = new THREE.Mesh(geo, [roofMat, roofMat, roofMat, underMat, roofMat, roofMat]);
+        m.position.set((x0 + x1) / 2, (y0 + y1) / 2, HALL.cz);
+        m.rotation.z = ang;
+        m.castShadow = true; m.receiveShadow = true;
+        hall.add(m);
+        WB.outline(m, 0.0020);
+        // 檐口封板
+        const fascia = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, zLen), woodDark);
+        fascia.position.set(x1, y1 - 0.04, HALL.cz);
+        fascia.castShadow = true; hall.add(fascia);
+      }
+      slope(HALL.cx, eaveFront, HALL.ridgeY, HALL.eaveY);
+      slope(HALL.cx, eaveBack, HALL.ridgeY, HALL.eaveY);
+      // 正脊
+      G.box(0.30, 0.16, zLen + 0.05, toon(0x33383a), HALL.cx, HALL.ridgeY + 0.10, HALL.cz, hall, { os: 0.003 });
+      G.box(0.20, 0.08, zLen + 0.12, toon(0x4c5154), HALL.cx, HALL.ridgeY + 0.20, HALL.cz, hall, { line: false });
+      // 山墙
+      [-1, 1].forEach(function (s) {
+        const zEdge = s < 0 ? HALL.z0 + HALL.T / 2 : HALL.z1 - HALL.T / 2;
+        const sh = new THREE.Shape();
+        sh.moveTo(HALL.x0 - 0.05, HALL.eaveY - 0.05);
+        sh.lineTo(HALL.x1 + 0.05, HALL.eaveY - 0.05);
+        sh.lineTo(HALL.cx, HALL.ridgeY - 0.02);
+        sh.closePath();
+        const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: HALL.T, bevelEnabled: false }), plaster);
+        m.rotation.y = 0;
+        m.position.set(0, 0, zEdge);
+        m.castShadow = true; m.receiveShadow = true;
+        hall.add(m);
+      });
+      // 檐下椽
+      for (let i = 0; i < 13; i++) {
+        const x = HALL.x0 - 0.2 + i * ((HALL.x1 - HALL.x0 + 1.1) / 12);
+        G.box(0.06, 0.08, 0.72, woodDark, x, HALL.eaveY - 0.13, HALL.z1 - 0.1, hall, { os: 0.0014 });
+      }
+      // 前廊柱
+      [HALL.z0 + 0.55, HALL.z1 - 0.55].forEach(function (z) {
+        G.cyl(0.075, 0.090, HALL.eaveY - HALL.floorY, 10, woodRed,
+          HALL.x1 + 0.98, HALL.floorY + (HALL.eaveY - HALL.floorY) / 2, z, hall, { os: 0.0018 });
+        G.box(0.28, 0.08, 0.28, toon(0x66675f), HALL.x1 + 0.98, HALL.floorY + 0.04, z, hall, { os: 0.002 });
+      });
+      // 前檐横梁 + 挂落
+      G.box(0.13, 0.18, HALL.z1 - HALL.z0 + 0.2, woodRed, HALL.x1 + 0.98, HALL.eaveY - 0.18, HALL.cz, hall, { os: 0.002 });
+      G.box(0.10, 0.10, HALL.z1 - HALL.z0 + 0.1, woodDark, HALL.x1 + 0.62, HALL.eaveY - 0.34, HALL.cz, hall, { os: 0.0017 });
+      for (let i = 0; i < 11; i++) {
+        const z = HALL.z0 + 0.55 + i * ((HALL.z1 - HALL.z0 - 1.1) / 10);
+        G.box(0.04, 0.30, 0.04, woodDark, HALL.x1 + 0.62, HALL.eaveY - 0.49, z, hall, { line: false });
+      }
+    })();
+
+    // 室内梁架
+    [-14.92, -13.62, -12.32].forEach(function (x) {
+      const bm = G.box(0.085, 0.105, HALL.z1 - HALL.z0 - 0.5, woodWarm, x, 2.79, HALL.cz, hall, { os: 0.0012 });
+      bm.castShadow = false;
+    });
+    
+
+    // 匾额：福盛坊展馆（门外，挂在门洞上方）
+    (function plaque() {
+      const face = new THREE.Mesh(new THREE.PlaneGeometry(2.05, 0.56),
+        new THREE.MeshBasicMaterial({ map: plaqueTex('福盛坊展馆') }));
+      face.rotation.y = Math.PI / 2;
+      face.position.set(HALL.doorX + HALL.T + 0.10, 2.76, HALL.cz);
+      hall.add(face);
+      G.box(0.06, 0.68, 2.20, woodDark, HALL.doorX + HALL.T + 0.055, 2.76, HALL.cz, hall, { os: 0.002 });
+      // 吊钩
+      [-0.78, 0.78].forEach(function (z) {
+        G.cyl(0.008, 0.008, 0.24, 4, toon(0x2a2620), HALL.doorX + HALL.T + 0.11, 3.06, HALL.cz + z, hall, { line: false });
+      });
+    })();
+
+    // 南侧外墙：给总览镜头一个可读的馆名与木构节奏
+    (function southSign() {
+      const face = new THREE.Mesh(new THREE.PlaneGeometry(2.15, 0.58),
+        new THREE.MeshBasicMaterial({ map: plaqueTex('福盛坊展馆') }));
+      face.position.set(HALL.cx, 2.55, HALL.z1 + 0.055);
+      hall.add(face);
+      G.box(2.32, 0.70, 0.06, woodDark, HALL.cx, 2.55, HALL.z1 + 0.02, hall, { os: 0.002 });
+      [-15.05, -13.95, -10.80, -9.90].forEach(function (x) {
+        G.box(0.11, 2.55, 0.08, woodDark, x, 1.48, HALL.z1 + 0.05, hall, { os: 0.0015 });
+      });
+      G.box(HALL.x1 - HALL.x0 + 0.25, 0.12, 0.10, woodDark, HALL.cx, 2.72, HALL.z1 + 0.05, hall, { os: 0.0016 });
+      G.box(HALL.x1 - HALL.x0 + 0.25, 0.10, 0.10, woodDark, HALL.cx, 0.62, HALL.z1 + 0.05, hall, { os: 0.0016 });
+    })();
+
+    // 院中入口小立牌（也可点）
+    (function entrySign() {
+      const g = new THREE.Group();
+      g.position.set(-8.55, 0, -0.05);
+      g.rotation.y = 0.46;
+      hall.add(g);
+      G.box(0.06, 1.18, 0.06, woodDark, -0.25, 0.59, 0, g, { os: 0.0014 });
+      G.box(0.06, 1.18, 0.06, woodDark, 0.25, 0.59, 0, g, { os: 0.0014 });
+      const face = new THREE.Mesh(new THREE.PlaneGeometry(0.78, 0.39),
+        new THREE.MeshBasicMaterial({ map: smallSignTex('福盛坊展馆', '入馆 · 当代作坊展厅') }));
+      face.position.set(0, 1.02, 0.04);
+      g.add(face);
+      G.box(0.86, 0.47, 0.05, woodWarm, 0, 1.02, 0, g, { os: 0.0018 });
+      shadowAll(g);
+    })();
+
+    /* ---------------- 入口小径：从院子接到土坎南侧的新门廊 ---------------- */
+    (function path() {
+      // 门前短径
+      for (let i = 0; i < 5; i++) {
+        const x = -7.15 - i * 0.52;
+        const m = G.box(0.46, 0.06, 0.64, i % 2 ? toon(0x777a70) : toon(0x6c7068),
+          x, 0.045, HALL.cz + Math.sin(i * 1.3) * 0.10, hall, { ry: R(-0.08, 0.08), os: 0.0014 });
+        m.receiveShadow = true;
+      }
+      // 从院中礼物匣附近绕到馆前的长石径（局部坐标，随整馆平移）
+      const pts = [
+        new THREE.Vector3(0.55, 0, -6.30),
+        new THREE.Vector3(-0.10, 0, -5.10),
+        new THREE.Vector3(-1.55, 0, -4.00),
+        new THREE.Vector3(-3.05, 0, -2.55),
+        new THREE.Vector3(-4.55, 0, -1.05),
+        new THREE.Vector3(-5.55, 0, 0.55),
+        new THREE.Vector3(-6.15, 0, 1.10),
+      ];
+      const curve = new THREE.CatmullRomCurve3(pts);
+      const arr = curve.getPoints(26);
+      for (let i = 0; i < arr.length; i += 2) {
+        const p0 = arr[i], p1 = arr[Math.min(i + 1, arr.length - 1)];
+        const ang = Math.atan2(p1.x - p0.x, p1.z - p0.z);
+        const slab = G.box(0.48, 0.055, 0.68, i % 4 ? toon(0x74776d) : toon(0x686c63),
+          p0.x, 0.045, p0.z, hall, { ry: ang + R(-0.09, 0.09), os: 0.0012 });
+        slab.receiveShadow = true;
+      }
+    })();
+
+    /* ---------------- 灯光 ---------------- */
+    // 馆内整体压暗，三座展台各有受光与侧擦光。
+    const lights = {};
+    function spot(color, intensity, dist, angle, penumbra, pos, tgt, shadows) {
+      const s = new THREE.SpotLight(color, intensity, dist, angle, penumbra, 1.35);
+      s.position.set(pos[0], pos[1], pos[2]);
+      s.target.position.set(tgt[0], tgt[1], tgt[2]);
+      hall.add(s); hall.add(s.target);
+      if (shadows) {
+        s.castShadow = true;
+        s.shadow.mapSize.set(1024, 1024);
+        s.shadow.bias = -0.0006;
+        s.shadow.normalBias = 0.02;
+        s.shadow.camera.near = 0.2;
+        s.shadow.camera.far = Math.max(5, dist);
+      }
+      return s;
+    }
+    lights.mainKey = spot(0xfff1dd, 1.20, 8.0, 0.40, 0.90, [-11.55, 2.80, 2.10], [-14.35, 1.85, 1.10], false);
+    lights.mainRim = spot(0xb9d0be, 0.55, 6.5, 0.52, 0.94, [-12.05, 1.20, -0.10], [-14.35, 1.85, 1.10], false);
+    lights.free = spot(0xffe2b0, 2.8, 5.5, 0.42, 0.85, [-12.72, 2.52, -1.05], [-14.62, 1.42, -0.92], false);
+    lights.chrys = spot(0xffd59b, 2.3, 5.2, 0.40, 0.90, [-12.78, 2.58, 4.12], [-14.62, 1.36, 3.95], false);
+    lights.bambooKey = spot(0xf7e8c8, 2.6, 6.8, 0.46, 0.80, [-10.82, 2.54, 1.50], [-12.35, 1.72, 2.15], false);
+    lights.bambooRim = spot(0xc7d8c1, 1.35, 5.8, 0.50, 0.95, [-13.42, 2.42, 3.00], [-12.35, 1.52, 2.15], false);
+    lights.sunKey = spot(0xffb877, 2.0, 4.6, 0.40, 0.92, [-11.25, 2.22, -0.85], [-12.32, 0.82, -0.40], false);
+    lights.moonKey = spot(0xb5d4df, 1.9, 4.6, 0.40, 0.92, [-11.20, 2.18, 0.45], [-12.32, 0.82, 0.20], false);
+    lights.fill = new THREE.PointLight(0xffdfb6, 0.18, 7.5, 2);
+    lights.fill.position.set(-12.3, 2.45, 1.05);
+    hall.add(lights.fill);
+    lights.floorWarm = new THREE.PointLight(0xffd8ae, 0.28, 6.0, 2);
+    lights.floorWarm.position.set(-12.30, 1.45, 1.05);
+    hall.add(lights.floorWarm);
+    lights.cupFill = new THREE.PointLight(0xffeed6, 0.32, 2.6, 2);
+    lights.cupFill.position.set(-12.30, 1.72, -0.10);
+    hall.add(lights.cupFill);
+    lights.porch = new THREE.PointLight(0xffb86a, 0.55, 3.4, 2);
+    lights.porch.position.set(HALL.x1 + 0.55, 2.35, HALL.cz);
+    hall.add(lights.porch);
+
+    /* ---------------- 堂心：红木镶嵌绞胎玉璧（图册 p.53，无尺寸不写直径） ---------------- */
+    (function mainBi() {
+      const g = new THREE.Group();
+      g.position.set(-14.35, 0, 1.10);
+      g.rotation.y = 0;
+      hall.add(g);
+      // 低而稳的高座：收分台基 + 薄压边 + 车木短颈，不再叠方盒
+      const basePts = [[0.39, 0], [0.47, 0.015], [0.47, 0.045], [0.41, 0.065], [0.36, 0.11], [0.34, 0.18], [0.35, 0.25], [0.39, 0.31], [0.37, 0.34]]
+        .map(function (p) { return new THREE.Vector2(p[0], p[1]); });
+      const plinth = new THREE.Mesh(new THREE.LatheGeometry(basePts, 24), woodRed);
+      plinth.position.set(0, 0.285, 0);
+      plinth.castShadow = true; plinth.receiveShadow = true;
+      g.add(plinth);
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.37, 0.40, 0.045, 24), woodWarm);
+      cap.position.set(0, 0.645, 0);
+      cap.castShadow = true; cap.receiveShadow = true;
+      g.add(cap);
+      const neckPts = [[0.25, 0.0], [0.21, 0.04], [0.16, 0.10], [0.14, 0.16], [0.18, 0.21], [0.21, 0.24]]
+        .map(function (p) { return new THREE.Vector2(p[0], p[1]); });
+      const neck = new THREE.Mesh(new THREE.LatheGeometry(neckPts, 20), woodDark);
+      neck.position.y = 0.67;
+      neck.castShadow = true; neck.receiveShadow = true;
+      g.add(neck);
+      // 镂空卷云高座：两侧升起的弧木 + 中央短柱
+      [-0.42, 0.42].forEach(function (z) {
+        const pts = [
+          new THREE.Vector3(0, 0.86, z),
+          new THREE.Vector3(0.03, 1.06, z * 0.92),
+          new THREE.Vector3(0.02, 1.24, z * 0.62),
+          new THREE.Vector3(0, 1.40, z * 0.20),
+        ];
+        g.add(makeCurveTube(pts, 0.055, woodRed, 22));
+      });
+      // 圆框 + 背圈
+      const frame = new THREE.Mesh(new THREE.TorusGeometry(1.02, 0.085, 10, 64), woodRed);
+      frame.position.set(0, 1.86, 0);
+      frame.rotation.y = Math.PI / 2;
+      frame.castShadow = true; frame.receiveShadow = true;
+      g.add(frame);
+      const backRing = new THREE.Mesh(new THREE.RingGeometry(0.84, 1.06, 64, 1),
+        std(0x4a2a1a, 0.86, 0.0, { side: THREE.DoubleSide }));
+      backRing.position.set(-0.045, 1.86, 0);
+      backRing.rotation.y = Math.PI / 2;
+      g.add(backRing);
+      // 四个小木扣
+      [0, Math.PI / 2, Math.PI, Math.PI * 1.5].forEach(function (a) {
+        const clamp = G.box(0.10, 0.16, 0.12, woodWarm,
+          -0.02, 1.86 + Math.sin(a) * 0.94, Math.cos(a) * 0.94, g, { os: 0.0014 });
+        clamp.rotation.x = a;
+      });
+      // 玉璧本体：真厚度 + 中孔
+      const biSpin = new THREE.Group();
+      biSpin.position.set(0.03, 1.86, 0);
+      g.add(biSpin);
+      const bi = makeBi(0.86, 0.175, 0.115, jadeSwirlTex(53, false), 0xcfc4ad);
+      bi.rotation.y = Math.PI / 2;
+      biSpin.add(bi);
+      // 中孔后方的暗龛：让圆孔真的像透空，而不是衬在墙上的白实心
+      const voidDisc = new THREE.Mesh(new THREE.CircleGeometry(0.34, 32),
+        new THREE.MeshBasicMaterial({ color: 0x241f19, side: THREE.DoubleSide }));
+      voidDisc.position.set(-0.22, 1.86, 0);
+      voidDisc.rotation.y = Math.PI / 2;
+      g.add(voidDisc);
+      // 短暗筒：斜看中孔时有一点内壁深度，不是贴纸式黑片
+      const tunnel = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.28, 28, 1, true),
+        new THREE.MeshBasicMaterial({ color: 0x332b21, side: THREE.BackSide }));
+      tunnel.rotation.z = Math.PI / 2;
+      tunnel.position.set(-0.20, 1.86, 0);
+      tunnel.castShadow = false; tunnel.receiveShadow = false;
+      g.add(tunnel);
+      // 极弱背透光，只是暗示纹在胎里
+      const halo = new THREE.Mesh(new THREE.CircleGeometry(0.88, 48),
+        new THREE.MeshBasicMaterial({ color: 0xffe9c2, transparent: true, opacity: 0.025, depthWrite: false }));
+      halo.position.set(-0.10, 1.86, 0);
+      halo.rotation.y = Math.PI / 2;
+      g.add(halo);
+      shadowAll(g);
+      P.hallMainBiSpin = biSpin;
+      g.userData.hallPick = 'main';
+      hall.userData.hallMain = g;
+      WB.hallPickables = WB.hallPickables || {};
+      WB.hallPickables.main = g;
+    })();
+
+    /* ---------------- 左翼：竹编绞胎观音瓶（p.50 左图开光编法，高 30） ---------------- */
+    (function bambooWing() {
+      const g = new THREE.Group();
+      g.position.set(-12.35, HALL.floorY, 2.15);
+      g.rotation.y = -0.10;
+      hall.add(g);
+      // 高木几
+      G.box(0.78, 0.92, 0.66, woodWarm, 0, 0.46, 0, g, { os: 0.003 });
+      G.box(0.88, 0.07, 0.76, woodRed, 0, 0.95, 0, g, { os: 0.0024 });
+      G.box(0.64, 0.10, 0.54, woodDark, 0, 0.89, 0, g, { line: false });
+      // 几面小铜牌（不刻未确认文字）
+      G.box(0.26, 0.018, 0.16, gold, 0.20, 0.985, 0.28, g, { os: 0.0012 });
+
+      const vase = new THREE.Group();
+      vase.position.set(0, 0.99, 0);
+      g.add(vase);
+      const profile = [
+        [0.001, 0.00], [0.105, 0.00], [0.145, 0.025], [0.150, 0.065],
+        [0.140, 0.105], [0.175, 0.145], [0.225, 0.205], [0.272, 0.300],
+        [0.290, 0.415], [0.282, 0.520], [0.252, 0.620], [0.205, 0.720],
+        [0.160, 0.815], [0.132, 0.895], [0.128, 0.955], [0.150, 1.005],
+        [0.185, 1.050], [0.205, 1.090], [0.198, 1.112], [0.170, 1.094],
+      ].map(function (p) { return new THREE.Vector2(Math.max(0.001, p[0]), p[1]); });
+      const ceramicMap = jadeSwirlTex(50, true);
+      ceramicMap.repeat.set(1, 1);
+      const ceramicMat = std(0xf0e6d2, 0.34, 0.02, { map: ceramicMap, env: 0.55 });
+      const body = new THREE.Mesh(new THREE.LatheGeometry(profile, 48), ceramicMat);
+      body.castShadow = true; body.receiveShadow = true;
+      vase.add(body);
+      WB.outline(body, 0.0014);
+      // 白瓷口沿（材料分界处，故意露出）
+      const lip = new THREE.Mesh(new THREE.TorusGeometry(0.198, 0.016, 6, 40),
+        std(0xf8f2e4, 0.22, 0.02, { env: 0.8 }));
+      lip.rotation.x = Math.PI / 2;
+      lip.position.y = 1.104;
+      vase.add(lip);
+      // 瓷圈足
+      const footRim = new THREE.Mesh(new THREE.TorusGeometry(0.145, 0.014, 6, 32),
+        std(0xf4ecda, 0.28, 0.02, { env: 0.6 }));
+      footRim.rotation.x = Math.PI / 2;
+      footRim.position.y = 0.032;
+      vase.add(footRim);
+
+      // 竹编材质：孔透明，瓷面从空隙透出
+      const weaveMap = weaveTex('fine');
+      const weaveMat = std(0xffffff, 0.72, 0.0, {
+        map: weaveMap, transparent: true, opacity: 1.0, side: THREE.DoubleSide, env: 0.18,
+      });
+      weaveMat.alphaTest = 0.16;
+      weaveMat.bumpMap = weaveMap; weaveMat.bumpScale = 0.0022; weaveMat.needsUpdate = true;
+      const denseMap = denseWeaveTex();
+      const denseMat = std(0xffffff, 0.68, 0.0, { map: denseMap, side: THREE.DoubleSide, env: 0.15 });
+
+      // 颈、足密编（真实厚度：编织套 + 横向篾圈）
+      function denseSleeve(y0, y1, r0, r1, rings) {
+        const geo = new THREE.CylinderGeometry(r1, r0, y1 - y0, 40, 3, true);
+        const m = new THREE.Mesh(geo, denseMat);
+        m.position.y = (y0 + y1) / 2;
+        m.castShadow = true; m.receiveShadow = true;
+        vase.add(m);
+        for (let i = 0; i <= rings; i++) {
+          const yy = y0 + (y1 - y0) * i / rings;
+          const rr = r0 + (r1 - r0) * i / rings;
+          const ring = new THREE.Mesh(new THREE.TorusGeometry(rr + 0.005, 0.0046, 4, 40), toon(0x8f612e));
+          ring.rotation.x = Math.PI / 2;
+          ring.position.y = yy;
+          ring.castShadow = true;
+          vase.add(ring);
+        }
+        // 竖向竹丝，和横箍交叉成经纬
+        for (let i = 0; i < 16; i++) {
+          const a = (i / 16) * Math.PI * 2;
+          const pts = [];
+          for (let k = 0; k <= 6; k++) {
+            const t = k / 6;
+            const yy = y0 + (y1 - y0) * t;
+            const rr = r0 + (r1 - r0) * t + 0.004;
+            pts.push(new THREE.Vector3(Math.cos(a) * rr, yy, Math.sin(a) * rr));
+          }
+          vase.add(makeCurveTube(pts, 0.0028, toon(0x8f612e), 10));
+        }
+      }
+      denseSleeve(0.035, 0.170, 0.146, 0.152, 12);
+      denseSleeve(0.858, 1.032, 0.132, 0.158, 13);
+
+      // 器腹：细网格套（透出瓷面）
+      const bellyProfile = [];
+      for (let i = 0; i <= 24; i++) {
+        const t = i / 24;
+        const y = 0.185 + t * 0.655;
+        let rr = 0.145;
+        for (let k = 1; k < profile.length; k++) {
+          if (profile[k].y >= y) {
+            const a = profile[k - 1], b = profile[k];
+            const u = (y - a.y) / Math.max(0.0001, b.y - a.y);
+            rr = a.x + (b.x - a.x) * u;
+            break;
+          }
+        }
+        bellyProfile.push(new THREE.Vector2(Math.max(0.001, rr + 0.014), y));
+      }
+      const belly = new THREE.Mesh(new THREE.LatheGeometry(bellyProfile, 56), weaveMat);
+      belly.castShadow = true; belly.receiveShadow = true;
+      vase.add(belly);
+
+      // 斜向编带：扁平竹篾带，贴着瓶腹走；不再是圆管/笼条。
+      const bandMat = toon(0x9b6b34, { side: THREE.DoubleSide });
+      for (let b = 0; b < 4; b++) {
+        const segs = 30;
+        const turns = b % 2 ? 0.78 : -0.70;
+        const pos = [], idx = [];
+        for (let i = 0; i <= segs; i++) {
+          const t = i / segs;
+          const y = 0.205 + t * 0.60;
+          let rr = 0.26;
+          for (let k = 1; k < profile.length; k++) {
+            if (profile[k].y >= y) {
+              const a = profile[k - 1], c2 = profile[k];
+              const u = (y - a.y) / Math.max(0.0001, c2.y - a.y);
+              rr = a.x + (c2.x - a.x) * u;
+              break;
+            }
+          }
+          const a = b * 0.78 + t * turns * Math.PI * 2;
+          const ro = rr + 0.004;
+          // 带宽沿竖向 0.034，径向只贴出 0.008
+          pos.push(Math.cos(a) * ro, y - 0.0042, Math.sin(a) * ro);
+          pos.push(Math.cos(a) * ro, y + 0.0042, Math.sin(a) * ro);
+        }
+        for (let i = 0; i < segs; i++) {
+          const k = i * 2;
+          idx.push(k, k + 2, k + 1, k + 1, k + 2, k + 3);
+        }
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        g.setIndex(idx);
+        g.computeVertexNormals();
+        const ribbon = new THREE.Mesh(g, bandMat);
+        ribbon.castShadow = true; ribbon.receiveShadow = true;
+        vase.add(ribbon);
+      }
+      shadowAll(vase);
+
+      // 瓶前低茶案 + 竹编折腰绞胎杯（p.18，单件）
+      const table = new THREE.Group();
+      table.position.set(0.82, 0, 0.06);
+      g.add(table);
+      G.box(0.78, 0.06, 0.50, woodWarm, 0, 0.54, 0, table, { os: 0.0024 });
+      [[-0.30, -0.18], [0.30, -0.18], [-0.30, 0.18], [0.30, 0.18]].forEach(function (p) {
+        G.box(0.06, 0.54, 0.06, woodDark, p[0], 0.27, p[1], table, { os: 0.0016 });
+      });
+      const cup = new THREE.Group();
+      cup.position.set(0.02, 0.57, 0);
+      cup.rotation.y = 0.4;
+      table.add(cup);
+      const cupProfile = [
+        [0.001, 0], [0.070, 0], [0.082, 0.010], [0.070, 0.045],
+        [0.082, 0.085], [0.104, 0.125], [0.108, 0.155], [0.100, 0.166],
+        [0.084, 0.158], [0.078, 0.120], [0.064, 0.075], [0.062, 0.040],
+        [0.070, 0.020], [0.060, 0.012],
+      ].map(function (p) { return new THREE.Vector2(Math.max(0.001, p[0]), p[1]); });
+      const cupBody = new THREE.Mesh(new THREE.LatheGeometry(cupProfile, 32),
+        std(0xefe2c9, 0.38, 0.02, { map: jadeSwirlTex(18, true), env: 0.45 }));
+      cupBody.castShadow = true; cupBody.receiveShadow = true;
+      cup.add(cupBody);
+      // 中段密编
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.086, 0.072, 0.055, 28, 1, true), denseMat);
+      band.position.y = 0.092; band.castShadow = true; cup.add(band);
+      [0.066, 0.090, 0.116].forEach(function (yy) {
+        const rr = 0.074 + (yy - 0.066) * 0.28;
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(rr, 0.0045, 4, 24), toon(0xc59657));
+        ring.rotation.x = Math.PI / 2; ring.position.y = yy; cup.add(ring);
+      });
+      // 瓷口沿与足的分界（露出）
+      const cupLip = new THREE.Mesh(new THREE.TorusGeometry(0.103, 0.007, 4, 28), std(0xf7efdd, 0.25, 0.02, { env: 0.7 }));
+      cupLip.rotation.x = Math.PI / 2; cupLip.position.y = 0.160; cup.add(cupLip);
+      shadowAll(cup);
+      shadowAll(table);
+      cup.userData.hallPick = 'bambooCup';
+      WB.hallPickables.bambooCup = cup;
+
+      g.userData.hallPick = 'bamboo';
+      WB.hallPickables.bamboo = g;
+      P.hallBamboo = g;
+    })();
+
+    /* ---------------- 右翼：海浪日月同辉对杯（p.21 / p.12）+ 案后壶（p.11/12，280ml） ---------------- */
+    (function sunMoonWing() {
+      const g = new THREE.Group();
+      g.position.set(-12.35, HALL.floorY, -0.10);
+      hall.add(g);
+      // 低条案
+      G.box(0.82, 0.042, 1.36, std(0x4b3628, 0.74, 0.0, { env: 0.10 }), 0, 0.605, 0, g, { os: 0.0022 });
+      G.box(0.835, 0.010, 1.375, woodWarm, 0, 0.630, 0, g, { os: 0.0014 });
+      [[-0.31, -0.58], [0.31, -0.58], [-0.31, 0.58], [0.31, 0.58]].forEach(function (p) {
+        G.cyl(0.023, 0.032, 0.55, 6, woodDark, p[0], 0.295, p[1], g, { os: 0.0014 });
+      });
+      G.box(0.76, 0.052, 0.045, woodDark, 0, 0.555, 0.66, g, { line: false });
+      G.box(0.76, 0.052, 0.045, woodDark, 0, 0.555, -0.66, g, { line: false });
+      G.box(0.045, 0.052, 1.28, woodDark, 0.34, 0.555, 0, g, { line: false });
+      G.box(0.045, 0.052, 1.28, woodDark, -0.34, 0.555, 0, g, { line: false });
+
+      function makeCup(kind) {
+        const cup = new THREE.Group();
+        const bodyProfile = [
+          [0.001, 0.000], [0.085, 0.000], [0.105, 0.012], [0.120, 0.040],
+          [0.152, 0.085], [0.166, 0.135], [0.170, 0.178], [0.158, 0.184],
+          [0.146, 0.168], [0.140, 0.130], [0.125, 0.075], [0.105, 0.050],
+          [0.060, 0.042], [0.001, 0.040],
+        ].map(function (p) { return new THREE.Vector2(Math.max(0.001, p[0]), p[1]); });
+        const mat = std(0xffffff, 0.42, 0.02, { map: cupBodyTex(kind === 'sun'), env: 0.45 });
+        const body = new THREE.Mesh(new THREE.LatheGeometry(bodyProfile, 40), mat);
+        body.castShadow = true; body.receiveShadow = true;
+        cup.add(body);
+        WB.outline(body, 0.0011);
+        // 杯心：日轮 / 月牙
+        const heart = new THREE.Mesh(new THREE.CircleGeometry(0.120, 36),
+          new THREE.MeshBasicMaterial({ map: cupHeartTex(kind), side: THREE.DoubleSide, toneMapped: false }));
+        heart.rotation.x = -Math.PI / 2;
+        heart.position.y = 0.106;
+        cup.add(heart);
+        // 内壁保持素净砂米色，把杯心的日/月留给底片
+        const inner = new THREE.Mesh(new THREE.CylinderGeometry(0.136, 0.124, 0.034, 32, 1, true),
+          std(0xe8d7b8, 0.52, 0.02, { side: THREE.DoubleSide, env: 0.25 }));
+        inner.position.y = 0.128;
+        cup.add(inner);
+        // 圈足
+        const foot = new THREE.Mesh(new THREE.TorusGeometry(0.078, 0.011, 4, 28), std(0xe7d6b8, 0.5, 0.02, { env: 0.3 }));
+        foot.rotation.x = Math.PI / 2; foot.position.y = 0.012; cup.add(foot);
+        shadowAll(cup);
+        return cup;
+      }
+      const sunCup = makeCup('sun');
+      const moonCup = makeCup('moon');
+      sunCup.position.set(-0.04, 0.675, -0.30);
+      moonCup.position.set(0.04, 0.675, 0.30);
+      sunCup.rotation.y = 0.5;
+      moonCup.rotation.y = -0.5;
+      sunCup.scale.set(0.84, 0.86, 0.84);
+      moonCup.scale.set(0.84, 0.86, 0.84);
+      g.add(sunCup); g.add(moonCup);
+      P.hallSunCup = sunCup;
+      P.hallMoonCup = moonCup;
+
+      // 案后壶：280ml，青绿盖钮，作陪衬不挡对杯
+      const pot = new THREE.Group();
+      pot.position.set(-0.23, 0.675, 0.01);
+      pot.scale.setScalar(0.78);
+      pot.rotation.y = -1.10;
+      g.add(pot);
+      const potProfile = [
+        [0.001, 0], [0.085, 0], [0.105, 0.02], [0.155, 0.06],
+        [0.180, 0.115], [0.176, 0.170], [0.150, 0.215], [0.112, 0.238],
+        [0.095, 0.245], [0.100, 0.258], [0.078, 0.268], [0.001, 0.268],
+      ].map(function (p) { return new THREE.Vector2(Math.max(0.001, p[0]), p[1]); });
+      const potBody = new THREE.Mesh(new THREE.LatheGeometry(potProfile, 36),
+        std(0xffffff, 0.40, 0.02, { map: cupBodyTex(true), env: 0.5 }));
+      potBody.castShadow = true; potBody.receiveShadow = true;
+      pot.add(potBody);
+      // 盖：薄口 + 微隆盖面 + 小钮
+      const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.090, 0.018, 24), std(0xe4d2b3, 0.4, 0.02, { env: 0.4 }));
+      lid.position.y = 0.268; pot.add(lid);
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.072, 18, 9, 0, Math.PI * 2, 0, Math.PI / 2),
+        std(0xe9d8ba, 0.42, 0.02, { env: 0.45 }));
+      dome.position.y = 0.276; dome.scale.y = 0.55; pot.add(dome);
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.027, 14, 9),
+        std(0xffffff, 0.30, 0.02, { map: jadeSwirlTex(11, true), env: 0.8 }));
+      knob.position.y = 0.302; knob.scale.y = 0.8; pot.add(knob);
+      // 流：弯嘴，分两段收细
+      pot.add(makeCurveTube([
+        new THREE.Vector3(0.115, 0.165, 0), new THREE.Vector3(0.205, 0.225, 0), new THREE.Vector3(0.275, 0.310, 0),
+      ], 0.016, std(0xe9d8ba, 0.42, 0.02, { env: 0.4 }), 18));
+      pot.add(makeCurveTube([
+        new THREE.Vector3(0.275, 0.310, 0), new THREE.Vector3(0.325, 0.345, 0),
+      ], 0.010, std(0xe9d8ba, 0.42, 0.02, { env: 0.4 }), 10));
+      // 把：细圈把，贴肩接腹
+      pot.add(makeCurveTube([
+        new THREE.Vector3(-0.140, 0.175, 0), new THREE.Vector3(-0.225, 0.190, 0),
+        new THREE.Vector3(-0.245, 0.230, 0), new THREE.Vector3(-0.215, 0.262, 0),
+        new THREE.Vector3(-0.140, 0.265, 0),
+      ], 0.009, std(0xe9d8ba, 0.44, 0.02, { env: 0.4 }), 28));
+      // 小圈足
+      const potFoot = new THREE.Mesh(new THREE.TorusGeometry(0.072, 0.009, 4, 24), std(0xe2cfae, 0.5, 0.02, { env: 0.3 }));
+      potFoot.rotation.x = Math.PI / 2; potFoot.position.y = 0.012; pot.add(potFoot);
+      shadowAll(pot);
+
+      g.userData.hallPick = 'sunmoon';
+      WB.hallPickables.sunmoon = g;
+      P.hallSunMoon = g;
+
+      WB.hallLamps = { sun: lights.sunKey, moon: lights.moonKey, joint: lights.fill };
+      P.hallPair = { sun: sunCup, moon: moonCup, t: 0, target: 0 };
+    })();
+
+    /* ---------------- 出入口拾取体 ---------------- */
+    // 院外点门/牌进馆：用一个不可见盒覆盖门脸与立牌
+    const hitMat = new THREE.MeshBasicMaterial({
+      transparent: true, opacity: 0, depthWrite: false, colorWrite: false, side: THREE.DoubleSide,
+    });
+    const entryHit = new THREE.Mesh(new THREE.BoxGeometry(2.4, 3.4, 8.6), hitMat);
+    entryHit.position.set(HALL.doorX + 0.30, 1.55, HALL.cz);
+    entryHit.frustumCulled = false;
+    hall.add(entryHit);
+    entryHit.userData.hallPick = 'enter';
+    WB.pickables = WB.pickables || {};
+    WB.pickables.hall = entryHit;
+    // 馆内点门回院
+    const exitHit = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.6, 2.3), hitMat);
+    exitHit.position.set(HALL.doorX + 0.05, 1.35, HALL.cz);
+    exitHit.frustumCulled = false;
+    hall.add(exitHit);
+    exitHit.userData.hallPick = 'exit';
+    WB.hallPickables.exit = exitHit;
+
+    // 新馆落在原先的坡地/灌木范围里：把完全落在馆内的小型既有物件收起，
+    // 避免树冠、灌木从地板或桌下穿出来；不动地面、房屋、窑炉。
+    (function clearPropsInsideHall() {
+      const box = new THREE.Box3(new THREE.Vector3(-16.3, 0.15, 6.7), new THREE.Vector3(-9.6, 4.4, 14.6));
+      function insideHall(o) {
+        let p = o;
+        while (p) { if (p === hall) return true; p = p.parent; }
+        return false;
+      }
+      WB.root.children.slice().forEach(function (top) {
+        if (!top || top === hall) return;
+        if (top.isLight) return;
+        const b = new THREE.Box3().setFromObject(top);
+        if (b.isEmpty()) return;
+        const c = b.getCenter(new THREE.Vector3());
+        if (box.containsPoint(c) && (b.max.y - b.min.y) < 6.0) top.visible = false;
+      });
+      // 有些植被是“大组里的小网格”，组中心在馆外、叶片却伸进馆内；
+      // 逐网格再查一次，只隐藏完全落在馆内的小物件。
+      WB.root.traverse(function (o) {
+        if (!o.isMesh || !o.geometry || insideHall(o)) return;
+        const b = new THREE.Box3().setFromObject(o);
+        if (b.isEmpty()) return;
+        const c = b.getCenter(new THREE.Vector3());
+        if (box.containsPoint(c) && (b.max.y - b.min.y) < 6.0) o.visible = false;
+      });
+      // 大范围森林/草丛是 InstancedMesh，不能整块隐藏；把落在馆内的实例缩到 0，
+      // 清掉 QA 里从地板/桌下穿出的绿色树冠与草叶。
+      const imBox = new THREE.Box3(new THREE.Vector3(-17.2, 0.0, 6.0), new THREE.Vector3(-9.0, 5.4, 15.4));
+      const m4 = new THREE.Matrix4(), pos = new THREE.Vector3(), quat = new THREE.Quaternion(), scl = new THREE.Vector3();
+      WB.root.traverse(function (o) {
+        if (!o.isInstancedMesh || insideHall(o) || !o.count) return;
+        let changed = false;
+        for (let i = 0; i < o.count; i++) {
+          o.getMatrixAt(i, m4);
+          m4.decompose(pos, quat, scl);
+          if (imBox.containsPoint(pos)) {
+            scl.set(0.0001, 0.0001, 0.0001);
+            m4.compose(pos, quat, scl);
+            o.setMatrixAt(i, m4);
+            changed = true;
+          }
+        }
+        if (changed) o.instanceMatrix.needsUpdate = true;
+      });
+    })();
+
+    WB.hallGroup = hall;
+    WB.hallPickables.hallGroup = hall;
+    WB.hallState = { lights: lights, mainSpin: P.hallMainBiSpin, freeSpin: P.hallFreeBiSpin, chrysSpin: P.hallChrysBiSpin };
+    shadowAll(hall);
+    entryHit.castShadow = false; entryHit.receiveShadow = false;
+    exitHit.castShadow = false; exitHit.receiveShadow = false;
+    // 让第一帧之后的阴影贴图包含展馆
+    if (WB.renderer) WB.renderer.shadowMap.needsUpdate = true;
+  };
+
+  /* ---------------- 逐帧：玉璧慢转 + 日月靠拢/同辉 ---------------- */
+  WB.updateHall = function (dt, t) {
+    const H = WB.hallState;
+    if (!H) return;
+    // 停在近景时器物本身慢转，相机不自动公转。
+    if (H.mainSpin) H.mainSpin.rotation.x += dt * 0.065;
+    if (H.freeSpin) H.freeSpin.rotation.x += dt * 0.14;
+    if (H.chrysSpin) H.chrysSpin.rotation.x += dt * 0.085;
+
+    const pair = WB.P && WB.P.hallPair;
+    if (pair) {
+      pair.t += (pair.target - pair.t) * Math.min(1, dt * 3.2);
+      const sun = pair.sun, moon = pair.moon;
+      const k = pair.t;
+      if (sun) sun.position.z = -0.30 + k * 0.13;
+      if (moon) moon.position.z = 0.30 - k * 0.13;
+      const lamps = WB.hallLamps;
+      if (lamps) {
+        if (lamps.sun) lamps.sun.intensity = 2.4 * (1 + 0.15 * k);
+        if (lamps.moon) lamps.moon.intensity = 2.2 * (1 + 0.20 * k);
+        if (lamps.joint) lamps.joint.intensity = 0.32 + 0.28 * k;
+      }
+    }
+  };
+})();
+</script>
+<script>
+/* ============================================================
    main.js — 渲染器 / 相机 / 灯光 / 自由旋转观察 / 主循环
    ============================================================ */
 (function () {
@@ -4755,7 +6658,6 @@ WB.initProduct = function () {
   // 颜色管理：把材质色按 sRGB 解释，避免整体发白
   if (THREE.ColorManagement) {
     THREE.ColorManagement.enabled = true;
-    if (THREE.ColorManagement.legacyMode !== undefined) THREE.ColorManagement.legacyMode = false;
   }
 
   /* ---------------- 渲染器 ---------------- */
@@ -4831,6 +6733,7 @@ WB.initProduct = function () {
   WB.initBuild();
   WB.initInterior();
   WB.initProps();
+  if (WB.initHall) WB.initHall(scene); // 福盛坊展馆（院落西侧）
   if (WB.initProduct) WB.initProduct(); // 3D 成品台
   WB.initFX(scene);
   WB.initLabel(scene);
@@ -4894,28 +6797,26 @@ WB.initProduct = function () {
   const uiOff = qp.get('ui') === '0';
   const coldDebug = qp.get('kilnCold') === '1';
   // 手机初始退远量由 layoutMobile() 依“真实预览区域”的宽高比计算，不能用整窗竖屏常数。
-  if (qp.has('cam')) {
-    const a0 = qp.get('cam').split(',').map(Number);
-    if (a0.length >= 3) { cam.theta = camT.theta = a0[0]; cam.phi = camT.phi = a0[1]; cam.r = camT.r = a0[2]; }
-    if (a0.length >= 6) { target.set(a0[3], a0[4], a0[5]); targetT.copy(target); }
-  }
-  // 本地调试刀口：不给 UI 按钮，只用 ?kilnCut=1 进入可看穿窑室/火膛/后壁的视角
-  if (qp.get('kilnCut') === '1' && !qp.has('cam')) {
-    target.set(5.6, 1.55, -6.0); targetT.copy(target);
-    cam.theta = camT.theta = 0.55; cam.phi = camT.phi = 1.08; cam.r = camT.r = 8.4;
-  }
+  // ?cam 与 ?kilnCut 只在用户点「进入工坊」之后再生效（见 applyEntryScenePreset）。
   const LIM = { minPhi: 0.28, maxPhi: 1.44, minR: 11, maxR: 46 };
   // HUD 有完整题名时收起场景里那张竖幅；?ui=0 截图时也必须收起，不让“宋”题名压住窑。
   if (WB.label) WB.label.hidden = true;
   let idle = 0, dragging = false, lastX = 0, lastY = 0, pinch = 0;
   let downX = 0, downY = 0, moved = 0, camLockT = 0;
   let activePointerId = null;
-  // 调试预设视角用于截图复测时不自动缓慢旋转，避免 5 秒后构图漂移。
-  if (qp.has('cam')) camLockT = 1e9;
+  // 调试预设视角在入场后由 applyEntryScenePreset 锁定，避免开始页期间自动漂移。
 
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const ki = document.getElementById('ki');
+  function syncCardOpenClass() {
+    if (!ki) return;
+    document.body.classList.toggle('card-open', ki.classList.contains('show'));
+  }
+  if (window.MutationObserver && ki) {
+    new MutationObserver(syncCardOpenClass).observe(ki, { attributes: true, attributeFilter: ['class'] });
+  }
+  syncCardOpenClass();
   const P = WB.P || {};
   // 熄灭演示的本地调试入口：火开关与 P.fireOn 同步为关；不碰 gift/step 进度。
   if (coldDebug) P.fireOn = false;
@@ -4989,8 +6890,10 @@ WB.initProduct = function () {
         scrollbar-width:none;
       }
       #rail::-webkit-scrollbar { display:none; }
+      /* 横向九关条的“还能往右看”提示：只在溢出且未到末尾时出现，不拦截指针 */
+      #railFade { display:none; }
       .rail-btn {
-        display:flex; align-items:center; gap:7px; width:100%; height:31px; padding:0 8px;
+        display:flex; align-items:center; gap:7px; width:100%; height:31px; min-height:44px; padding:0 8px;
         border:1px solid rgba(210,188,147,.20); border-radius:3px;
         background:rgba(17,22,27,.68); color:#bdb19b; text-align:left;
         transition:background .2s, border-color .2s, color .2s;
@@ -5008,7 +6911,7 @@ WB.initProduct = function () {
         position:absolute; left:18px; bottom:18px; display:flex; gap:7px; pointer-events:auto;
       }
       #viewbar button {
-        height:38px; padding:0 13px; border-radius:3px; border:1px solid rgba(210,188,147,.32);
+        height:38px; min-height:44px; padding:0 13px; border-radius:3px; border:1px solid rgba(210,188,147,.32);
         background:rgba(18,23,28,.76); color:#dfd2b9; font-size:13px; letter-spacing:2px;
         transition:background .2s, border-color .2s;
       }
@@ -5021,7 +6924,7 @@ WB.initProduct = function () {
         box-shadow:0 8px 28px rgba(0,0,0,.28); pointer-events:auto; backdrop-filter:blur(3px);
       }
       .sw {
-        display:flex; align-items:center; gap:6px; height:37px; padding:0 8px;
+        display:flex; align-items:center; gap:6px; height:37px; min-height:44px; padding:0 8px;
         border:1px solid rgba(210,188,147,.18); border-radius:3px;
         background:rgba(25,31,37,.82); color:#cfc3ad; font-size:12.5px; letter-spacing:1px;
       }
@@ -5119,13 +7022,24 @@ WB.initProduct = function () {
           padding:5px 9px 7px; gap:5px; overflow-x:auto; overflow-y:hidden;
           background:linear-gradient(180deg, rgba(12,17,22,.62), rgba(12,17,22,0));
         }
-        .rail-btn { flex:0 0 auto; width:auto; min-width:61px; height:32px; padding:0 7px; }
+        .rail-btn { flex:0 0 auto; width:auto; min-width:61px; height:44px; min-height:44px; padding:0 7px; }
         .rail-btn i { min-width:14px; font-size:9.5px; }
         .rail-btn span { font-size:11.5px; letter-spacing:.5px; }
         .rail-btn em { display:none; }
+        #railFade {
+          display:block; position:absolute; right:0; top:58px; width:28px; height:44px;
+          pointer-events:none; opacity:0; visibility:hidden; z-index:2;
+          background:linear-gradient(90deg, rgba(12,17,22,0), rgba(12,17,22,.74));
+          transition:opacity .18s ease, visibility .18s;
+        }
+        #railFade::after {
+          content:'›'; position:absolute; right:7px; top:50%; transform:translateY(-54%);
+          color:#f1e5cf; font-size:19px; line-height:1; text-shadow:0 1px 3px rgba(0,0,0,.8);
+        }
+        #railFade.show { opacity:1; visibility:visible; }
         /* 底部控制区：安全区之上，永远位于画布与参数纸签之外 */
         #viewbar { left:10px; right:10px; bottom:calc(67px + env(safe-area-inset-bottom,0px)); justify-content:center; gap:6px; }
-        #viewbar button { flex:1; height:37px; padding:0 7px; font-size:12px; letter-spacing:1px; }
+        #viewbar button { flex:1; height:44px; min-height:44px; padding:0 7px; font-size:12px; letter-spacing:1px; }
         #switches { left:10px; right:10px; bottom:calc(9px + env(safe-area-inset-bottom,0px)); width:auto; grid-template-columns:repeat(4,minmax(0,1fr)); padding:6px; gap:5px; }
         .sw { height:38px; padding:0 4px; font-size:10px; gap:3px; }
         .sw .nm { white-space:nowrap; }
@@ -5174,13 +7088,25 @@ WB.initProduct = function () {
         #viewbar { left:8px; right:auto; bottom:calc(64px + env(safe-area-inset-bottom,0px)); gap:4px; }
         #viewbar button { flex:0 0 auto; height:30px; padding:0 8px; font-size:11px; letter-spacing:1px; }
         #switches { left:8px; right:auto; bottom:calc(7px + env(safe-area-inset-bottom,0px)); width:min(46vw, 320px); grid-template-columns:repeat(4,minmax(0,1fr)); padding:5px; gap:4px; }
-        .sw { height:30px; padding:0 4px; font-size:10px; gap:3px; }
+        .sw { height:44px; min-height:44px; padding:0 4px; font-size:10px; gap:3px; }
         #ki { max-width:none; }
         #ki.collapsed { width:46px !important; max-width:46px; }
         #ki.collapsed .sheet-toggle { padding:0; justify-content:center; }
         #ki.collapsed .sheet-toggle .sheet-label { display:none; }
         #ki.collapsed .sheet-toggle .sheet-grip { display:none; }
         #ki.collapsed .sheet-toggle .sheet-chev { margin:0; transform:rotate(180deg); }
+      }
+      /* 横屏手机/窄屏：卡片打开时，viewbar 只占左侧画布区，绝不压到卡片上。
+         640×360 下卡片宽 42vw=269px，viewbar 右侧收至卡片左边，按钮完整可点。 */
+      @media (max-width: 760px) and (orientation: landscape),
+             (max-height: 500px) and (pointer: coarse) and (orientation: landscape) {
+        body.card-open #viewbar {
+          left: 8px;
+          right: calc(min(42vw, 340px) + 16px);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #railFade { transition:none; }
       }
     `;
     document.head.appendChild(s);
@@ -5298,6 +7224,8 @@ WB.initProduct = function () {
     finish: { t: [1.58, 0.85, 2.72], theta: 0.35, phi: 1.10, r: 4.4 },
   };
 
+  let suppressCardsUntil = 0;
+  function suppressCards(ms) { suppressCardsUntil = performance.now() + (ms || 650); }
   const journey = {
     current: 0,
     cleared: new Set(),
@@ -5312,6 +7240,189 @@ WB.initProduct = function () {
   const prog = { kind: null, running: false, p: 0, dur: 0, speed: 1 };
   const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* ---------------- 福盛坊展馆：镜头 / 近景 / 名牌 / 成对 ---------------- */
+  const hallInfo = WB.hallInfo || {};
+  const HX = hallInfo.offsetX !== undefined ? hallInfo.offsetX : -0.55;
+  const HZ = hallInfo.offsetZ !== undefined ? hallInfo.offsetZ : 9.55;
+  const HY = hallInfo.baseY !== undefined ? hallInfo.baseY : 0.12;
+  const HALL_VIEWS = {
+    // 展馆整体平移；以下为世界坐标（y 随台基抬升）。
+    entry:   { t: [-14.30 + HX, 1.55 + HY, 1.10 + HZ], theta: Math.PI / 2, phi: 1.56, r: 4.55 },
+    main:    { t: [-14.35 + HX, 1.72 + HY, 1.10 + HZ], theta: 1.62, phi: 1.47, r: 4.30 },
+    bamboo:  { t: [-12.35 + HX, 1.58 + HY, 2.15 + HZ], theta: 1.15, phi: 1.33, r: 3.05 },
+    sunmoon: { t: [-12.35 + HX, 1.08 + HY, -0.10 + HZ], theta: 1.48, phi: 0.82, r: 2.20 },
+  };
+  const hall = { active: false, view: 'entry', preset: 'entry', saved: null, paired: false, hintTimer: 0 };
+  function hallLimits() {
+    return hall.active
+      ? { minPhi: 0.40, maxPhi: 1.52, minR: (hall.preset === 'main' ? 2.20 : 1.60), maxR: 9.50 }
+      : LIM;
+  }
+  const HALL_CARDS = {
+    main: {
+      name: '红木镶嵌绞胎玉璧', spec: '',
+      note: '圆框高座里一枚璧，青绿纹从左侧游向中孔。',
+    },
+    free: {
+      name: '自由纹绞胎玉璧', spec: '直径30、25',
+      note: '青绿自由纹向中孔推挤、分叉，转一圈，纹随胎走。',
+    },
+    chrys: {
+      name: '菊花纹绞胎玉璧', spec: '直径30',
+      note: '满铺细密菊花纹，和自由纹一眼分开。',
+    },
+    bamboo: {
+      name: '竹编绞胎观音瓶', spec: '高30',
+      note: '竹丝包在瓷上，颈足密编，腹上编带透出瓷面。',
+    },
+    bambooCup: {
+      name: '竹编折腰绞胎杯', spec: '高6.8 口径6.8 底足4.6',
+      note: '中腰内折，中段密编，口沿与足仍是瓷。',
+    },
+    sunmoon: {
+      name: '海浪日月同辉', spec: '口径8.5 高4 底足2.5',
+      note: '日轮与月牙各在一只杯心，海浪相向。',
+    },
+  };
+
+  /* ---------------- 开始页 / 旋转门禁（只做交互层，不动场景与九关状态） ---------------- */
+  const gateCore = window.WBGateCore || null;
+  const gateEls = {
+    start: document.getElementById('startGate'),
+    rotate: document.getElementById('rotateGate'),
+    enter: document.getElementById('sgEnter'),
+    warn: document.getElementById('sgWarn'),
+    hint: document.getElementById('sgHint'),
+    progress: document.getElementById('rgProgress'),
+  };
+  // ui=0 是既有的截图/调试模式，视为已入场；普通打开一律停在开始页，等用户点击。
+  const gate = { entered: uiOff, lastMode: '', presetApplied: false };
+
+  function gateMedia(q) {
+    try {
+      return !!(window.matchMedia && window.matchMedia(q).matches);
+    } catch (e) {
+      return false;
+    }
+  }
+  function gateInput() {
+    return {
+      entered: gate.entered,
+      vw: window.innerWidth,
+      vh: window.innerHeight,
+      coarse: gateMedia('(pointer: coarse)'),
+      finePointer: gateMedia('(pointer: fine)'),
+      hover: gateMedia('(hover: hover)'),
+      maxTouchPoints: navigator.maxTouchPoints || 0,
+    };
+  }
+  function evalGate() {
+    if (gateCore && typeof gateCore.evaluate === 'function') return gateCore.evaluate(gateInput());
+    // 兜底（正常情况下内联的 start-gate-core.js 已提供纯函数）。
+    const v = gateInput();
+    const touch = v.coarse || (v.maxTouchPoints > 0 && !(v.finePointer && v.hover));
+    const phone = touch && Math.min(v.vw, v.vh) <= 560;
+    const portrait = v.vh > v.vw;
+    const canEnter = !phone || !portrait;
+    const showRotate = v.entered && phone && portrait;
+    return {
+      entered: v.entered, phone: phone, portrait: portrait, canEnter: canEnter,
+      showStart: !v.entered, showRotate: showRotate,
+      allowPlay: v.entered && !(phone && portrait), desktop: !phone,
+    };
+  }
+  function gateProgressText() {
+    let s = '进度已保留';
+    if (journey.cleared.size) s += ' · 已过 ' + journey.cleared.size + ' 关';
+    s += ' · 当前第 ' + (journey.current + 1) + ' 关';
+    return s;
+  }
+  // 只切开始页/旋转遮罩的显隐与按钮可用性；绝不触碰 journey/prog、九关、礼匣或相机状态。
+  function syncGate() {
+    const st = evalGate();
+    gate.lastMode = st.mode || '';
+    if (gateEls.start) gateEls.start.hidden = !st.showStart;
+    if (gateEls.rotate) gateEls.rotate.hidden = !st.showRotate;
+    document.body.classList.toggle('gate-pending', !!st.showStart);
+    document.body.classList.toggle('gate-paused', !!st.showRotate);
+    if (gateEls.start) gateEls.start.dataset.state = st.mode || '';
+    if (st.showStart && gateEls.enter) {
+      gateEls.enter.disabled = !st.canEnter;
+      gateEls.enter.setAttribute('aria-disabled', st.canEnter ? 'false' : 'true');
+      gateEls.enter.textContent = st.canEnter ? '进入工坊' : '请横屏后进入';
+      if (gateEls.warn) gateEls.warn.hidden = !!st.canEnter;
+      if (gateEls.hint) {
+        gateEls.hint.textContent = st.canEnter
+          ? (st.phone ? '手机已横屏 · 点一下才进入' : '电脑宽屏可直接进入 · 进入后可随时旋转')
+          : '把手机横过来，进入按钮即可用';
+      }
+    }
+    if (st.showRotate && gateEls.progress) gateEls.progress.textContent = gateProgressText();
+    return st;
+  }
+
+  // 调试视角参数延后到入场后再生效，开始页期间保持默认全景。
+  function applyEntryScenePreset() {
+    if (gate.presetApplied) return;
+    gate.presetApplied = true;
+    if (qp.has('cam')) {
+      const a0 = qp.get('cam').split(',').map(Number);
+      if (a0.length >= 3) { cam.theta = camT.theta = a0[0]; cam.phi = camT.phi = a0[1]; cam.r = camT.r = a0[2]; }
+      if (a0.length >= 6) { target.set(a0[3], a0[4], a0[5]); targetT.copy(target); }
+      // 调试预设视角用于截图复测时不自动缓慢旋转，避免 5 秒后构图漂移。
+      camLockT = 1e9;
+    } else if (qp.get('kilnCut') === '1') {
+      // 本地调试刀口：不给 UI 按钮，只用 ?kilnCut=1 进入可看穿窑室/火膛/后壁的视角
+      target.set(5.6, 1.55, -6.0); targetT.copy(target);
+      cam.theta = camT.theta = 0.55; cam.phi = camT.phi = 1.08; cam.r = camT.r = 8.4;
+    }
+  }
+
+  function enterWorkshop() {
+    if (gate.entered) { syncGate(); return; }
+    const st = evalGate();
+    if (!st.canEnter) { syncGate(); return; }
+    gate.entered = true;
+    document.body.classList.remove('gate-pending');
+    syncGate();
+    applyEntryScenePreset();
+    scheduleMobileLayout();
+    queueViewportChange(0);
+    runEntryIntro();
+  }
+
+  // 入场按钮：click、pointerdown/up、touchstart/end 都走同一个闸门。
+  // 不能只绑 click：部分移动浏览器/辅助技术/自动化输入只派发指针或触摸序列，
+  // 不合成 click；而真正竖屏、按钮 disabled 或已入场时，所有路径都不可入。
+  const gateActivator = gateEls.enter && gateCore && typeof gateCore.createActivator === 'function'
+    ? gateCore.createActivator({
+        button: gateEls.enter,
+        getState: () => {
+          const st = evalGate();
+          return { canEnter: !!st.canEnter, entered: !!st.entered };
+        },
+        enter: enterWorkshop,
+        onClickEvent: (ev) => { ev.preventDefault(); ev.stopPropagation(); }
+      })
+    : null;
+  if (gateEls.enter && !gateActivator) {
+    // 兜底：纯判定核心缺失时仍保留原生 click（Enter 走的就是这条）。
+    gateEls.enter.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      enterWorkshop();
+    });
+  }
+  if (WB) WB.gate = {
+    evaluate: evalGate, sync: syncGate, enter: enterWorkshop,
+    state: gate, activator: gateActivator
+  };
+  if (WB) WB.hallDebug = {
+    enter: enterHall, exit: exitHall, view: hallView, card: showHallCard,
+    state: hall, views: HALL_VIEWS,
+  };
+  syncGate();
+
   const switches = { lights: true, fire: !coldDebug, gate: true, music: false };
   let doorVal = 1, doorTarget = 1;
   const DOOR_L = -1.72, DOOR_R = 1.35;
@@ -5325,8 +7436,10 @@ WB.initProduct = function () {
       '<div class="p">晴日太行 · 九关游历 · <b id="jCount">1</b>/9</div>' +
     '</div>' +
     '<nav id="rail" aria-label="九关工序"></nav>' +
+    '<span id="railFade" aria-hidden="true"></span>' +
     '<div id="viewbar">' +
       '<button class="primary" data-view="product">看成品台</button>' +
+      '<button data-view="hall">福盛坊展馆</button>' +
       '<button data-view="overview">全景</button>' +
       '<button data-view="inside">入内</button>' +
     '</div>' +
@@ -5335,6 +7448,101 @@ WB.initProduct = function () {
   document.body.appendChild(hud);
   if (qp.get('ui') === '0') hud.style.display = 'none';
 
+  /* ---------------- 展馆 UI：回院按钮 + 极短提示（不挡主景） ---------------- */
+  (function hallUI() {
+    const st = document.createElement('style');
+    st.textContent = `
+      body.hall-mode #hud { opacity: 0; pointer-events: none; }
+      body.hall-mode #hud * { pointer-events: none; }
+      #hallBar { position: fixed; inset: 0; z-index: 36; pointer-events: none; }
+      #hallExit {
+        position: fixed; left: 12px; top: 12px; z-index: 38; pointer-events: auto;
+        display: none; align-items: center; gap: 6px;
+        min-height: 44px; min-width: 44px;
+        padding: 8px 13px; border-radius: 999px;
+        background: rgba(32, 25, 18, 0.76); color: #f1e4c8;
+        border: 1px solid rgba(201, 169, 106, 0.7);
+        font: 500 13px/1.2 "KaiTi","楷体","STKaiti","SimSun",serif;
+        letter-spacing: 0.04em; cursor: pointer;
+        box-shadow: 0 3px 14px rgba(0,0,0,0.28);
+        -webkit-tap-highlight-color: transparent;
+      }
+      #hallExit.show { display: inline-flex; }
+      #hallExit:hover { background: rgba(52, 40, 27, 0.86); }
+      #hallNav {
+        position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom,0px));
+        transform: translateX(-50%); z-index: 38; pointer-events: auto;
+        display: none; align-items: center; gap: 6px;
+      }
+      body.hall-mode #hallNav { display: flex; }
+      #hallNav button {
+        pointer-events: auto; cursor: pointer;
+        height: 44px; min-height: 44px; min-width: 44px; padding: 0 12px; border-radius: 999px;
+        background: rgba(32, 25, 18, 0.76); color: #f1e4c8;
+        border: 1px solid rgba(201, 169, 106, 0.55);
+        font: 500 12.5px/1 "KaiTi","楷体","STKaiti","SimSun",serif;
+        letter-spacing: 0.08em; -webkit-tap-highlight-color: transparent;
+      }
+      #hallNav button:hover { background: rgba(62, 48, 33, 0.9); border-color: rgba(232, 203, 144, 0.9); }
+      #hallHint {
+        position: fixed; left: 50%; bottom: calc(64px + env(safe-area-inset-bottom,0px));
+        transform: translateX(-50%); z-index: 37; pointer-events: none;
+        max-width: min(86vw, 620px); padding: 7px 14px; border-radius: 999px;
+        background: rgba(28, 22, 16, 0.66); color: #f0e3c8;
+        border: 1px solid rgba(201, 169, 106, 0.32);
+        font: 500 12.5px/1.4 "KaiTi","楷体","STKaiti","SimSun",serif;
+        text-align: center; opacity: 0; transition: opacity .28s ease;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      }
+      #hallHint.show { opacity: 1; }
+      body.hall-mode #ki { z-index: 44; }
+      @media (min-width: 761px) { body.hall-mode #ki { width: 330px; }
+      body.hall-mode #ki h3 { letter-spacing: 2px; font-size: 22px; } }
+      @media (max-width: 760px) { body.hall-mode #ki { width: auto; } }
+      @media (max-height: 480px) {
+        #hallExit { top: 8px; left: 8px; padding: 6px 11px; font-size: 12px; }
+        #hallNav { bottom: calc(8px + env(safe-area-inset-bottom,0px)); gap: 4px; }
+        #hallNav button { height: 44px; min-height: 44px; padding: 0 9px; font-size: 11.5px; }
+        #hallHint { bottom: calc(62px + env(safe-area-inset-bottom,0px)); font-size: 11.5px; }
+      }
+    `;
+    document.head.appendChild(st);
+    const bar = document.createElement('div');
+    bar.id = 'hallBar';
+    bar.innerHTML = '<button id="hallExit" type="button" aria-label="回到工坊院子">← 回院子</button>' +
+      '<div id="hallNav" role="group" aria-label="展馆机位">' +
+        '<button type="button" data-hall-view="entry">全厅</button>' +
+        '<button type="button" data-hall-view="main">主璧</button>' +
+        '<button type="button" data-hall-view="bamboo">竹编</button>' +
+        '<button type="button" data-hall-view="sunmoon">日月</button>' +
+      '</div>' +
+      '<div id="hallHint" role="status" aria-live="polite"></div>';
+    document.body.appendChild(bar);
+  })();
+  const hallExitEl = document.getElementById('hallExit');
+  const hallHintEl = document.getElementById('hallHint');
+  const hallNavEl = document.getElementById('hallNav');
+  function hallHint(msg, ms) {
+    if (!hallHintEl) return;
+    hallHintEl.textContent = msg;
+    hallHintEl.classList.add('show');
+    clearTimeout(hall.hintTimer);
+    hall.hintTimer = setTimeout(function () { hallHintEl.classList.remove('show'); }, ms || 3200);
+  }
+  if (hallNavEl) {
+    hallNavEl.addEventListener('click', function (ev) {
+      const b = ev.target && ev.target.closest ? ev.target.closest('[data-hall-view]') : null;
+      if (!b) return;
+      ev.preventDefault(); ev.stopPropagation();
+      const v = b.dataset.hallView;
+      if (!v || !HALL_VIEWS[v]) return;
+      hallView(v);
+      closeCard();
+      snapHallCamera();
+      hallHint(v === 'entry' ? '全厅 · 主璧 / 竹编 / 日月在左右' : ('机位 · ' + b.textContent), 2200);
+    });
+  }
+
   const railEl = hud.querySelector('#rail');
   railEl.innerHTML = STEPS.map((s, i) =>
     '<button class="rail-btn" data-step="' + i + '" title="' + (i + 1) + ' · ' + s.name + '">' +
@@ -5342,6 +7550,41 @@ WB.initProduct = function () {
     '</button>'
   ).join('');
   const railBtns = Array.from(railEl.querySelectorAll('.rail-btn'));
+
+  /* 横向九关条在窄横屏会溢出（640×360 实测 scrollWidth 799 / clientWidth 640）。
+     滚动本身一直可用，但滚动条被隐藏，截图上看起来像“08/09 被裁掉”。
+     这里只补两件最小的事：溢出且未到末尾时露出右侧渐隐+箭头；切关时把当前关滚入视口。
+     不改按钮宽度/导航结构，844×390 不溢出时提示保持隐藏。 */
+  function railOverflowState(scrollWidth, clientWidth, scrollLeft) {
+    const max = Math.max(0, (scrollWidth || 0) - (clientWidth || 0));
+    return {
+      max,
+      overflow: max > 1,
+      atEnd: max <= 1 || scrollLeft >= max - 1,
+      show: max > 1 && scrollLeft < max - 1
+    };
+  }
+  function updateRailHint() {
+    const fade = document.getElementById('railFade');
+    if (!fade) return;
+    const st = railOverflowState(railEl.scrollWidth, railEl.clientWidth, railEl.scrollLeft);
+    fade.classList.toggle('show', isMobileUI() && st.show);
+  }
+  function revealRailStep(i) {
+    const btn = railBtns[i];
+    if (!btn || !isMobileUI()) return;
+    const st = railOverflowState(railEl.scrollWidth, railEl.clientWidth, railEl.scrollLeft);
+    if (!st.overflow) return;
+    // offsetLeft 相对 #rail 的内边距边界；留 12px 余量，末尾自然夹到 max。
+    const left = btn.offsetLeft;
+    const right = left + btn.offsetWidth;
+    const pad = 12;
+    if (left < railEl.scrollLeft + pad) {
+      railEl.scrollLeft = Math.max(0, left - pad);
+    } else if (right > railEl.scrollLeft + railEl.clientWidth - pad) {
+      railEl.scrollLeft = Math.min(st.max, right - railEl.clientWidth + pad);
+    }
+  }
 
   const SWITCH_DEFS = [
     { id: 'lights', name: '灯光' },
@@ -5408,23 +7651,35 @@ WB.initProduct = function () {
   });
 
   hud.querySelector('.brand').addEventListener('click', () => {
-    focusView('overview');
+    suppressCards(700);
     closeCard();
+    focusView('overview');
+    snapHallCamera();
     toast('当阳峪绞胎瓷工坊 · 全景');
   });
+  const viewbarEl = hud.querySelector('#viewbar');
+  if (viewbarEl) {
+    ['pointerdown', 'touchstart'].forEach(function (k) {
+      viewbarEl.addEventListener(k, function (ev) { suppressCards(700); ev.stopPropagation(); }, { passive: true });
+    });
+  }
   hud.querySelectorAll('#viewbar button').forEach(btn => {
     btn.addEventListener('click', (ev) => {
       ev.preventDefault(); ev.stopPropagation();
       const v = btn.dataset.view;
+      suppressCards(700);
       if (v === 'product') {
         focusView('product');
         showProductCard();
+      } else if (v === 'hall') {
+        enterHall();
       } else if (v === 'inside') {
         focusView('inside');
         toast('入内 · 拉坯、揉泥、施釉都在里面');
       } else {
-        focusView('overview');
         closeCard();
+        focusView('overview');
+        snapHallCamera();
         toast('全景');
       }
     });
@@ -5464,13 +7719,19 @@ WB.initProduct = function () {
     });
     const jc = document.getElementById('jCount');
     if (jc) jc.textContent = String(journey.current + 1);
+    revealRailStep(journey.current);
+    updateRailHint();
   }
+  railEl.addEventListener('scroll', updateRailHint, { passive: true });
   railBtns.forEach(btn => {
     btn.addEventListener('click', (ev) => {
       ev.preventDefault(); ev.stopPropagation();
+      if (performance.now() < suppressCardsUntil) return;
       const i = Number(btn.dataset.step);
       if (journey.locked && i !== journey.current) { toast('先完成当前步骤'); return; }
       goStep(i, { focus: true });
+      // 工坊 rail 切关直接落位，避免从馆内/院外目标插值穿过屋顶
+      snapHallCamera();
     });
   });
 
@@ -5643,6 +7904,19 @@ WB.initProduct = function () {
     const modeChanged = !!lastLayoutKind && lastLayoutKind !== kind;
     if (modeChanged) resetPointerState();
 
+    // 展馆内：画布占满真实视口，不被工坊九关条/参数抽屉挤小。
+    if (hall.active) {
+      mobileApplied = true;
+      canvasEl.style.position = 'fixed';
+      canvasEl.style.left = '0'; canvasEl.style.top = '0';
+      canvasEl.style.right = 'auto'; canvasEl.style.bottom = 'auto';
+      canvasEl.style.zIndex = '0';
+      applyRenderSize(vw, vh);
+      if (ki.classList.contains('show')) positionCardDefault();
+      lastLayoutKind = kind;
+      return;
+    }
+
     // ui=0：必须保持整窗画布、无 UI；桌面非触屏也完全走原逻辑。
     if (uiOff || !isMobileUI()) {
       if (mobileApplied) {
@@ -5657,6 +7931,7 @@ WB.initProduct = function () {
       if (!uiOff && ki.classList.contains('show') && vw > 760) positionCardDefault();
       if (modeChanged) refitForViewport();
       lastLayoutKind = kind;
+      updateRailHint();
       return;
     }
 
@@ -5710,6 +7985,8 @@ WB.initProduct = function () {
     applyRenderSize(w, h);
     if (modeChanged) refitForViewport();
     lastLayoutKind = kind;
+    revealRailStep(journey.current);
+    updateRailHint();
   }
 
   // 纸签展开/收起、字体加载、控件换行都会改内容盒；用 ResizeObserver 复核，
@@ -5846,7 +8123,8 @@ WB.initProduct = function () {
 
   function showStepCard(i, opts) {
     opts = opts || {};
-    if (!STEPS[i]) return;
+    if (!STEPS[i] || !gate.entered || hall.active) return;
+    if (performance.now() < suppressCardsUntil) return;
     cardStep = i;
     cardKey = STEPS[i].id;
     ki.innerHTML = cardHTML(i);
@@ -5865,6 +8143,7 @@ WB.initProduct = function () {
 
   function showProductCard() {
     if (!WB.liveProduct) return;
+    if (performance.now() < suppressCardsUntil) return;
     cardStep = -1; cardKey = 'product';
     const p = WB.liveProduct;
     // 成品台是纯三维展台，这里只给实时读数，不贴任何馆藏照片。
@@ -5896,7 +8175,9 @@ WB.initProduct = function () {
     const ov = ki.querySelector('[data-act="overview"]');
     if (ov) ov.addEventListener('click', (ev) => {
       ev.preventDefault(); ev.stopPropagation();
-      focusView('overview'); closeCard();
+      closeCard();
+      focusView('overview');
+      snapHallCamera();
     });
   }
 
@@ -5906,6 +8187,171 @@ WB.initProduct = function () {
     ki.classList.remove('show');
     ki.style.pointerEvents = 'none';
     scheduleMobileLayout();
+  }
+
+  /* ---------------- 展馆：镜头、短名牌、进出 ---------------- */
+  function setHallFov(v) {
+    if (camera.fov === v) return;
+    camera.fov = v;
+    camera.updateProjectionMatrix();
+  }
+
+  function hallView(name) {
+    const v = HALL_VIEWS[name] || HALL_VIEWS.entry;
+    hall.view = name;
+    hall.preset = name;
+    currentView = 'hall-' + name;
+    targetT.set(v.t[0], v.t[1], v.t[2]);
+    camT.theta = v.theta; camT.phi = v.phi; camT.r = v.r;
+    if (qp.get('instant') === '1') {
+      target.copy(targetT);
+      cam.theta = camT.theta; cam.phi = camT.phi; cam.r = camT.r;
+    }
+    idle = 0; camLockT = 14;
+  }
+
+  function snapHallCamera() {
+    target.copy(targetT);
+    cam.theta = camT.theta; cam.phi = camT.phi; cam.r = camT.r;
+    apply();
+  }
+
+  function showHallCard(key) {
+    const d = HALL_CARDS[key];
+    if (!d || !gate.entered) return;
+    cardStep = -1;
+    cardKey = 'hall:' + key;
+    let h = '<button class="close" type="button" aria-label="收起">×</button>';
+    h += '<h3>' + d.name + '</h3>';
+    h += '<div class="sub">福盛坊展馆</div>';
+    h += '<p class="voice">' + d.note + '</p>';
+    if (d.spec) h += '<div class="subline">规格 · ' + d.spec + '</div>';
+    h += '<div class="foot"><span class="seal">福盛坊</span><span class="tip">轻触别处收起</span></div>';
+    ki.innerHTML = h;
+    ki.dataset.sheetReady = '0';
+    sheetCollapsed = false;
+    ki.classList.remove('collapsed');
+    ki.classList.add('show');
+    ki.style.pointerEvents = 'auto';
+    prepareSheet();
+    positionCardDefault();
+    scheduleMobileLayout();
+    setTimeout(layoutMobile, 300);
+    const close = ki.querySelector('.close');
+    if (close) close.addEventListener('click', function (ev) {
+      ev.preventDefault(); ev.stopPropagation(); closeCard();
+    });
+  }
+
+  function enterHall() {
+    if (hall.active || !gate.entered || !WB.hallGroup) return;
+    hall.saved = {
+      target: targetT.clone(),
+      theta: camT.theta, phi: camT.phi, r: camT.r,
+      view: currentView,
+    };
+    hall.active = true;
+    hall.paired = false;
+    if (WB.P && WB.P.hallPair) WB.P.hallPair.target = 0;
+    journey.interacted = true;
+    closeCard();
+    document.body.classList.add('hall-mode');
+    if (hallExitEl) hallExitEl.classList.add('show');
+    setHallFov(46);
+    hallView('entry');
+    layoutMobile();
+    snapHallCamera();
+    hallHint('已入厅 · 下方切全厅 / 主璧 / 竹编 / 日月 · 点门或左上回院', 6000);
+  }
+
+  function exitHall() {
+    if (!hall.active) return;
+    hall.active = false;
+    document.body.classList.remove('hall-mode');
+    if (hallExitEl) hallExitEl.classList.remove('show');
+    if (hallHintEl) hallHintEl.classList.remove('show');
+    closeCard();
+    // 不用进馆前捕获的临时机位：回院必须落到当前工步的看点。
+    // 这样出馆后立刻点 rail 02，不会从馆内目标/高度插值穿过屋顶。
+    let vname = 'overview';
+    const st = STEPS[journey.current];
+    if (st) vname = st.id === 'finish' ? 'finish' : st.id;
+    if (!VIEWS[vname]) vname = 'overview';
+    setHallFov(38);
+    focusView(vname);
+    snapHallCamera();
+    hall.saved = null;
+    layoutMobile();
+    toast('回到院子 · 工坊进度保留');
+  }
+  if (hallExitEl) hallExitEl.addEventListener('click', function (ev) {
+    ev.preventDefault(); ev.stopPropagation(); exitHall();
+  });
+
+  const HALL_PICK_KEYS = ['main', 'free', 'chrys', 'bamboo', 'bambooCup', 'sunmoon', 'exit'];
+  function hallStationOf(obj) {
+    let o = obj;
+    while (o) {
+      if (o.userData && o.userData.hallPick) return o.userData.hallPick;
+      o = o.parent;
+    }
+    return null;
+  }
+  function hallHit(e) {
+    if (!WB.hallPickables) return null;
+    const rc = canvas.getBoundingClientRect();
+    ndc.x = ((e.clientX - rc.left) / rc.width) * 2 - 1;
+    ndc.y = -((e.clientY - rc.top) / rc.height) * 2 + 1;
+    ray.setFromCamera(ndc, camera);
+    let best = null, bestD = Infinity;
+    HALL_PICK_KEYS.forEach(function (key) {
+      const obj = WB.hallPickables[key];
+      if (!obj) return;
+      const hits = ray.intersectObject(obj, true);
+      if (hits.length && hits[0].distance < bestD) {
+        bestD = hits[0].distance;
+        best = hallStationOf(hits[0].object) || key;
+      }
+    });
+    return best;
+  }
+  function pickHallAt(e, key) {
+    if (key === 'exit') { exitHall(); return; }
+    if (!key || key === 'enter') return;
+    if (key === 'sunmoon') {
+      if (hall.view === 'sunmoon') {
+        hall.paired = !hall.paired;
+        if (WB.P && WB.P.hallPair) WB.P.hallPair.target = hall.paired ? 1 : 0;
+        hallHint(hall.paired ? '对杯靠拢 · 灯光微亮' : '对杯分开 · 可以俯看杯心', 2400);
+        showHallCard('sunmoon');
+      } else {
+        hallView('sunmoon');
+        showHallCard('sunmoon');
+        hallHint('俯看杯心 · 再点对杯可让它靠拢', 3000);
+      }
+      return;
+    }
+    if (key === 'bambooCup') {
+      hallView('bamboo');
+      showHallCard('bambooCup');
+      return;
+    }
+    if (key === 'bamboo') {
+      hallView('bamboo');
+      showHallCard('bamboo');
+      hallHint('绕行看编带 · 双指或滚轮再近一点', 2800);
+      return;
+    }
+    if (key === 'free' || key === 'chrys') {
+      hallView(key);
+      showHallCard(key);
+      return;
+    }
+    if (key === 'main') {
+      hallView('main');
+      showHallCard('main');
+      hallHint('近看中孔与侧沿 · 拖动环绕', 2800);
+    }
   }
 
   // 礼匣按钮状态：开匣中 / 再看开匣 / 开匣
@@ -5930,13 +8376,15 @@ WB.initProduct = function () {
 
   function goStep(i, opts) {
     opts = opts || {};
-    if (!STEPS[i]) return;
+    if (!STEPS[i] || !gate.entered) return;
+    if (performance.now() < suppressCardsUntil) return;
     if (journey.locked && i !== journey.current) { toast('先完成当前步骤'); return; }
     journey.current = i;
     journey.interacted = true;
-    if (opts.focus) focusView(STEPS[i].id === 'finish' ? 'finish' : STEPS[i].id);
     updateRail();
     updateProduct();
+    if (hall.active) return; // 展馆里不弹工坊九关纸签，也不抢镜头；进度照常保留
+    if (opts.focus) focusView(STEPS[i].id === 'finish' ? 'finish' : STEPS[i].id);
     showStepCard(i, opts);
     if (i === 8 && opts.openGift) openGift();
   }
@@ -6064,7 +8512,7 @@ WB.initProduct = function () {
   }
 
   /* ---------------- 拾取 ---------------- */
-  const PICK_LIST = ['product', 'soil', 'refine', 'twist', 'vessel', 'form', 'dry', 'glaze', 'fire', 'gift'];
+  const PICK_LIST = ['product', 'soil', 'refine', 'twist', 'vessel', 'form', 'dry', 'glaze', 'fire', 'gift', 'hall'];
   const PICK_STEP = { soil: 0, refine: 1, twist: 2, vessel: 3, form: 4, dry: 5, glaze: 6, fire: 7, gift: 8 };
 
   const PICK_ALIAS = { shelf: 'vessel', wheel: 'form', kiln: 'fire', wedging: 'refine', finish: 'gift', gift: 'gift' };
@@ -6099,7 +8547,16 @@ WB.initProduct = function () {
     return best;
   }
 
+  function pointOnUI(e) {
+    if (!e || e.clientX === undefined) return false;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    if (!el || !el.closest) return false;
+    return !!(el.closest('#hud') || el.closest('#ki') || el.closest('#hallBar'));
+  }
+
   function pickAt(e, key) {
+    if (performance.now() < suppressCardsUntil) return;
+    if (key === 'hall') { enterHall(); return; }
     if (key === 'product') {
       focusView('product');
       showProductCard();
@@ -6116,6 +8573,18 @@ WB.initProduct = function () {
   }
 
   /* ---------------- 自由旋转 / 触摸 ---------------- */
+  function clampHallOrbit() {
+    if (!hall.active) return;
+    const p = hall.preset;
+    let t0, t1, f0, f1;
+    if (p === 'main') { t0 = 0.38; t1 = 2.78; f0 = 0.70; f1 = 1.45; }
+    else if (p === 'bamboo') { t0 = 0.50; t1 = 2.62; f0 = 0.74; f1 = 1.44; }
+    else if (p === 'sunmoon') { t0 = 0.65; t1 = 2.35; f0 = 0.62; f1 = 1.28; }
+    else return;
+    camT.theta = Math.min(t1, Math.max(t0, camT.theta));
+    camT.phi = Math.min(f1, Math.max(f0, camT.phi));
+  }
+
   function apply() {
     const sp = Math.sin(cam.phi), cp = Math.cos(cam.phi);
     camera.position.set(
@@ -6123,10 +8592,29 @@ WB.initProduct = function () {
       target.y + cam.r * cp,
       target.z + cam.r * sp * Math.cos(cam.theta)
     );
+    // 馆内近观/绕行：把相机限制在厅内安全盒，避免穿墙、穿顶、穿地。
+    // 入口第一眼故意在廊外，不夹取；一旦拖动/缩放即切到 orbit 并夹取。
+    if (hall.active) {
+      const info = WB.hallInfo || {};
+      const ox = info.offsetX !== undefined ? info.offsetX : -0.55;
+      const oz = info.offsetZ !== undefined ? info.offsetZ : 9.55;
+      const by = info.baseY !== undefined ? info.baseY : 0.12;
+      const minX = ox - 14.85, maxX = ox - 9.75;
+      const minZ = oz - 2.00, maxZ = oz + 4.20;
+      const minY = by + 0.62, maxY = by + 2.45;
+      camera.position.x = Math.min(maxX, Math.max(minX, camera.position.x));
+      camera.position.z = Math.min(maxZ, Math.max(minZ, camera.position.z));
+      camera.position.y = Math.min(maxY, Math.max(minY, camera.position.y));
+      // 近观/缩放时保持在展品正面一侧，避免被安全盒挤进璧面或底座。
+      if (hall.preset === 'main') camera.position.x = Math.max(camera.position.x, -13.35);
+      else if (hall.preset === 'bamboo') camera.position.x = Math.max(camera.position.x, -11.25);
+      else if (hall.preset === 'sunmoon') camera.position.x = Math.max(camera.position.x, -11.05);
+    }
     camera.lookAt(target);
   }
 
   canvas.addEventListener('pointerdown', (e) => {
+    if (!gate.entered || gate.lastMode === 'rotate') return;
     if (activePointerId !== null && activePointerId !== e.pointerId) {
       try { if (canvas.hasPointerCapture(activePointerId)) canvas.releasePointerCapture(activePointerId); } catch (err) {}
     }
@@ -6140,9 +8628,10 @@ WB.initProduct = function () {
   });
   let hoverAt = 0, hoverKey = null;
   canvas.addEventListener('pointermove', (e) => {
+    if (!gate.entered || gate.lastMode === 'rotate') return;
     if (!dragging) {
       const now = performance.now();
-      if (now - hoverAt > 45) { hoverAt = now; hoverKey = hitPick(e); }
+      if (now - hoverAt > 45) { hoverAt = now; hoverKey = hall.active ? hallHit(e) : hitPick(e); }
       canvas.style.cursor = hoverKey ? 'pointer' : 'grab';
       return;
     }
@@ -6150,15 +8639,37 @@ WB.initProduct = function () {
     lastX = e.clientX; lastY = e.clientY;
     moved += Math.abs(dx) + Math.abs(dy);
     if (moved > 8) closeCard();
-    camT.theta -= dx * 0.0055;
-    camT.phi = Math.min(LIM.maxPhi, Math.max(LIM.minPhi, camT.phi - dy * 0.0045));
+    if (hall.active) hall.view = 'orbit';
+    const lim = hallLimits();
+    const prevTheta = camT.theta, prevPhi = camT.phi;
+    camT.theta += -dx * 0.0072;
+    camT.phi = Math.min(lim.maxPhi, Math.max(lim.minPhi, camT.phi - dy * 0.0060));
+    clampHallOrbit();
+    // 短拖也要当场看到变化：把本次允许的实际变化先落实一半，其余由主循环缓动。
+    cam.theta += (camT.theta - prevTheta) * 0.55;
+    cam.phi += (camT.phi - prevPhi) * 0.55;
     idle = 0; camLockT = 0;
   });
   canvas.addEventListener('pointerup', (e) => {
+    if (!gate.entered || gate.lastMode === 'rotate') return;
     if (moved < 8) {
-      const key = hitPick(e);
-      if (key) pickAt(e, key);
-      else closeCard();
+      if (performance.now() < suppressCardsUntil || pointOnUI(e)) { closeCard(); endDrag(e); return; }
+      if (ki && ki.classList.contains('show')) {
+        // 卡片打开时，画布轻点默认只收起卡片，不继续 pickAt -> goStep。
+        // 但入口立牌/圆门是“进馆控件”，应允许一次点击进馆，不能让它先被卡片吃掉。
+        const entryKey = hitPick(e);
+        if (entryKey === 'hall') { closeCard(); enterHall(); endDrag(e); return; }
+        closeCard(); endDrag(e); return;
+      }
+      if (hall.active) {
+        const hk = hallHit(e);
+        if (hk) pickHallAt(e, hk);
+        else closeCard();
+      } else {
+        const key = hitPick(e);
+        if (key) pickAt(e, key);
+        else closeCard();
+      }
     }
     endDrag(e);
   });
@@ -6178,13 +8689,19 @@ WB.initProduct = function () {
   });
 
   canvas.addEventListener('wheel', (e) => {
+    if (!gate.entered || gate.lastMode === 'rotate') return;
     e.preventDefault();
-    const k = Math.exp(e.deltaY * 0.0012);
-    camT.r = Math.min(LIM.maxR, Math.max(LIM.minR, camT.r * k));
+    const k = Math.exp(e.deltaY * 0.0020);
+    if (hall.active) hall.view = 'orbit';
+    const lim = hallLimits();
+    const prevR = camT.r;
+    camT.r = Math.min(lim.maxR, Math.max(lim.minR, camT.r * k));
+    cam.r += (camT.r - prevR) * 0.55;
     idle = 0; camLockT = 0;
   }, { passive: false });
 
   canvas.addEventListener('touchstart', (e) => {
+    if (!gate.entered || gate.lastMode === 'rotate') return;
     if (e.touches.length === 2) {
       pinch = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
     } else if (e.touches.length < 2) {
@@ -6192,9 +8709,14 @@ WB.initProduct = function () {
     }
   }, { passive: true });
   canvas.addEventListener('touchmove', (e) => {
+    if (!gate.entered || gate.lastMode === 'rotate') return;
     if (e.touches.length === 2 && pinch) {
       const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-      camT.r = Math.min(LIM.maxR, Math.max(LIM.minR, camT.r * (pinch / d)));
+      if (hall.active) hall.view = 'orbit';
+      const lim = hallLimits();
+      const prevR = camT.r;
+      camT.r = Math.min(lim.maxR, Math.max(lim.minR, camT.r * (pinch / d)));
+      cam.r += (camT.r - prevR) * 0.55;
       pinch = d;
       idle = 0; camLockT = 0;
     }
@@ -6203,7 +8725,18 @@ WB.initProduct = function () {
   canvas.addEventListener('touchcancel', () => { pinch = 0; resetPointerState(); }, { passive: true });
 
   // 旋转时 innerWidth/innerHeight 会晚一两帧才稳定；合并 resize 事件，按稳定尺寸量一次。
+  function paintViewportNow() {
+    // 方向/视口一旦变化，先用新窗尺寸铺满画布并立刻渲染一帧。
+    // 旧实现只排 rAF/90ms/240ms 的 layout，首帧仍沿用旋转前的内联宽高，
+    // 新视口里就会露出部分空白。这里只改画布尺寸与相机宽高比，
+    // 不动机位、不重置 journey/prog/礼匣/窑炉，也不重开开始页。
+    if (!rendererRef || !canvasEl) return;
+    applyRenderSize(window.innerWidth, window.innerHeight);
+    rendererRef.render(scene, camera);
+  }
   function onViewportChange() {
+    // 先重算开始页/旋转门禁；只切遮罩显隐，不重置 journey / prog / 礼匣 / 相机。
+    syncGate();
     if (isMobileUI() || uiOff || mobileApplied) { layoutMobile(); return; }
     const kind = viewportKind();
     const modeChanged = !!lastLayoutKind && lastLayoutKind !== kind;
@@ -6218,14 +8751,37 @@ WB.initProduct = function () {
     if (viewportTimer) clearTimeout(viewportTimer);
     viewportTimer = setTimeout(() => { viewportTimer = 0; onViewportChange(); }, delay || 0);
   }
-  window.addEventListener('resize', () => queueViewportChange(90));
+  function syncGateSoon(delay) {
+    setTimeout(syncGate, delay || 0);
+  }
+  window.addEventListener('resize', () => {
+    syncGate();
+    paintViewportNow();
+    queueViewportChange(90);
+  });
   window.addEventListener('orientationchange', () => {
+    syncGate();
     resetPointerState();
+    paintViewportNow();
     scheduleMobileLayout();
     queueViewportChange(240);
-    setTimeout(() => { scheduleMobileLayout(); queueViewportChange(0); }, 420);
+    syncGateSoon(60);
+    setTimeout(() => { syncGate(); scheduleMobileLayout(); queueViewportChange(0); }, 420);
   });
-  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => queueViewportChange(120));
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => {
+    // 地址栏伸缩只复核状态，绝不重置进度；视角仍交给合并后的 queueViewportChange。
+    syncGate();
+    queueViewportChange(120);
+  });
+  if (window.screen && screen.orientation && screen.orientation.addEventListener) {
+    screen.orientation.addEventListener('change', () => {
+      syncGateSoon(30);
+      syncGateSoon(240);
+      paintViewportNow();
+      scheduleMobileLayout();
+      queueViewportChange(120);
+    });
+  }
   // 首屏也要按真实预览区域初始化，不能只等 window.resize。
   layoutMobile();
   requestAnimationFrame(layoutMobile);
@@ -6245,7 +8801,8 @@ WB.initProduct = function () {
     // 和任何展开的参数纸签都禁止自动改方位角，避免14s锁过期后把可用的
     // 相机慢慢转进墙体；显式拖拽/双指操作仍可自由旋转。
     const sheetOpen = !!(ki && ki.classList.contains('show'));
-    if (!dragging && !sheetOpen && currentView === 'overview' && idle > 5 && camLockT <= 0) {
+    const gatePaused = !gate.entered || gate.lastMode === 'rotate';
+    if (!dragging && !sheetOpen && !gatePaused && currentView === 'overview' && idle > 5 && camLockT <= 0) {
       camT.theta += dt * 0.028;
     }
 
@@ -6264,6 +8821,7 @@ WB.initProduct = function () {
     if (WB.giftShadowDirty) { renderer.shadowMap.needsUpdate = true; WB.giftShadowDirty = false; }
     if (WB.productShadowDirty) { renderer.shadowMap.needsUpdate = true; WB.productShadowDirty = false; }
     WB.updateFX(dt, elapsed);
+    if (WB.updateHall) WB.updateHall(dt, elapsed);
     WB.updateLabel(dt, camera, target);
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
@@ -6367,54 +8925,84 @@ WB.initProduct = function () {
   updateProduct();
   updateRail();
   setSwitchUI('music', false);
-  // 默认按 1→9 引导：先亮出第 1 关纸签，但不自动锁视角、不替用户做选择。
-  setTimeout(() => {
-    // 手机首屏先给场景；九关仍在顶部横条里，点工序或点场景工位再开纸签。
-    // 本地切窑调试也不自动弹卡，方便看穿窑室。
-    if (!journey.interacted && window.innerWidth > 760 && qp.get('kilnCut') !== '1' && !uiOff) {
+  syncGate();
+
+  // 原桌面 1 秒后弹第 1 关纸签：必须等用户进入工坊之后才允许。
+  // 若入场后又恰好转回竖屏，先停在遮罩，横回来再弹，避免开场动画压在遮罩下。
+  function maybeShowFirstCard() {
+    if (!gate.entered || uiOff || hall.active) return;
+    if (gate.lastMode === 'rotate') { setTimeout(maybeShowFirstCard, 500); return; }
+    if (!journey.interacted && window.innerWidth > 760 && qp.get('kilnCut') !== '1') {
       journey.current = 0;
       updateRail();
       updateProduct();
       showStepCard(0);
     }
-  }, 1000);
+  }
 
-  /* ---------------- 调试入口（不是正式入口依赖） ---------------- */
-  if (qp.has('info')) {
-    setTimeout(() => {
-      const i = renderer.info;
-      document.title = 'INFO calls=' + i.render.calls + ' tris=' + i.render.triangles +
-        ' geo=' + i.memory.geometries + ' tex=' + i.memory.textures;
-    }, 1600);
+  function runEntryIntro() {
+    if (!gate.entered) return;
+    applyEntryScenePreset();
+    setTimeout(maybeShowFirstCard, 1000);
+
+    /* ---------------- 调试入口（均在入场后再生效，开始页期间不开烧、不开匣） ---------------- */
+    if (qp.has('info')) {
+      setTimeout(() => {
+        const i = renderer.info;
+        document.title = 'INFO calls=' + i.render.calls + ' tris=' + i.render.triangles +
+          ' geo=' + i.memory.geometries + ' tex=' + i.memory.textures;
+      }, 1600);
+    }
+    if (qp.has('step')) {
+      setTimeout(() => {
+        const n = Math.max(1, Math.min(9, Number(qp.get('step')) || 1));
+        goStep(n - 1, { focus: true });
+      }, 1300);
+    }
+    if (qp.has('gift')) {
+      setTimeout(() => {
+        if (!gate.entered) return;
+        if (WB.gift && WB.gift.phase() === 'closed') WB.gift.click();
+        showStepCard(8);
+        journey.current = 8;
+        updateRail();
+        updateProduct();
+      }, 1200);
+    }
+    if (qp.has('hall')) {
+      setTimeout(() => {
+        if (!gate.entered) return;
+        enterHall();
+        const m = qp.get('hall');
+        if (m && m !== '1' && HALL_VIEWS[m]) {
+          hallView(m);
+          if (qp.get('hallcard') === '1') showHallCard(m);
+        }
+        if (qp.get('pair') === '1' && WB.P && WB.P.hallPair) {
+          hall.paired = true;
+          WB.P.hallPair.target = 1;
+        }
+      }, 900);
+    }
+    if (qp.has('hit')) {
+      setTimeout(() => {
+        const arr = qp.get('hit').split(',').map(Number);
+        const rc = new THREE.Raycaster();
+        rc.setFromCamera(new THREE.Vector2(arr[0] * 2 - 1, -(arr[1] * 2 - 1)), camera);
+        const hits = rc.intersectObjects(scene.children, true).filter(h => h.object.isMesh);
+        document.title = 'HIT ' + hits.slice(0, 4).map(h => {
+          const m = h.object.material;
+          const col = m && m.color ? m.color.getHexString() : '-';
+          const nm = m && m.map ? 'map' : 'plain';
+          return h.object.geometry.type + '/' + col + '/' + nm + '@y' + h.point.y.toFixed(2);
+        }).join(' | ');
+      }, 600);
+    }
   }
-  if (qp.has('step')) {
-    setTimeout(() => {
-      const n = Math.max(1, Math.min(9, Number(qp.get('step')) || 1));
-      goStep(n - 1, { focus: true });
-    }, 1300);
-  }
-  if (qp.has('gift')) {
-    setTimeout(() => {
-      if (WB.gift && WB.gift.phase() === 'closed') WB.gift.click();
-      showStepCard(8);
-      journey.current = 8;
-      updateRail();
-      updateProduct();
-    }, 1200);
-  }
-  if (qp.has('hit')) {
-    setTimeout(() => {
-      const arr = qp.get('hit').split(',').map(Number);
-      const rc = new THREE.Raycaster();
-      rc.setFromCamera(new THREE.Vector2(arr[0] * 2 - 1, -(arr[1] * 2 - 1)), camera);
-      const hits = rc.intersectObjects(scene.children, true).filter(h => h.object.isMesh);
-      document.title = 'HIT ' + hits.slice(0, 4).map(h => {
-        const m = h.object.material;
-        const col = m && m.color ? m.color.getHexString() : '-';
-        const nm = m && m.map ? 'map' : 'plain';
-        return h.object.geometry.type + '/' + col + '/' + nm + '@y' + h.point.y.toFixed(2);
-      }).join(' | ');
-    }, 600);
+
+  if (gate.entered) {
+    // ui=0 是既有截图/调试模式：不展示开始页，直接按已入场处理。
+    runEntryIntro();
   }
 })();
 
